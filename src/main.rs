@@ -1,6 +1,6 @@
 use base64::prelude::*;
 use log::{debug, info};
-use serde_json::{json, Value};
+use serde_json::Value;
 use teloxide::{net::Download, prelude::*, RequestError};
 
 mod ollama;
@@ -21,6 +21,8 @@ fn parse_command(msg: &Message) -> (Option<&str>, Option<&str>) {
     let text = msg.text().unwrap_or("");
     let mut iter = text.splitn(2, ' ');
     let command = iter.next();
+    // Trim the @botname
+    let command = command.map(|c| c.split('@').next().unwrap());
     let args = iter.next();
 
     (command, args)
@@ -30,13 +32,15 @@ fn parse_command_in_caption(msg: &Message) -> (Option<&str>, Option<&str>) {
     let text = msg.caption().unwrap_or("");
     let mut iter = text.splitn(2, ' ');
     let command = iter.next();
+    // Trim the @botname
+    let command = command.map(|c| c.split('@').next().unwrap());
     let args = iter.next();
 
     (command, args)
 }
 
 async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
-    info!("Received message: {}", msg.text().unwrap_or(""));
+    // info!("Received message: {}", msg.text().unwrap_or(""));
 
     // Check if the message is a message or an image with a caption
     if msg.photo().is_some() && msg.caption().is_some() {
@@ -149,7 +153,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
 async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, RequestError> {
     log::info!("Starting llava function");
 
-    log::info!("Prompt: {}", prompt);
+    // log::info!("Prompt: {}", prompt);
 
     if prompt.is_empty() {
         prompt = "What is in this image?".to_string();
@@ -196,14 +200,12 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
     };
 
     // Save this request in json to the disk
-    let request_body_json = json!(request_body);
-    let request_body_json = serde_json::to_string_pretty(&request_body_json).unwrap();
-    use std::fs::File;
-    use std::io::Write;
-    let mut file = File::create("request.json").unwrap();
-    file.write_all(request_body_json.as_bytes()).unwrap();
-
-    // log::info!("Request body: {:?}", request_body);
+    // let request_body_json = json!(request_body);
+    // let request_body_json = serde_json::to_string_pretty(&request_body_json).unwrap();
+    // use std::fs::File;
+    // use std::io::Write;
+    // let mut file = File::create("request.json").unwrap();
+    // file.write_all(request_body_json.as_bytes()).unwrap();
 
     let client = reqwest::Client::new();
     let response = client
@@ -217,7 +219,7 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
             let res: Value = response.json().await?;
             // let text = response.text().await?;
             if let Some(response_text) = res["response"].as_str() {
-                log::info!("Response text: {}", response_text);
+                // log::info!("Response text: {}", response_text);
 
                 bot.send_message(msg.chat.id, response_text)
                     .reply_to_message_id(msg.id)
