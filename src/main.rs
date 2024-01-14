@@ -60,6 +60,11 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                 debug!("Executing mistral command with prompt: {}", prompt);
                 mistral(bot, msg, prompt).await?;
             }
+            Some("/llava") | Some("/l") => {
+                let prompt = args.unwrap_or("").to_string();
+                debug!("Executing llava reply command with prompt: {}", prompt);
+                llava(bot, msg, prompt).await?;
+            }
             _ => {}
         }
     } else {
@@ -153,10 +158,22 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
     let photo = match msg.photo() {
         Some(photos) => photos.last().unwrap(),
         None => {
-            bot.send_message(msg.chat.id, "No image provided")
-                .reply_to_message_id(msg.id)
-                .await?;
-            return Ok(msg);
+            // Check if there is a reply
+            if let Some(reply) = msg.reply_to_message() {
+                if let Some(photo) = reply.photo() {
+                    photo.last().unwrap()
+                } else {
+                    bot.send_message(msg.chat.id, "No image provided")
+                        .reply_to_message_id(msg.id)
+                        .await?;
+                    return Ok(msg);
+                }
+            } else {
+                bot.send_message(msg.chat.id, "No image provided")
+                    .reply_to_message_id(msg.id)
+                    .await?;
+                return Ok(msg);
+            }
         }
     };
 
