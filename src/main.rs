@@ -69,6 +69,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
             model: "mistral".to_string(),
             prompt,
             stream: false,
+            images: None,
         })
         .send()
         .await;
