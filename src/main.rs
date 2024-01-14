@@ -9,6 +9,10 @@ async fn main() {
     log::info!("Starting command bot...");
 
     let bot = Bot::from_env();
+    // Set the commands
+    bot.set_my_commands(Command::bot_commands())
+        .await
+        .expect("Failed to set commands");
 
     Command::repl(bot, answer).await;
 }
@@ -23,7 +27,7 @@ enum Command {
     Help,
     #[command(description = "Generate using Mistral 7B")]
     Mistral(String),
-    #[command(description = "Generate using Mistral 7B")]
+    #[command(description = "Alias for /mistral", prefix = "m")]
     M(String),
 }
 
