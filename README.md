@@ -11,7 +11,7 @@ This is a AI telegram bot which currently supports Mistral. It requires Ollama t
 ## Installation
 
 1. Install Ollama following the instructions on its [official website](https://ollama.ai/).
-2. Clone this repository: `git clone https://github.com/DuckyBlender/sussy_ducky_bot
+2. Clone this repository: `git clone https://github.com/DuckyBlender/sussy_ducky_bot`
 3. Navigate to the cloned repository: `cd bot-repo`
 
 ## Usage

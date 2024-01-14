@@ -69,6 +69,16 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                 debug!("Executing llava reply command with prompt: {}", prompt);
                 llava(bot, msg, prompt).await?;
             }
+            Some("/help") | Some("/h") => {
+                bot.send_message(msg.chat.id, "Available commands:\n/mistral or /m: generate text\n/llava or /l: generate text from image")
+                    .reply_to_message_id(msg.id)
+                    .await?;
+            }
+            Some("/start") => {
+                bot.send_message(msg.chat.id, "Welcome to Ollama Bot!\nAvailable commands:\n/mistral or /m: generate text\n/llava or /l: generate text from image")
+                    .reply_to_message_id(msg.id)
+                    .await?;
+            }
             _ => {}
         }
     } else {
