@@ -62,6 +62,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
     bot.send_chat_action(msg.chat.id, teloxide::types::ChatAction::Typing)
         .await?;
 
+    // Send the request
     let res = reqwest::Client::new()
         .post("http://localhost:11434/api/generate")
         .json(&OllamaRequest {
@@ -82,13 +83,19 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
     };
 
     // Parse the response
-    let res: Result<serde_json::Value, reqwest::Error> = res?.json().await;
+    let res = res.unwrap().json::<OllamaResponse>().await;
 
+    // Send the response
     match res {
         Ok(res) => {
-            let res = res["text"].as_str().unwrap_or("Error");
-            bot.send_message(msg.chat.id, res).await
+            bot.send_message(msg.chat.id, res.response)
+                .reply_to_message_id(msg.id)
+                .await
         }
-        Err(e) => bot.send_message(msg.chat.id, format!("Error: {}", e)).await,
+        Err(e) => {
+            bot.send_message(msg.chat.id, format!("Error: {}", e))
+                .reply_to_message_id(msg.id)
+                .await
+        }
     }
 }
