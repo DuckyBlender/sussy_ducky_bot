@@ -21,22 +21,47 @@ fn parse_command(msg: &Message) -> (Option<&str>, Option<&str>) {
     let text = msg.text().unwrap_or("");
     let mut iter = text.splitn(2, ' ');
     let command = iter.next();
-    // Trim the @botname
-    let command = command.map(|c| c.split('@').next().unwrap());
-    let args = iter.next();
+    // Check if the @botname exists right after the command
+    // If it is, check if the bot is mentioned
+    // If it is, remove the @botname
+    let command = command.map(|c| {
+        if c.starts_with("@") {
+            let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
+            if c == format!("@{}", bot_name) {
+                c.split('@').next().unwrap()
+            } else {
+                c
+            }
+        } else {
+            c
+        }
+    });
 
-    (command, args)
+    (command, iter.next())
 }
 
 fn parse_command_in_caption(msg: &Message) -> (Option<&str>, Option<&str>) {
     let text = msg.caption().unwrap_or("");
     let mut iter = text.splitn(2, ' ');
     let command = iter.next();
-    // Trim the @botname
-    let command = command.map(|c| c.split('@').next().unwrap());
-    let args = iter.next();
+    // Check if the @botname exists right after the command
+    // If it is, check if the bot is mentioned
+    // If it is, remove the @botname
+    let command = command.map(|c| {
+        if c.starts_with("@") {
+            // get the bot name from env 
+            let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
+            if c == format!("@{}", bot_name) {
+                c.split('@').next().unwrap()
+            } else {
+                c
+            }
+        } else {
+            c
+        }
+    });
 
-    (command, args)
+    (command, iter.next())
 }
 
 async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
@@ -75,7 +100,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                     .await?;
             }
             Some("/start") => {
-                bot.send_message(msg.chat.id, "Welcome to Ollama Bot!\nAvailable commands:\n/mistral or /m: generate text\n/llava or /l: generate text from image")
+                bot.send_message(msg.chat.id, "Welcome to Sussy Ducky Bot (because all the good names were taken)\nAvailable commands:\n/mistral or /m: generate text\n/llava or /l: generate text from image")
                     .reply_to_message_id(msg.id)
                     .await?;
             }
