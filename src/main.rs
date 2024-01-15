@@ -49,7 +49,7 @@ fn parse_command_in_caption(msg: &Message) -> (Option<&str>, Option<&str>) {
     // If it is, remove the @botname
     let command = command.map(|c| {
         if c.starts_with("@") {
-            // get the bot name from env 
+            // get the bot name from env
             let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
             if c == format!("@{}", bot_name) {
                 c.split('@').next().unwrap()
@@ -103,6 +103,24 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                 bot.send_message(msg.chat.id, "Welcome to Sussy Ducky Bot (because all the good names were taken)\nAvailable commands:\n/mistral or /m: generate text\n/llava or /l: generate text from image")
                     .reply_to_message_id(msg.id)
                     .await?;
+            }
+            Some("/ping") => {
+                // Ping api.telegram.org and calculate the latency
+                let start = std::time::Instant::now();
+                let res = reqwest::get("https://api.telegram.org").await;
+                let latency = start.elapsed().as_millis();
+                match res {
+                    Ok(_) => {
+                        bot.send_message(msg.chat.id, format!("Pong! Latency: {}ms", latency))
+                            .reply_to_message_id(msg.id)
+                            .await?;
+                    }
+                    Err(e) => {
+                        bot.send_message(msg.chat.id, format!("Error calculating latency: {}", e))
+                            .reply_to_message_id(msg.id)
+                            .await?;
+                    }
+                }
             }
             _ => {}
         }
