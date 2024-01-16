@@ -1,5 +1,5 @@
 use base64::prelude::*;
-use log::{debug, info};
+use log::{debug, error, info};
 use reqwest::StatusCode;
 use serde_json::Value;
 use teloxide::types::ParseMode::MarkdownV2;
@@ -17,7 +17,7 @@ use ollama::*;
 async fn main() {
     dotenv::dotenv().ok();
     pretty_env_logger::init();
-    log::info!("Starting command bot...");
+    info!("Starting command bot...");
 
     let bot = Bot::from_env();
 
@@ -96,7 +96,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             _ => {}
         }
     } else if msg.text().is_some() {
-        info!("Message is a text message");
+        // info!("Message is a text message");
         let (command, args) = parse_command(&msg);
         match command {
             Some("/mistral") | Some("/m") => {
@@ -204,7 +204,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             _ => {}
         }
     } else {
-        info!("Message is not a text message nor an image with a caption");
+        // info!("Message is not a text message nor an image with a caption");
     }
 
     Ok(())
@@ -256,10 +256,10 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
 
     match res {
         Ok(_) => {
-            log::info!("Request sent successfully");
+            // info!("Request sent successfully");
         }
         Err(e) => {
-            log::debug!("Error sending request: {}", e);
+            error!("Error sending request: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
                 .parse_mode(MarkdownV2)
@@ -288,7 +288,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
             .await
         }
         Err(e) => {
-            log::debug!("Error parsing response: {}", e);
+            error!("Error parsing response: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
                 .parse_mode(MarkdownV2)
@@ -298,9 +298,9 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
 }
 
 async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, RequestError> {
-    log::info!("Starting llava function");
+    info!("Starting llava function");
 
-    // log::info!("Prompt: {}", prompt);
+    // info!("Prompt: {}", prompt);
 
     if prompt.is_empty() {
         prompt = "What is in this image?".to_string();
@@ -330,7 +330,7 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
         }
     };
 
-    log::info!("Photo: {:?}", photo);
+    info!("Photo: {:?}", photo);
 
     let file_path = bot.get_file(photo.file.id.clone()).await?.path;
     let mut buf = Vec::new();
@@ -370,7 +370,7 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
             let res: Value = response.json().await?;
             // let text = response.text().await?;
             if let Some(response_text) = res["response"].as_str() {
-                // log::info!("Response text: {}", response_text);
+                // info!("Response text: {}", response_text);
                 let response_text = format!(
                     "{}\n\n`Generation time: {}s`",
                     response_text,
@@ -389,7 +389,7 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
             }
         }
         Err(e) => {
-            log::info!("Error sending request: {}", e);
+            info!("Error sending request: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
                 .parse_mode(MarkdownV2)
