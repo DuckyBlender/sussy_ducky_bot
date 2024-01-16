@@ -1,7 +1,13 @@
 use base64::prelude::*;
 use log::{debug, info};
+use reqwest::StatusCode;
 use serde_json::Value;
-use teloxide::{net::Download, prelude::*, RequestError};
+use teloxide::{
+    net::Download,
+    prelude::*,
+    types::{BotCommand, InputFile, True},
+    RequestError,
+};
 
 mod ollama;
 use ollama::*;
@@ -14,54 +20,62 @@ async fn main() {
 
     let bot = Bot::from_env();
 
+    set_commands(&bot).await.unwrap();
+
     teloxide::repl(bot, handler).await;
 }
 
+async fn set_commands(bot: &Bot) -> Result<True, RequestError> {
+    let commands = vec![
+        BotCommand::new("mistral", "Generate text using Mistral7B"),
+        BotCommand::new("m", "Alias for /mistral"),
+        BotCommand::new("llava", "Generate text from image using Llava"),
+        BotCommand::new("l", "Alias for /llava"),
+        BotCommand::new("help", "Show available commands"),
+        BotCommand::new("h", "Alias for /help"),
+        BotCommand::new("start", "Start information"),
+        BotCommand::new("ping", "Check the bot's latency"),
+        BotCommand::new(
+            "httpcat",
+            "Get an image of a cat for a given HTTP status code",
+        ),
+    ];
+
+    bot.set_my_commands(commands).await
+}
+
 fn parse_command(msg: &Message) -> (Option<&str>, Option<&str>) {
+    let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
     let text = msg.text().unwrap_or("");
     let mut iter = text.splitn(2, ' ');
     let command = iter.next();
-    // Check if the @botname exists right after the command
-    // If it is, check if the bot is mentioned
-    // If it is, remove the @botname
-    let command = command.map(|c| {
-        if c.starts_with("@") {
-            let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
-            if c == format!("@{}", bot_name) {
-                c.split('@').next().unwrap()
-            } else {
-                c
-            }
-        } else {
-            c
-        }
-    });
+    let args = iter.next();
 
-    (command, iter.next())
+    match command {
+        Some(command) if command.ends_with(&bot_name) => {
+            let command = &command[..command.len() - bot_name.len() - 1]; // -1 to remove @
+            (Some(command), args)
+        }
+        Some(command) if !command.contains("@") => (Some(command), args),
+        _ => (None, None),
+    }
 }
 
 fn parse_command_in_caption(msg: &Message) -> (Option<&str>, Option<&str>) {
-    let text = msg.caption().unwrap_or("");
-    let mut iter = text.splitn(2, ' ');
+    let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
+    let caption = msg.caption().unwrap_or("");
+    let mut iter = caption.splitn(2, ' ');
     let command = iter.next();
-    // Check if the @botname exists right after the command
-    // If it is, check if the bot is mentioned
-    // If it is, remove the @botname
-    let command = command.map(|c| {
-        if c.starts_with("@") {
-            // get the bot name from env
-            let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
-            if c == format!("@{}", bot_name) {
-                c.split('@').next().unwrap()
-            } else {
-                c
-            }
-        } else {
-            c
-        }
-    });
+    let args = iter.next();
 
-    (command, iter.next())
+    match command {
+        Some(command) if command.ends_with(&bot_name) => {
+            let command = &command[..command.len() - bot_name.len() - 1]; // -1 to remove @
+            (Some(command), args)
+        }
+        Some(command) if !command.contains("@") => (Some(command), args),
+        _ => (None, None),
+    }
 }
 
 async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
@@ -119,6 +133,63 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                         bot.send_message(msg.chat.id, format!("Error calculating latency: {}", e))
                             .reply_to_message_id(msg.id)
                             .await?;
+                    }
+                }
+            }
+            Some("/httpcat") => {
+                // Ping http://http.cat/{argument}
+                if args.is_none() {
+                    bot.send_message(
+                        msg.chat.id,
+                        "No argument provided: Please provide a status code",
+                    )
+                    .reply_to_message_id(msg.id)
+                    .await?;
+                    return Ok(());
+                }
+                let status_code = args.unwrap();
+                let first_argument = status_code.splitn(2, ' ').next().unwrap();
+                // Check if it's a 3 digit number
+                if first_argument.len() != 3 {
+                    bot.send_message(
+                        msg.chat.id,
+                        "Invalid argument: Please provide a 3 digit status code",
+                    )
+                    .reply_to_message_id(msg.id)
+                    .await?;
+                    return Ok(());
+                }
+                // Download the image
+                let res = reqwest::get(format!("https://http.cat/{}", first_argument)).await;
+                // Send the image
+                match res {
+                    Ok(res) => {
+                        let body = res.bytes().await?;
+                        let buf = body.to_vec();
+                        bot.send_photo(msg.chat.id, InputFile::memory(buf))
+                            .reply_to_message_id(msg.id)
+                            .await?;
+                    }
+                    Err(e) => {
+                        // Check which error it is
+                        match e.status() {
+                            Some(StatusCode::NOT_FOUND) => {
+                                bot.send_message(
+                                    msg.chat.id,
+                                    format!("Error: {} is not a valid status code", status_code),
+                                )
+                                .reply_to_message_id(msg.id)
+                                .await?;
+                            }
+                            _ => {
+                                bot.send_message(
+                                    msg.chat.id,
+                                    format!("Error downloading image: {}", e),
+                                )
+                                .reply_to_message_id(msg.id)
+                                .await?;
+                            }
+                        }
                     }
                 }
             }
