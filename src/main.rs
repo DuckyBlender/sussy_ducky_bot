@@ -2,6 +2,7 @@ use base64::prelude::*;
 use log::{debug, info};
 use reqwest::StatusCode;
 use serde_json::Value;
+use teloxide::types::ParseMode::MarkdownV2;
 use teloxide::{
     net::Download,
     prelude::*,
@@ -110,12 +111,12 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
             Some("/help") | Some("/h") => {
                 bot.send_message(msg.chat.id, "Available commands:\n/mistral or /m: generate text\n/llava or /l: generate text from image")
-                    .reply_to_message_id(msg.id)
+                    .reply_to_message_id(msg.id).parse_mode(MarkdownV2)
                     .await?;
             }
             Some("/start") => {
                 bot.send_message(msg.chat.id, "Welcome to Sussy Ducky Bot (because all the good names were taken)\nAvailable commands:\n/mistral or /m: generate text\n/llava or /l: generate text from image")
-                    .reply_to_message_id(msg.id)
+                    .reply_to_message_id(msg.id).parse_mode(MarkdownV2)
                     .await?;
             }
             Some("/ping") => {
@@ -127,11 +128,13 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                     Ok(_) => {
                         bot.send_message(msg.chat.id, format!("Pong! Latency: {}ms", latency))
                             .reply_to_message_id(msg.id)
+                            .parse_mode(MarkdownV2)
                             .await?;
                     }
                     Err(e) => {
                         bot.send_message(msg.chat.id, format!("Error calculating latency: {}", e))
                             .reply_to_message_id(msg.id)
+                            .parse_mode(MarkdownV2)
                             .await?;
                     }
                 }
@@ -144,6 +147,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                         "No argument provided: Please provide a status code",
                     )
                     .reply_to_message_id(msg.id)
+                    .parse_mode(MarkdownV2)
                     .await?;
                     return Ok(());
                 }
@@ -156,6 +160,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                         "Invalid argument: Please provide a 3 digit status code",
                     )
                     .reply_to_message_id(msg.id)
+                    .parse_mode(MarkdownV2)
                     .await?;
                     return Ok(());
                 }
@@ -168,6 +173,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                         let buf = body.to_vec();
                         bot.send_photo(msg.chat.id, InputFile::memory(buf))
                             .reply_to_message_id(msg.id)
+                            .parse_mode(MarkdownV2)
                             .await?;
                     }
                     Err(e) => {
@@ -179,6 +185,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                                     format!("Error: {} is not a valid status code", status_code),
                                 )
                                 .reply_to_message_id(msg.id)
+                                .parse_mode(MarkdownV2)
                                 .await?;
                             }
                             _ => {
@@ -187,6 +194,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                                     format!("Error downloading image: {}", e),
                                 )
                                 .reply_to_message_id(msg.id)
+                                .parse_mode(MarkdownV2)
                                 .await?;
                             }
                         }
@@ -211,6 +219,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
         } else {
             bot.send_message(msg.chat.id, "No prompt provided")
                 .reply_to_message_id(msg.id)
+                .parse_mode(MarkdownV2)
                 .await?;
             return Ok(msg);
         }
@@ -222,6 +231,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
     if prompt.is_empty() {
         bot.send_message(msg.chat.id, "No prompt provided")
             .reply_to_message_id(msg.id)
+            .parse_mode(MarkdownV2)
             .await?;
         return Ok(msg);
     }
@@ -231,6 +241,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
         .await?;
 
     // Send the request
+    let now = std::time::Instant::now();
     let res = reqwest::Client::new()
         .post("http://localhost:11434/api/generate")
         .json(&OllamaRequest {
@@ -241,6 +252,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
         })
         .send()
         .await;
+    let elapsed = now.elapsed().as_secs_f32();
 
     match res {
         Ok(_) => {
@@ -250,6 +262,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
             log::debug!("Error sending request: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
+                .parse_mode(MarkdownV2)
                 .await?;
             return Ok(msg);
         }
@@ -261,14 +274,24 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
     // Send the response
     match res {
         Ok(res) => {
-            bot.send_message(msg.chat.id, res.response)
-                .reply_to_message_id(msg.id)
-                .await
+            bot.send_message(
+                msg.chat.id,
+                // round to one decimal place
+                format!(
+                    "{}\n\n`Generation time: {}s`",
+                    res.response,
+                    (elapsed * 10.0).round() / 10.0
+                ),
+            )
+            .reply_to_message_id(msg.id)
+            .parse_mode(MarkdownV2)
+            .await
         }
         Err(e) => {
             log::debug!("Error parsing response: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
+                .parse_mode(MarkdownV2)
                 .await
         }
     }
@@ -293,12 +316,14 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
                 } else {
                     bot.send_message(msg.chat.id, "No image provided")
                         .reply_to_message_id(msg.id)
+                        .parse_mode(MarkdownV2)
                         .await?;
                     return Ok(msg);
                 }
             } else {
                 bot.send_message(msg.chat.id, "No image provided")
                     .reply_to_message_id(msg.id)
+                    .parse_mode(MarkdownV2)
                     .await?;
                 return Ok(msg);
             }
@@ -332,11 +357,13 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
     // file.write_all(request_body_json.as_bytes()).unwrap();
 
     let client = reqwest::Client::new();
+    let now = std::time::Instant::now();
     let response = client
         .post("http://localhost:11434/api/generate")
         .json(&request_body)
         .send()
         .await;
+    let elapsed = now.elapsed().as_secs_f32();
 
     match response {
         Ok(response) => {
@@ -344,13 +371,20 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
             // let text = response.text().await?;
             if let Some(response_text) = res["response"].as_str() {
                 // log::info!("Response text: {}", response_text);
+                let response_text = format!(
+                    "{}\n\n`Generation time: {}s`",
+                    response_text,
+                    (elapsed * 10.0).round() / 10.0
+                );
 
                 bot.send_message(msg.chat.id, response_text)
                     .reply_to_message_id(msg.id)
+                    .parse_mode(MarkdownV2)
                     .await
             } else {
                 bot.send_message(msg.chat.id, "Error: no response")
                     .reply_to_message_id(msg.id)
+                    .parse_mode(MarkdownV2)
                     .await
             }
         }
@@ -358,6 +392,7 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
             log::info!("Error sending request: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
+                .parse_mode(MarkdownV2)
                 .await?;
 
             Err(e.into())
