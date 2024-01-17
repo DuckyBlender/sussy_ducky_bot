@@ -1,4 +1,5 @@
 use base64::prelude::*;
+use rand::prelude::*;
 use log::{debug, error, info};
 use reqwest::StatusCode;
 use serde_json::Value;
@@ -9,8 +10,10 @@ use teloxide::{
     RequestError,
 };
 
-mod ollama;
-use ollama::*;
+mod structs;
+use structs::*;
+
+const TTS_VOICES: [&str; 6] = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
 
 #[tokio::main]
 async fn main() {
@@ -39,6 +42,7 @@ async fn set_commands(bot: &Bot) -> Result<True, RequestError> {
             "httpcat",
             "Get an image of a cat for a given HTTP status code",
         ),
+        BotCommand::new("tts", "Text to speech using random OpenAI voice"),
     ];
 
     bot.set_my_commands(commands).await
@@ -85,7 +89,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
     if msg.photo().is_some() && msg.caption().is_some() {
         info!("Message is an image with a caption");
         let (command, args) = parse_command_in_caption(&msg);
-        debug!("Command: {:?}, args: {:?}", command, args);
+        // debug!("Command: {:?}, args: {:?}", command, args);
         match command {
             Some("/llava") | Some("/l") => {
                 let prompt = args.unwrap_or("").to_string();
@@ -127,13 +131,11 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                     Ok(_) => {
                         bot.send_message(msg.chat.id, format!("Pong! Latency: {}ms", latency))
                             .reply_to_message_id(msg.id)
-                            
                             .await?;
                     }
                     Err(e) => {
                         bot.send_message(msg.chat.id, format!("Error calculating latency: {}", e))
                             .reply_to_message_id(msg.id)
-                            
                             .await?;
                     }
                 }
@@ -146,7 +148,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                         "No argument provided: Please provide a status code",
                     )
                     .reply_to_message_id(msg.id)
-                    
                     .await?;
                     return Ok(());
                 }
@@ -159,7 +160,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                         "Invalid argument: Please provide a 3 digit status code",
                     )
                     .reply_to_message_id(msg.id)
-                    
                     .await?;
                     return Ok(());
                 }
@@ -172,7 +172,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                         let buf = body.to_vec();
                         bot.send_photo(msg.chat.id, InputFile::memory(buf))
                             .reply_to_message_id(msg.id)
-                            
                             .await?;
                     }
                     Err(e) => {
@@ -184,7 +183,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                                     format!("Error: {} is not a valid status code", status_code),
                                 )
                                 .reply_to_message_id(msg.id)
-                                
                                 .await?;
                             }
                             _ => {
@@ -193,12 +191,87 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                                     format!("Error downloading image: {}", e),
                                 )
                                 .reply_to_message_id(msg.id)
-                                
                                 .await?;
                             }
                         }
                     }
                 }
+            }
+            Some("/tts") => {
+                // Available TTS voices: alloy, echo, fable, onyx, nova, and shimmer
+                // Check if there is a prompt after the command
+                // If not, check if there is a reply
+                // If not, send an error message
+
+                let prompt;
+                if args.is_none() {
+                    if let Some(reply) = msg.reply_to_message() {
+                        if let Some(text) = reply.text() {
+                            prompt = text.to_string();
+                        } else {
+                            bot.send_message(msg.chat.id, "No prompt provided")
+                                .reply_to_message_id(msg.id)
+                                .await?;
+                            return Ok(());
+                        }
+                    } else {
+                        bot.send_message(msg.chat.id, "No prompt provided")
+                            .reply_to_message_id(msg.id)
+                            .await?;
+                        return Ok(());
+                    }
+                } else {
+                    prompt = args.unwrap().to_string();
+                }
+
+                // Send typing indicator
+                bot.send_chat_action(msg.chat.id, teloxide::types::ChatAction::Typing)
+                    .await?;
+
+                // Send the request
+                let voice = TTS_VOICES.choose(&mut rand::thread_rng()).unwrap();
+                let res = reqwest::Client::new()
+                    .post("https://api.openai.com/v1/audio/speech")
+                    .bearer_auth(std::env::var("OPENAI_KEY").unwrap())
+                    .json(&TTSRequest {
+                        model: "tts-1".to_string(),
+                        input: prompt,
+                        voice: voice.to_string(),
+                    })
+                    .send()
+                    .await;
+
+                if res.is_err() {
+                    error!("Error sending request: {}", res.as_ref().err().unwrap());
+                    bot.send_message(
+                        msg.chat.id,
+                        format!("Error: {}", res.as_ref().err().unwrap()),
+                    )
+                    .reply_to_message_id(msg.id)
+                    .await?;
+                    return Ok(());
+                }
+
+                // Check if the request was successful
+                if res.as_ref().unwrap().status().is_client_error() {
+                    let error = res.unwrap().text().await.unwrap();
+                    error!("Error sending request: {}", error);
+                    bot.send_message(msg.chat.id, format!("Error: {}", error))
+                        .reply_to_message_id(msg.id)
+                        .await?;
+                    return Ok(());
+                }
+
+                // The response is the audio file in mp3
+                // Send the response
+                let res = res.unwrap();
+
+                let body = res.bytes().await?;
+                let buf = body.to_vec();
+                bot.send_voice(msg.chat.id, InputFile::memory(buf))
+                    .caption(format!("Voice: {}", voice))
+                    .reply_to_message_id(msg.id)
+                    .await?;
             }
             _ => {}
         }
@@ -218,7 +291,6 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
         } else {
             bot.send_message(msg.chat.id, "No prompt provided")
                 .reply_to_message_id(msg.id)
-                
                 .await?;
             return Ok(msg);
         }
@@ -230,7 +302,6 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
     if prompt.is_empty() {
         bot.send_message(msg.chat.id, "No prompt provided")
             .reply_to_message_id(msg.id)
-            
             .await?;
         return Ok(msg);
     }
@@ -261,7 +332,6 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
             error!("Error sending request: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
-                
                 .await?;
             return Ok(msg);
         }
@@ -283,14 +353,12 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
                 ),
             )
             .reply_to_message_id(msg.id)
-            
             .await
         }
         Err(e) => {
             error!("Error parsing response: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
-                
                 .await
         }
     }
@@ -315,14 +383,12 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
                 } else {
                     bot.send_message(msg.chat.id, "No image provided")
                         .reply_to_message_id(msg.id)
-                        
                         .await?;
                     return Ok(msg);
                 }
             } else {
                 bot.send_message(msg.chat.id, "No image provided")
                     .reply_to_message_id(msg.id)
-                    
                     .await?;
                 return Ok(msg);
             }
@@ -378,12 +444,10 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
 
                 bot.send_message(msg.chat.id, response_text)
                     .reply_to_message_id(msg.id)
-                    
                     .await
             } else {
                 bot.send_message(msg.chat.id, "Error: no response")
                     .reply_to_message_id(msg.id)
-                    
                     .await
             }
         }
@@ -391,7 +455,6 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
             info!("Error sending request: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
-                
                 .await?;
 
             Err(e.into())

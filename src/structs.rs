@@ -1,6 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct TTSRequest {
+    pub model: String,
+    pub input: String,
+    pub voice: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OllamaRequest {
     pub model: String,
     pub prompt: String,
