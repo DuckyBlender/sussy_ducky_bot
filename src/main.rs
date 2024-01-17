@@ -6,7 +6,7 @@ use serde_json::Value;
 use teloxide::{
     net::Download,
     prelude::*,
-    types::{BotCommand, InputFile, True},
+    types::{BotCommand, InputFile, True, ChatAction},
     RequestError,
 };
 
@@ -225,7 +225,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                 }
 
                 // Send typing indicator
-                bot.send_chat_action(msg.chat.id, teloxide::types::ChatAction::Typing)
+                bot.send_chat_action(msg.chat.id, ChatAction::RecordVoice)
                     .await?;
 
                 // Send the request
@@ -261,6 +261,9 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                         .await?;
                     return Ok(());
                 }
+
+                bot.send_chat_action(msg.chat.id, ChatAction::RecordVoice)
+                    .await?;
 
                 // The response is the audio file in mp3
                 // Send the response
@@ -307,7 +310,7 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
     }
 
     // Send typing action
-    bot.send_chat_action(msg.chat.id, teloxide::types::ChatAction::Typing)
+    bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
 
     // Send the request
@@ -403,7 +406,7 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
 
     let base64_image = BASE64_STANDARD.encode(&buf);
 
-    bot.send_chat_action(msg.chat.id, teloxide::types::ChatAction::Typing)
+    bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
 
     let request_body = &OllamaRequest {
