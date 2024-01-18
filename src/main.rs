@@ -302,7 +302,7 @@ async fn mistral(
 ) -> Result<Message, RequestError> {
     info!("Starting mistral function");
     // If the prompt is empty, check if there is a reply
-    let mut prompt = if prompt.is_empty() {
+    let prompt = if prompt.is_empty() {
         if let Some(reply) = msg.reply_to_message() {
             reply.text().unwrap_or("").to_string()
         } else {
@@ -323,9 +323,11 @@ async fn mistral(
         return Ok(msg);
     }
 
-    if caveman {
-        prompt = format!("Reply to this message in caveman language. Use all caps. Make many grammatical errors. Message: {}", prompt);
-    }
+    let prompt = if caveman {
+        format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS [/INST]\n\n{}", prompt)
+    } else {
+        prompt
+    };
 
     // Send typing action
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
@@ -340,6 +342,7 @@ async fn mistral(
             prompt,
             stream: false,
             images: None,
+            raw: if caveman { true } else { false },
         })
         .send()
         .await;
@@ -432,6 +435,7 @@ async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message, Re
         prompt,
         stream: false,
         images: Some(vec![base64_image]),
+        raw: false,
     };
 
     // Save this request in json to the disk
