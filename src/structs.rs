@@ -22,7 +22,7 @@ pub struct OllamaResponse {
     pub created_at: String,
     pub response: String,
     pub done: bool,
-    pub context: Vec<i32>,
+    pub context: Option<Vec<i32>>, // optional if raw is true
     pub total_duration: i64,
     pub load_duration: i64,
     pub prompt_eval_count: Option<i32>,
