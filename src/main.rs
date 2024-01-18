@@ -50,17 +50,20 @@ async fn set_commands(bot: &Bot) -> Result<True, RequestError> {
     bot.set_my_commands(commands).await
 }
 
-async fn handler(bot: Bot, msg: &'static Message) -> ResponseResult<()> {
+async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
     // info!("Received message: {}", msg.text().unwrap_or(""));
 
     // Check if the message is a message or an image with a caption
     if msg.photo().is_some() && msg.caption().is_some() {
         info!("Message is an image with a caption");
-        let (command, args) = parse_command_in_caption(&msg);
-        // debug!("Command: {:?}, args: {:?}", command, args);
-        match command {
-            Some("/llava" | "/l") => {
-                let prompt = args.unwrap_or("").to_string();
+        let (command, args) = parse_command_in_caption(msg.clone());
+        let command = command.unwrap_or(String::new());
+        let args = args.unwrap_or(String::new());
+        let msg = msg.clone(); // Clone the message here
+
+        match command.as_str() {
+            "/llava" | "/l" => {
+                let prompt = args;
                 debug!("Executing llava command with prompt: {}", prompt);
                 llava(bot, msg.clone(), prompt).await?;
             }
@@ -68,45 +71,34 @@ async fn handler(bot: Bot, msg: &'static Message) -> ResponseResult<()> {
         }
     } else if msg.text().is_some() {
         // info!("Message is a text message");
-        let (command, args) = parse_command(&msg);
-        match command {
-            Some("/mistral") | Some("/m") => {
-                tokio::spawn(mistral(
-                    bot.clone(),
-                    msg.clone(),
-                    args.unwrap_or("").to_string(),
-                    false,
-                ));
+        let (command, args) = parse_command(msg.clone());
+        let command = command.unwrap_or(String::new());
+        let args = args.unwrap_or(String::new());
+        let msg = msg.clone(); // Clone the message here
+        match command.as_str() {
+            "/mistral" | "/m" => {
+                tokio::spawn(mistral(bot.clone(), msg, args.clone(), false));
             }
-            Some("/caveman") => {
-                tokio::spawn(mistral(
-                    bot.clone(),
-                    msg.clone(),
-                    args.unwrap_or("").to_string(),
-                    true,
-                ));
+            "/caveman" => {
+                tokio::spawn(mistral(bot.clone(), msg, args.clone(), true));
             }
-            Some("/llava") | Some("/l") => {
-                tokio::spawn(llava(
-                    bot.clone(),
-                    msg.clone(),
-                    args.unwrap_or("").to_string(),
-                ));
+            "/llava" | "/l" => {
+                tokio::spawn(llava(bot.clone(), msg, args.clone()));
             }
-            Some("/help") | Some("/h") => {
-                tokio::spawn(help(bot.clone(), &msg));
+            "/help" | "/h" => {
+                tokio::spawn(help(bot.clone(), msg));
             }
-            Some("/start") => {
-                tokio::spawn(start(bot.clone(), &msg));
+            "/start" => {
+                tokio::spawn(start(bot.clone(), msg));
             }
-            Some("/ping") => {
-                tokio::spawn(ping(bot.clone(), &msg));
+            "/ping" => {
+                tokio::spawn(ping(bot.clone(), msg));
             }
-            Some("/httpcat") => {
-                tokio::spawn(httpcat(bot.clone(), &msg, args));
+            "/httpcat" => {
+                tokio::spawn(httpcat(bot.clone(), msg, args.clone()));
             }
-            Some("/tts") => {
-                tokio::spawn(tts(bot.clone(), &msg, args));
+            "/tts" => {
+                tokio::spawn(tts(bot.clone(), msg, args.clone()));
             }
             _ => {
                 // If the command is not recognized, do nothing

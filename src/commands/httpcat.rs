@@ -9,9 +9,9 @@ use teloxide::{
     Bot,
 };
 
-pub async fn httpcat(bot: Bot, msg: &Message, args: Option<&str>) -> ResponseResult<()> {
+pub async fn httpcat(bot: Bot, msg: Message, args: String) -> ResponseResult<()> {
     // Ping http://http.cat/{argument}
-    if args.is_none() {
+    if args.is_empty() {
         bot.send_message(
             msg.chat.id,
             "No argument provided: Please provide a status code",
@@ -20,8 +20,8 @@ pub async fn httpcat(bot: Bot, msg: &Message, args: Option<&str>) -> ResponseRes
         .await?;
         return Ok(());
     }
-    let status_code = args.unwrap();
-    let first_argument = status_code.split(' ').next().unwrap();
+    let status_code = args.to_string();
+    let first_argument = args.split(' ').next().unwrap();
     // Check if it's a 3 digit number
     if first_argument.len() != 3 {
         bot.send_message(

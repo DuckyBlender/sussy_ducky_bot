@@ -55,7 +55,7 @@ pub async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message
 
     let request_body = &OllamaRequest {
         model: "llava".to_string(),
-        prompt,
+        prompt: prompt.to_string(),
         stream: false,
         images: Some(vec![base64_image]),
         raw: false,

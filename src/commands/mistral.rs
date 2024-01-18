@@ -16,9 +16,9 @@ pub async fn mistral(
 ) -> Result<Message, RequestError> {
     info!("Starting mistral function");
     // If the prompt is empty, check if there is a reply
-    let prompt = if prompt.is_empty() {
+    let mut prompt: String = if prompt.is_empty() {
         if let Some(reply) = msg.reply_to_message() {
-            reply.text().unwrap_or("").to_string()
+            reply.text().unwrap_or_default().to_string()
         } else {
             bot.send_message(msg.chat.id, "No prompt provided")
                 .reply_to_message_id(msg.id)
@@ -37,13 +37,13 @@ pub async fn mistral(
         return Ok(msg);
     }
 
-    let prompt = if caveman {
-        format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS [/INST]\n\n{}", prompt)
-    } else {
-        prompt
-    };
+    // prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS [/INST]\n\n"
 
-    // Send typing action
+    if caveman {
+        prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS [/INST]\n\n{prompt}");
+    }
+
+    // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
 
@@ -53,10 +53,10 @@ pub async fn mistral(
         .post("http://localhost:11434/api/generate")
         .json(&OllamaRequest {
             model: "mistral".to_string(),
-            prompt,
+            prompt: prompt.to_string(),
             stream: false,
             images: None,
-            raw: if caveman { true } else { false },
+            raw: caveman,
         })
         .send()
         .await;
@@ -68,7 +68,7 @@ pub async fn mistral(
         }
         Err(e) => {
             error!("Error sending request: {}", e);
-            bot.send_message(msg.chat.id, format!("Error: {}", e))
+            bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
                 .await?;
             return Ok(msg);
@@ -95,7 +95,7 @@ pub async fn mistral(
         }
         Err(e) => {
             error!("Error parsing response: {}", e);
-            bot.send_message(msg.chat.id, format!("Error: {}", e))
+            bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
                 .await
         }

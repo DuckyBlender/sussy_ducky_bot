@@ -11,14 +11,14 @@ use teloxide::{
 
 use crate::{TTSRequest, TTS_VOICES};
 
-pub async fn tts(bot: Bot, msg: &Message, args: Option<&str>) -> ResponseResult<()> {
+pub async fn tts(bot: Bot, msg: Message, args: String) -> ResponseResult<()> {
     // Available TTS voices: alloy, echo, fable, onyx, nova, and shimmer
     // Check if there is a prompt after the command
     // If not, check if there is a reply
     // If not, send an error message
 
     let prompt;
-    if args.is_none() {
+    if args.is_empty() {
         if let Some(reply) = msg.reply_to_message() {
             if let Some(text) = reply.text() {
                 prompt = text.to_string();
@@ -35,7 +35,7 @@ pub async fn tts(bot: Bot, msg: &Message, args: Option<&str>) -> ResponseResult<
             return Ok(());
         }
     } else {
-        prompt = args.unwrap().to_string();
+        prompt = args.to_string();
     }
 
     // Send typing indicator

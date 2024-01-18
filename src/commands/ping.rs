@@ -3,7 +3,7 @@ use teloxide::prelude::Requester;
 use teloxide::requests::ResponseResult;
 use teloxide::{types::Message, Bot};
 
-pub async fn ping(bot: Bot, msg: &Message) -> ResponseResult<Message> {
+pub async fn ping(bot: Bot, msg: Message) -> ResponseResult<Message> {
     // Ping api.telegram.org and calculate the latency
     let start = std::time::Instant::now();
     let res = reqwest::get("https://api.telegram.org").await;
