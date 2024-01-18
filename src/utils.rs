@@ -1,5 +1,12 @@
 use teloxide::types::Message;
 
+pub enum MistralType {
+    Standard, // mistral
+    Caveman,  // still mistral, just with a different prompt
+    Dolphin,  // dolphin-mistral
+    OpenOrca, // mistral-openorca
+}
+
 pub fn parse_command(msg: Message) -> (Option<String>, Option<String>) {
     let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
     let text = msg.text().unwrap_or("");

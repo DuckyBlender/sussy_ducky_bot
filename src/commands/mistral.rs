@@ -1,18 +1,20 @@
 use log::{error, info};
 use teloxide::payloads::SendMessageSetters;
+
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
     Bot, RequestError,
 };
 
+use crate::utils::MistralType;
 use crate::{OllamaRequest, OllamaResponse};
 
 pub async fn mistral(
     bot: Bot,
     msg: Message,
     prompt: String,
-    caveman: bool,
+    model_type: MistralType,
 ) -> Result<Message, RequestError> {
     info!("Starting mistral function");
     // If the prompt is empty, check if there is a reply
@@ -39,9 +41,20 @@ pub async fn mistral(
 
     // prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS [/INST]\n\n"
 
-    if caveman {
+    let raw: bool;
+    if let MistralType::Caveman = model_type {
         prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS. THE MESSAGE: {prompt}[/INST]");
+        raw = true;
+    } else {
+        raw = false;
     }
+
+    let model = match model_type {
+        MistralType::Standard => "mistral",
+        MistralType::Caveman => "mistral", // yes this is correct
+        MistralType::Dolphin => "dolphin-mistral",
+        MistralType::OpenOrca => "mistral-openorca",
+    };
 
     // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
@@ -52,11 +65,11 @@ pub async fn mistral(
     let res = reqwest::Client::new()
         .post("http://localhost:11434/api/generate")
         .json(&OllamaRequest {
-            model: "mistral".to_string(),
+            model: model.to_string(),
             prompt: prompt.to_string(),
             stream: false,
             images: None,
-            raw: caveman,
+            raw,
         })
         .send()
         .await;

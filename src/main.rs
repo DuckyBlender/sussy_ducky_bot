@@ -10,7 +10,7 @@ mod structs;
 use structs::{OllamaRequest, OllamaResponse, TTSRequest};
 
 mod utils;
-use utils::{parse_command, parse_command_in_caption};
+use utils::{parse_command, parse_command_in_caption, MistralType};
 
 mod commands;
 use commands::{help, httpcat, llava, mistral, ping, start, tts};
@@ -30,20 +30,18 @@ async fn main() {
     teloxide::repl(bot, handler).await;
 }
 
+#[rustfmt::skip]
 async fn set_commands(bot: &Bot) -> Result<True, RequestError> {
     let commands = vec![
-        BotCommand::new("mistral", "Generate text using Mistral7B"),
-        BotCommand::new("llava", "Generate text from image using Llava"),
+        BotCommand::new("mistral", "Generate text using mistral LLM"),
+        BotCommand::new("dolphin", "Generate text using dolphin-mistral LLM"),
+        BotCommand::new("orca", "Generate text using mistral-openorca LLM"),
+        BotCommand::new("llava", "Generate text from image using llava multi-modal LLM",),
         BotCommand::new("help", "Show available commands"),
         BotCommand::new("ping", "Check the bot's latency"),
-        BotCommand::new(
-            "httpcat",
-            "Get an image of a cat for a given HTTP status code",
-        ),
+        BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
         BotCommand::new("tts", "Text to speech using random OpenAI voice"),
-        BotCommand::new(
-            "caveman",
-            "Generate text using Mistral7B in caveman language",
+        BotCommand::new("caveman", "Generate text using mistral LLM in caveman language",
         ),
     ];
 
@@ -77,10 +75,36 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
         let msg = msg.clone(); // Clone the message here
         match command.as_str() {
             "/mistral" | "/m" => {
-                tokio::spawn(mistral(bot.clone(), msg, args.clone(), false));
+                tokio::spawn(mistral(
+                    bot.clone(),
+                    msg,
+                    args.clone(),
+                    MistralType::Standard,
+                ));
             }
             "/caveman" => {
-                tokio::spawn(mistral(bot.clone(), msg, args.clone(), true));
+                tokio::spawn(mistral(
+                    bot.clone(),
+                    msg,
+                    args.clone(),
+                    MistralType::Caveman,
+                ));
+            }
+            "/dolphin" => {
+                tokio::spawn(mistral(
+                    bot.clone(),
+                    msg,
+                    args.clone(),
+                    MistralType::Dolphin,
+                ));
+            }
+            "/orca" => {
+                tokio::spawn(mistral(
+                    bot.clone(),
+                    msg,
+                    args.clone(),
+                    MistralType::OpenOrca,
+                ));
             }
             "/llava" | "/l" => {
                 tokio::spawn(llava(bot.clone(), msg, args.clone()));
