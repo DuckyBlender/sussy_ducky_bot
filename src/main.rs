@@ -1,12 +1,12 @@
 use base64::prelude::*;
-use rand::prelude::*;
 use log::{debug, error, info};
+use rand::prelude::*;
 use reqwest::StatusCode;
 use serde_json::Value;
 use teloxide::{
     net::Download,
     prelude::*,
-    types::{BotCommand, InputFile, True, ChatAction},
+    types::{BotCommand, ChatAction, InputFile, True},
     RequestError,
 };
 
@@ -43,6 +43,10 @@ async fn set_commands(bot: &Bot) -> Result<True, RequestError> {
             "Get an image of a cat for a given HTTP status code",
         ),
         BotCommand::new("tts", "Text to speech using random OpenAI voice"),
+        BotCommand::new(
+            "caveman",
+            "Generate text using Mistral7B in caveman language",
+        ),
     ];
 
     bot.set_my_commands(commands).await
@@ -105,7 +109,12 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             Some("/mistral") | Some("/m") => {
                 let prompt = args.unwrap_or("").to_string();
                 debug!("Executing mistral command with prompt: {}", prompt);
-                mistral(bot, msg, prompt).await?;
+                mistral(bot, msg, prompt, false).await?;
+            }
+            Some("/caveman") => {
+                let prompt = args.unwrap_or("").to_string();
+                debug!("Executing caveman command with prompt: {}", prompt);
+                mistral(bot, msg, prompt, false).await?;
             }
             Some("/llava") | Some("/l") => {
                 let prompt = args.unwrap_or("").to_string();
@@ -285,10 +294,15 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
     Ok(())
 }
 
-async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, RequestError> {
+async fn mistral(
+    bot: Bot,
+    msg: Message,
+    prompt: String,
+    caveman: bool,
+) -> Result<Message, RequestError> {
     info!("Starting mistral function");
     // If the prompt is empty, check if there is a reply
-    let prompt = if prompt.is_empty() {
+    let mut prompt = if prompt.is_empty() {
         if let Some(reply) = msg.reply_to_message() {
             reply.text().unwrap_or("").to_string()
         } else {
@@ -307,6 +321,10 @@ async fn mistral(bot: Bot, msg: Message, prompt: String) -> Result<Message, Requ
             .reply_to_message_id(msg.id)
             .await?;
         return Ok(msg);
+    }
+
+    if caveman {
+        prompt = format!("Reply to this message in caveman language. Use all caps. Make many grammatical errors. Message: {}", prompt);
     }
 
     // Send typing action
