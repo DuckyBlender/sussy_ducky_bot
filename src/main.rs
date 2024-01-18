@@ -114,7 +114,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             Some("/caveman") => {
                 let prompt = args.unwrap_or("").to_string();
                 debug!("Executing caveman command with prompt: {}", prompt);
-                mistral(bot, msg, prompt, false).await?;
+                mistral(bot, msg, prompt, true).await?;
             }
             Some("/llava") | Some("/l") => {
                 let prompt = args.unwrap_or("").to_string();
