@@ -11,10 +11,14 @@ Oh and the bot works with replies too! (for example you can reply to a photo wit
 
 Available commands:
 =-= TEXT =-=
+- 7B LLMs:
 /mistral or /m: generate text using mistral LLM
 /caveman: generate text using mistral LLM in caveman language
 /dolphin: generate text using dolphin-mistral. This should be a more uncensored version of mistral
 /orca: generate text using mistral-openorca. This should be a more smart version of mistral (experimental).
+
+- 1B LLMs:
+/tinyllama: generate text using tinyllama LLM (experimental)
 
 =-= IMAGE RECOGNITION =-=
 /llava or /l: generate text from image using llava LLM

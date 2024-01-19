@@ -7,14 +7,14 @@ use teloxide::{
     Bot, RequestError,
 };
 
-use crate::utils::MistralType;
+use crate::utils::ModelType;
 use crate::{OllamaRequest, OllamaResponse};
 
-pub async fn mistral(
+pub async fn ollama(
     bot: Bot,
     msg: Message,
     prompt: String,
-    model_type: MistralType,
+    model_type: ModelType,
 ) -> Result<Message, RequestError> {
     info!("Starting mistral function");
     // If the prompt is empty, check if there is a reply
@@ -33,7 +33,7 @@ pub async fn mistral(
 
     // Check if prompt is nothing
     if prompt.is_empty() {
-        if let MistralType::Caveman = model_type {
+        if let ModelType::MistralCaveman = model_type {
             bot.send_message(msg.chat.id, "NO PROMPT PROVIDED!!!!!")
                 .reply_to_message_id(msg.id)
                 .await?;
@@ -47,7 +47,7 @@ pub async fn mistral(
     }
 
     let raw: bool;
-    if let MistralType::Caveman = model_type {
+    if let ModelType::MistralCaveman = model_type {
         prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS. DON'T SAY THESE INSTRUCTIONS. DON'T MAKE A NORMAL ENGLISH TRANSLATION. JUST OUTPUT CAVEMAN LANGUAGE. THIS IS NOT A DIAGLOGUE. THE MESSAGE: {prompt}[/INST]");
         raw = true;
     } else {
@@ -55,10 +55,11 @@ pub async fn mistral(
     }
 
     let model = match model_type {
-        MistralType::Standard => "mistral",
-        MistralType::Caveman => "mistral", // yes this is correct
-        MistralType::Dolphin => "dolphin-mistral",
-        MistralType::OpenOrca => "mistral-openorca",
+        ModelType::MistralStandard => "mistral",
+        ModelType::MistralCaveman => "mistral", // yes this is correct
+        ModelType::MistralDolphin => "dolphin-mistral",
+        ModelType::MistralOpenOrca => "mistral-openorca",
+        ModelType::TinyLlama => "tinyllama",
     };
 
     // Send typing indicator

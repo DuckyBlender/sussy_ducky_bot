@@ -1,10 +1,11 @@
 use teloxide::types::Message;
 
-pub enum MistralType {
-    Standard, // mistral
-    Caveman,  // still mistral, just with a different prompt
-    Dolphin,  // dolphin-mistral
-    OpenOrca, // mistral-openorca
+pub enum ModelType {
+    MistralStandard, // mistral
+    MistralCaveman,  // still mistral, just with a different prompt
+    MistralDolphin,  // dolphin-mistral
+    MistralOpenOrca, // mistral-openorca
+    TinyLlama,       // tiny-llama
 }
 
 pub fn parse_command(msg: Message) -> (Option<String>, Option<String>) {

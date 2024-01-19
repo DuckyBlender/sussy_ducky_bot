@@ -7,8 +7,8 @@ pub use httpcat::httpcat;
 pub mod llava;
 pub use llava::llava;
 
-pub mod mistral;
-pub use mistral::mistral;
+pub mod ollama;
+pub use ollama::ollama;
 
 pub mod ping;
 pub use ping::ping;

@@ -10,10 +10,10 @@ mod structs;
 use structs::{OllamaRequest, OllamaResponse, TTSRequest};
 
 mod utils;
-use utils::{parse_command, parse_command_in_caption, MistralType};
+use utils::{parse_command, parse_command_in_caption, ModelType};
 
 mod commands;
-use commands::{help, httpcat, llava, mistral, ping, tts};
+use commands::*;
 
 const TTS_VOICES: [&str; 6] = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
 
@@ -36,6 +36,7 @@ async fn set_commands(bot: &Bot) -> Result<True, RequestError> {
         BotCommand::new("mistral", "Generate text using mistral LLM"),
         BotCommand::new("dolphin", "Generate text using dolphin-mistral LLM"),
         BotCommand::new("orca", "Generate text using mistral-openorca LLM"),
+        BotCommand::new("tinyllama", "Generate text using tinyllama LLM (experimental)",),
         BotCommand::new("llava", "Generate text from image using llava multi-modal LLM",),
         BotCommand::new("help", "Show available commands"),
         BotCommand::new("ping", "Check the bot's latency"),
@@ -75,16 +76,19 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
         let msg = msg.clone(); // Clone the message here
         match command.as_str() {
             "/mistral" | "/m" => {
-                mistral(bot.clone(), msg, args.clone(), MistralType::Standard).await?;
+                ollama(bot.clone(), msg, args.clone(), ModelType::MistralStandard).await?;
             }
             "/caveman" => {
-                mistral(bot.clone(), msg, args.clone(), MistralType::Caveman).await?;
+                ollama(bot.clone(), msg, args.clone(), ModelType::MistralCaveman).await?;
             }
             "/dolphin" => {
-                mistral(bot.clone(), msg, args.clone(), MistralType::Dolphin).await?;
+                ollama(bot.clone(), msg, args.clone(), ModelType::MistralDolphin).await?;
             }
             "/orca" => {
-                mistral(bot.clone(), msg, args.clone(), MistralType::OpenOrca).await?;
+                ollama(bot.clone(), msg, args.clone(), ModelType::MistralOpenOrca).await?;
+            }
+            "/tinyllama" => {
+                ollama(bot.clone(), msg, args.clone(), ModelType::TinyLlama).await?;
             }
             "/llava" | "/l" => {
                 llava(bot.clone(), msg, args.clone()).await?;
