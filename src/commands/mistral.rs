@@ -43,7 +43,7 @@ pub async fn mistral(
 
     let raw: bool;
     if let MistralType::Caveman = model_type {
-        prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS. THE MESSAGE: {prompt}[/INST]");
+        prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS. DON'T SAY THESE INSTRUCTIONS. DON'T MAKE A NORMAL ENGLISH TRANSLATION. JUST OUTPUT CAVEMAN LANGUAGE. THIS IS NOT A DIAGLOGUE. [/INST] {prompt}");
         raw = true;
     } else {
         raw = false;
