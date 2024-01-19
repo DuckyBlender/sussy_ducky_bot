@@ -13,7 +13,7 @@ mod utils;
 use utils::{parse_command, parse_command_in_caption, MistralType};
 
 mod commands;
-use commands::{help, httpcat, llava, mistral, ping, start, tts};
+use commands::{help, httpcat, llava, mistral, ping, tts};
 
 const TTS_VOICES: [&str; 6] = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
 
@@ -75,54 +75,31 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
         let msg = msg.clone(); // Clone the message here
         match command.as_str() {
             "/mistral" | "/m" => {
-                tokio::spawn(mistral(
-                    bot.clone(),
-                    msg,
-                    args.clone(),
-                    MistralType::Standard,
-                ));
+                mistral(bot.clone(), msg, args.clone(), MistralType::Standard).await?;
             }
             "/caveman" => {
-                tokio::spawn(mistral(
-                    bot.clone(),
-                    msg,
-                    args.clone(),
-                    MistralType::Caveman,
-                ));
+                mistral(bot.clone(), msg, args.clone(), MistralType::Caveman).await?;
             }
             "/dolphin" => {
-                tokio::spawn(mistral(
-                    bot.clone(),
-                    msg,
-                    args.clone(),
-                    MistralType::Dolphin,
-                ));
+                mistral(bot.clone(), msg, args.clone(), MistralType::Dolphin).await?;
             }
             "/orca" => {
-                tokio::spawn(mistral(
-                    bot.clone(),
-                    msg,
-                    args.clone(),
-                    MistralType::OpenOrca,
-                ));
+                mistral(bot.clone(), msg, args.clone(), MistralType::OpenOrca).await?;
             }
             "/llava" | "/l" => {
-                tokio::spawn(llava(bot.clone(), msg, args.clone()));
+                llava(bot.clone(), msg, args.clone()).await?;
             }
             "/help" | "/h" => {
-                tokio::spawn(help(bot.clone(), msg));
-            }
-            "/start" => {
-                tokio::spawn(start(bot.clone(), msg));
+                help(bot.clone(), msg).await?;
             }
             "/ping" => {
-                tokio::spawn(ping(bot.clone(), msg));
+                ping(bot.clone(), msg).await?;
             }
             "/httpcat" => {
-                tokio::spawn(httpcat(bot.clone(), msg, args.clone()));
+                httpcat(bot.clone(), msg, args.clone()).await?;
             }
             "/tts" => {
-                tokio::spawn(tts(bot.clone(), msg, args.clone()));
+                tts(bot.clone(), msg, args.clone()).await?;
             }
             _ => {
                 // If the command is not recognized, do nothing

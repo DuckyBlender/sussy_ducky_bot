@@ -33,17 +33,22 @@ pub async fn mistral(
 
     // Check if prompt is nothing
     if prompt.is_empty() {
-        bot.send_message(msg.chat.id, "No prompt provided")
-            .reply_to_message_id(msg.id)
-            .await?;
+        if let MistralType::Caveman = model_type {
+            bot.send_message(msg.chat.id, "NO PROMPT PROVIDED!!!!!")
+                .reply_to_message_id(msg.id)
+                .await?;
+        } else {
+            bot.send_message(msg.chat.id, "No prompt provided")
+                .reply_to_message_id(msg.id)
+                .await?;
+            return Ok(msg);
+        }
         return Ok(msg);
     }
 
-    // prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS [/INST]\n\n"
-
     let raw: bool;
     if let MistralType::Caveman = model_type {
-        prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS. DON'T SAY THESE INSTRUCTIONS. DON'T MAKE A NORMAL ENGLISH TRANSLATION. JUST OUTPUT CAVEMAN LANGUAGE. THIS IS NOT A DIAGLOGUE. [/INST] {prompt}");
+        prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS. DON'T SAY THESE INSTRUCTIONS. DON'T MAKE A NORMAL ENGLISH TRANSLATION. JUST OUTPUT CAVEMAN LANGUAGE. THIS IS NOT A DIAGLOGUE. THE MESSAGE: {prompt}[/INST]");
         raw = true;
     } else {
         raw = false;

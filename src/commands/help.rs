@@ -28,7 +28,6 @@ soon :P
 =-= OTHER =-=
 /ping: check if the bot is alive
 /help: show this message
-/start: show a welcome message
 /httpcat: get a http cat image
 
 "#;

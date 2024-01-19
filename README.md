@@ -14,7 +14,6 @@ This is a AI telegram bot which currently supports Mistral. It requires Ollama t
 
 - [x] Mistral (base model)
 - [x] Llava (image recognition)
-- [x] Threaded
 - [ ] MarkdownV2 support
 
 ## Prerequisites

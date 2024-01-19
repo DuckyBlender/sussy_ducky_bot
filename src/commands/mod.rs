@@ -13,8 +13,5 @@ pub use mistral::mistral;
 pub mod ping;
 pub use ping::ping;
 
-pub mod start;
-pub use start::start;
-
 pub mod tts;
 pub use tts::tts;
