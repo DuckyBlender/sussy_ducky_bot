@@ -32,6 +32,7 @@ ollama pull mistral
 ollama pull llava
 ollama pull dolphin-mistral
 ollama pull mistral-openorca
+ollama pull tinyllama
 ```
 
 2. Clone this repository: `git clone https://github.com/DuckyBlender/sussy_ducky_bot`
