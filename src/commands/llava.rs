@@ -71,13 +71,13 @@ pub async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message
     // file.write_all(request_body_json.as_bytes()).unwrap();
 
     let client = reqwest::Client::new();
-    let now = std::time::Instant::now();
+    // let now = std::time::Instant::now();
     let response = client
         .post("http://localhost:11434/api/generate")
         .json(&request_body)
         .send()
         .await;
-    let elapsed = now.elapsed().as_secs_f32();
+    // let elapsed = now.elapsed().as_secs_f32();
 
     match response {
         Ok(response) => {
@@ -85,11 +85,11 @@ pub async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message
             // let text = response.text().await?;
             if let Some(response_text) = res["response"].as_str() {
                 // info!("Response text: {}", response_text);
-                let response_text = format!(
-                    "{}\n\nGeneration time: {}s",
-                    response_text,
-                    (elapsed * 10.0).round() / 10.0
-                );
+                // let response_text = format!(
+                //     "{}\n\nGeneration time: {}s",
+                //     response_text,
+                //     (elapsed * 10.0).round() / 10.0
+                // );
 
                 bot.send_message(msg.chat.id, response_text)
                     .reply_to_message_id(msg.id)
