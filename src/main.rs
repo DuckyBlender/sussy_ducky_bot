@@ -1,4 +1,4 @@
-use log::{debug, info};
+use log::{debug, error, info};
 
 use teloxide::{
     prelude::*,
@@ -25,7 +25,9 @@ async fn main() {
 
     let bot = Bot::from_env();
 
-    set_commands(&bot).await.unwrap();
+    if let Err(err) = set_commands(&bot).await {
+        error!("Failed to set commands: {}", err);
+    }
 
     teloxide::repl(bot, handler).await;
 }
