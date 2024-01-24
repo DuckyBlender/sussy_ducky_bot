@@ -7,15 +7,13 @@ use teloxide::{
 };
 
 mod structs;
-use structs::{OllamaRequest, OllamaResponse, TTSRequest};
+use structs::{OllamaRequest, OllamaResponse};
 
 mod utils;
 use utils::{parse_command, parse_command_in_caption, ModelType};
 
 mod commands;
 use commands::*;
-
-const TTS_VOICES: [&str; 6] = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
 
 #[tokio::main]
 async fn main() {
@@ -43,7 +41,6 @@ async fn set_commands(bot: &Bot) -> Result<True, RequestError> {
         BotCommand::new("help", "Show available commands"),
         BotCommand::new("ping", "Check the bot's latency"),
         BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
-        BotCommand::new("tts", "Text to speech using random OpenAI voice"),
         BotCommand::new("caveman", "Generate text using mistral LLM in caveman language",
         ),
     ];
@@ -103,9 +100,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
             "/httpcat" => {
                 httpcat(bot.clone(), msg, args.clone()).await?;
-            }
-            "/tts" => {
-                tts(bot.clone(), msg, args.clone()).await?;
             }
             _ => {
                 // If the command is not recognized, do nothing

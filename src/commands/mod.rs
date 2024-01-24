@@ -12,6 +12,3 @@ pub use ollama::ollama;
 
 pub mod ping;
 pub use ping::ping;
-
-pub mod tts;
-pub use tts::tts;

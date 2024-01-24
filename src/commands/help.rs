@@ -26,9 +26,6 @@ Available commands:
 =-= IMAGE GENERATION =-=
 soon :P
 
-=-= AUDIO =-=
-/tts: generate audio from text using OpenAI. Random voice is used.
-
 =-= OTHER =-=
 /ping: check if the bot is alive
 /help: show this message
