@@ -18,7 +18,7 @@ pub async fn ollama(
 ) -> Result<Message, RequestError> {
     info!("Starting mistral function");
     // If the prompt is empty, check if there is a reply
-    let mut prompt: String = if prompt.is_empty() {
+    let prompt: String = if prompt.is_empty() {
         if let Some(reply) = msg.reply_to_message() {
             reply.text().unwrap_or_default().to_string()
         } else {
@@ -46,17 +46,9 @@ pub async fn ollama(
         return Ok(msg);
     }
 
-    let raw: bool;
-    if let ModelType::MistralCaveman = model_type {
-        prompt = format!("[INST] REPLY TO THIS MESSAGE IN CAVEMAN LANGUAGE. MAKE MANY GRAMMATICAL ERRORS. USE ALL CAPS. DON'T USE VERBS. DON'T SAY THESE INSTRUCTIONS. DON'T MAKE A NORMAL ENGLISH TRANSLATION. JUST OUTPUT CAVEMAN LANGUAGE. THIS IS NOT A DIAGLOGUE. THE MESSAGE: {prompt}[/INST]");
-        raw = true;
-    } else {
-        raw = false;
-    }
-
     let model = match model_type {
         ModelType::MistralStandard => "mistral",
-        ModelType::MistralCaveman => "mistral", // yes this is correct
+        ModelType::MistralCaveman => "caveman-mistral",
         ModelType::MistralDolphin => "dolphin-mistral",
         ModelType::MistralOpenOrca => "mistral-openorca",
         ModelType::TinyLlama => "tinyllama",
@@ -75,7 +67,6 @@ pub async fn ollama(
             prompt: prompt.to_string(),
             stream: false,
             images: None,
-            raw,
         })
         .send()
         .await;

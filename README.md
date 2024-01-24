@@ -37,6 +37,12 @@ ollama pull tinyllama
 
 2. Clone this repository: `git clone https://github.com/DuckyBlender/sussy_ducky_bot`
 3. Navigate to the cloned repository: `cd sussy_ducky_bot`
+4. Install the caveman model:
+
+bash
+```
+ollama create caveman-mistral -f ./caveman/Modelfile
+```
 
 ## Usage
 

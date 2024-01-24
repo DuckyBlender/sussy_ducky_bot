@@ -59,7 +59,6 @@ pub async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message
         prompt: prompt.to_string(),
         stream: false,
         images: Some(vec![base64_image]),
-        raw: false,
     };
 
     // Save this request in json to the disk

@@ -2,7 +2,7 @@ use teloxide::types::Message;
 
 pub enum ModelType {
     MistralStandard, // mistral
-    MistralCaveman,  // still mistral, just with a different prompt
+    MistralCaveman,  // caveman-mistral (custom model)
     MistralDolphin,  // dolphin-mistral
     MistralOpenOrca, // mistral-openorca
     TinyLlama,       // tiny-llama

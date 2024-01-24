@@ -13,7 +13,6 @@ pub struct OllamaRequest {
     pub prompt: String,
     pub stream: bool,
     pub images: Option<Vec<String>>,
-    pub raw: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
