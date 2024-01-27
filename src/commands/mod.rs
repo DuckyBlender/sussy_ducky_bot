@@ -12,3 +12,6 @@ pub use ollama::ollama;
 
 pub mod ping;
 pub use ping::ping;
+
+pub mod perplexity;
+pub use perplexity::perplexity;

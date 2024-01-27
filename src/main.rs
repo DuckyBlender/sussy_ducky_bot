@@ -41,8 +41,9 @@ async fn set_commands(bot: &Bot) -> Result<True, RequestError> {
         BotCommand::new("help", "Show available commands"),
         BotCommand::new("ping", "Check the bot's latency"),
         BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
-        BotCommand::new("caveman", "Generate text using mistral LLM in caveman language",
-        ),
+        BotCommand::new("caveman", "Generate text using mistral LLM in caveman language"),
+        BotCommand::new("perplexity [model]", "Test the perplexity AI [TESTING]"),
+        
     ];
 
     bot.set_my_commands(commands).await
@@ -100,6 +101,9 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
             "/httpcat" => {
                 httpcat(bot.clone(), msg, args.clone()).await?;
+            }
+            "/perplexity" => {
+                perplexity(bot.clone(), msg, args.clone()).await?;
             }
             _ => {
                 // If the command is not recognized, do nothing

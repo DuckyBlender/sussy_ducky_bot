@@ -30,6 +30,7 @@ soon :P
 /ping: check if the bot is alive
 /help: show this message
 /httpcat: get a http cat image
+/perplexity [model] [prompt]: test the perplexity AI [ONLY OWNER]. See the available models with /perplexity models
 
 "#;
 
