@@ -6,6 +6,7 @@ pub enum ModelType {
     MistralDolphin,  // dolphin-mistral
     MistralOpenOrca, // mistral-openorca
     TinyLlama,       // tiny-llama
+    CodeLlama,       // codellama
 }
 
 pub fn parse_command(msg: Message) -> (Option<String>, Option<String>) {

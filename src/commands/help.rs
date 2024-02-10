@@ -17,6 +17,9 @@ Available commands:
 /dolphin: generate text using dolphin-mistral. This should be a more uncensored version of mistral
 /orca: generate text using mistral-openorca. This should be a more smart version of mistral (experimental).
 
+- 3B LLMs:
+/codellama: generate text using codellama LLM
+
 - 1B LLMs:
 /tinyllama: generate text using tinyllama LLM (experimental)
 

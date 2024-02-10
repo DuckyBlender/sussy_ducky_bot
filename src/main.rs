@@ -42,7 +42,8 @@ async fn set_commands(bot: &Bot) -> Result<True, RequestError> {
         BotCommand::new("ping", "Check the bot's latency"),
         BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
         BotCommand::new("caveman", "Generate text using mistral LLM in caveman language"),
-        BotCommand::new("perplexity [model]", "Test the perplexity AI [TESTING]"),
+        BotCommand::new("perplexity", "/perplexity [model] - Test the perplexity AI [TESTING]"),
+        BotCommand::new("codellama", "Generate text using codellama LLM"),
         
     ];
 
@@ -104,6 +105,9 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
             "/perplexity" => {
                 perplexity(bot.clone(), msg, args.clone()).await?;
+            }
+            "/codellama" => {
+                ollama(bot.clone(), msg, args.clone(), ModelType::CodeLlama).await?;
             }
             _ => {
                 // If the command is not recognized, do nothing

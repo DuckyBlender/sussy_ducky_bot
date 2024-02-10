@@ -8,8 +8,7 @@ use teloxide::{
     Bot, RequestError,
 };
 
-use crate::structs::PerplexityRequestMessage;
-use crate::structs::{PerplexityRequest, PerplexityResponse};
+use crate::structs::{PerplexityRequest, PerplexityRequestMessage};
 
 pub async fn perplexity(bot: Bot, msg: Message, prompt: String) -> Result<Message, RequestError> {
     // Check if the user is from the owner
@@ -65,27 +64,6 @@ pub async fn perplexity(bot: Bot, msg: Message, prompt: String) -> Result<Messag
         .await?;
 
     // Send the request
-    // let now = std::time::Instant::now();
-    //     curl --request POST \
-    //      --url https://api.perplexity.ai/chat/completions \
-    //      --header 'accept: application/json' \
-    //      --header 'content-type: application/json' \
-    //      --data '
-    // {
-    //   "model": "mistral-7b-instruct",
-    //   "messages": [
-    //     {
-    //       "role": "system",
-    //       "content": "Be precise and concise."
-    //     },
-    //     {
-    //       "role": "user",
-    //       "content": "How many stars are there in our galaxy?"
-    //     }
-    //   ]
-    // }
-    // '
-
     let res = reqwest::Client::new()
         .post("https://api.perplexity.ai/chat/completions")
         .header("accept", "application/json")
@@ -121,12 +99,14 @@ pub async fn perplexity(bot: Bot, msg: Message, prompt: String) -> Result<Messag
     };
 
     // Parse the response
-    let res = res.unwrap().json::<PerplexityResponse>().await;
+    let res = res.unwrap().json::<serde_json::Value>().await;
 
     // Send the response
     match res {
         Ok(res) => {
-            let content = res.choices[0].message.content.clone();
+            let content = res["choices"][0]["message"]["content"]
+                .as_str()
+                .unwrap_or_default();
             bot.send_message(msg.chat.id, content)
                 .reply_to_message_id(msg.id)
                 .await
