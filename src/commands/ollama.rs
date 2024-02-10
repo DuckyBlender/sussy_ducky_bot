@@ -52,7 +52,7 @@ pub async fn ollama(
         ModelType::MistralDolphin => "dolphin-mistral",
         ModelType::MistralOpenOrca => "mistral-openorca",
         ModelType::TinyLlama => "tinyllama",
-        ModelType::StableCode => "stablecode",
+        ModelType::StableCode => "stable-code",
     };
 
     // Send typing indicator
