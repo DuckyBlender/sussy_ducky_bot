@@ -106,8 +106,8 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             "/perplexity" => {
                 perplexity(bot.clone(), msg, args.clone()).await?;
             }
-            "/codellama" => {
-                ollama(bot.clone(), msg, args.clone(), ModelType::CodeLlama).await?;
+            "/stablecode" => {
+                ollama(bot.clone(), msg, args.clone(), ModelType::StableCode).await?;
             }
             _ => {
                 // If the command is not recognized, do nothing

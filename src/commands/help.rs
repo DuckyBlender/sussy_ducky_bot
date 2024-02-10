@@ -18,7 +18,7 @@ Available commands:
 /orca: generate text using mistral-openorca. This should be a more smart version of mistral (experimental).
 
 - 3B LLMs:
-/codellama: generate text using codellama LLM
+/stablecode: generate text using stablecode LLM
 
 - 1B LLMs:
 /tinyllama: generate text using tinyllama LLM (experimental)
