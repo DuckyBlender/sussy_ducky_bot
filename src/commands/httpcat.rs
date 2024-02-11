@@ -1,3 +1,4 @@
+use log::error;
 use reqwest::StatusCode;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::payloads::SendPhotoSetters;
@@ -51,6 +52,7 @@ pub async fn httpcat(bot: Bot, msg: Message, args: String) -> ResponseResult<()>
             // Check which error it is
             match e.status() {
                 Some(StatusCode::NOT_FOUND) => {
+                    error!("Error: {status_code}");
                     bot.send_message(
                         msg.chat.id,
                         format!("Error: {status_code} is not a valid status code"),

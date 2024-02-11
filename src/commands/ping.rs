@@ -1,3 +1,4 @@
+use log::error;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::Requester;
 use teloxide::requests::ResponseResult;
@@ -16,6 +17,7 @@ pub async fn ping(bot: Bot, msg: Message) -> ResponseResult<Message> {
                 .await
         }
         Err(e) => {
+            error!("Error calculating latency: {e}");
             bot.send_message(msg.chat.id, format!("Error calculating latency: {e}"))
                 .reply_to_message_id(msg.id)
                 .await

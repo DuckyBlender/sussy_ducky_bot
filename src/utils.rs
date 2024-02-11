@@ -19,7 +19,7 @@ impl fmt::Display for ModelType {
             ModelType::MistralCaveman => write!(f, "caveman-mistral"),
             ModelType::MistralUncensored => write!(f, "dolphin-mistral"),
             ModelType::Mistral => write!(f, "mistral-openorca"),
-            ModelType::TinyLlama => write!(f, "tiny-llama"),
+            ModelType::TinyLlama => write!(f, "tinyllama"),
             ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
             ModelType::Online => write!(f, "pplx-7b-online"),
         }

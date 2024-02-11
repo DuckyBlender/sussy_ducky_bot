@@ -54,7 +54,7 @@ pub async fn ollama(
         .await?;
 
     // Send the request
-    // let now = std::time::Instant::now();
+    let now = std::time::Instant::now();
     let res = reqwest::Client::new()
         .post("http://localhost:11434/api/generate")
         .json(&OllamaRequest {
@@ -65,7 +65,7 @@ pub async fn ollama(
         })
         .send()
         .await;
-    // let elapsed = now.elapsed().as_secs_f32();
+    let elapsed = now.elapsed().as_secs_f32();
 
     match res {
         Ok(_) => {
@@ -86,18 +86,13 @@ pub async fn ollama(
     // Send the response
     match res {
         Ok(res) => {
-            bot.send_message(
-                msg.chat.id,
-                // round to one decimal place
-                // format!(
-                //     "{}\n\nGeneration time: {}s",
-                //     res.response,
-                //     (elapsed * 10.0).round() / 10.0
-                // ),
-                res.response,
-            )
-            .reply_to_message_id(msg.id)
-            .await
+            info!(
+                "Replying to message using ollama. Generation took {}s",
+                (elapsed * 10.0).round() / 10.0
+            );
+            bot.send_message(msg.chat.id, res.response)
+                .reply_to_message_id(msg.id)
+                .await
         }
         Err(e) => {
             error!("Error parsing response: {}", e);

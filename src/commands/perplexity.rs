@@ -43,6 +43,7 @@ pub async fn perplexity(
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
 
+    let now = std::time::Instant::now();
     // Send the request
     let res = reqwest::Client::new()
         .post("https://api.perplexity.ai/chat/completions")
@@ -64,6 +65,7 @@ pub async fn perplexity(
         })
         .send()
         .await;
+    let elapsed = now.elapsed().as_secs_f32();
 
     match res {
         Ok(_) => {
@@ -87,6 +89,10 @@ pub async fn perplexity(
             let content = res["choices"][0]["message"]["content"]
                 .as_str()
                 .unwrap_or_default();
+            info!(
+                "Replying to message using perplexity. Generation took {}s",
+                (elapsed * 10.0).round() / 10.0
+            );
             bot.send_message(msg.chat.id, content)
                 .reply_to_message_id(msg.id)
                 .await

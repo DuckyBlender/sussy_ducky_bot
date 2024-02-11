@@ -3,7 +3,7 @@ use crate::structs::{
 };
 use aws_sdk_bedrockruntime::primitives::Blob;
 use base64::prelude::*;
-use log::info;
+use log::{error, info};
 use serde_json::json;
 use std::env;
 use teloxide::payloads::{SendMessageSetters, SendPhotoSetters};
@@ -81,6 +81,7 @@ pub async fn img(bot: Bot, msg: Message) -> ResponseResult<Message> {
     let body = json!(body);
     let body = Blob::new(body.to_string().as_bytes().to_vec());
 
+    let now = std::time::Instant::now();
     let response = client
         .invoke_model()
         .content_type("application/json")
@@ -88,10 +89,12 @@ pub async fn img(bot: Bot, msg: Message) -> ResponseResult<Message> {
         .body(body)
         .send()
         .await;
+    let elapsed = now.elapsed().as_secs_f32();
 
     let response = match response {
         Ok(response) => response,
         Err(e) => {
+            error!("Error sending request: {:?}", e);
             bot.send_message(msg.chat.id, format!("Error: {:?}", e))
                 .reply_to_message_id(msg.id)
                 .await?;
@@ -106,6 +109,10 @@ pub async fn img(bot: Bot, msg: Message) -> ResponseResult<Message> {
     let image = BASE64_STANDARD.decode(image).unwrap();
     let image = teloxide::types::InputFile::memory(image);
 
+    info!(
+        "Replying to message using Bedrock. Generation took {}s",
+        (elapsed * 10.0).round() / 10.0
+    );
     bot.send_photo(msg.chat.id, image)
         .reply_to_message_id(msg.id)
         .caption(prompt)
