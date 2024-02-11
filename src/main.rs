@@ -49,6 +49,7 @@ impl Commands {
                 BotCommand::new("caveman", "Generate text using mistral LLM in caveman language"),
                 BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
                 BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
+                BotCommand::new("img", "Generate an image using the Amazon Titan Image Generator G1 [TESTING]"),
             ]
         )
     }
@@ -63,7 +64,7 @@ impl Commands {
         help_message.push_str("<b>Available commands:</b>\n");
         for command in &self.0 {
             help_message.push_str(&format!(
-                "<b>{}</b>: {}\n",
+                "<b>/{}</b>: {}\n",
                 command.command, command.description
             ));
         }
@@ -124,6 +125,9 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
             "/mixtral" => {
                 perplexity(bot.clone(), msg, args.clone(), ModelType::Mixtral).await?;
+            }
+            "/img" => {
+                img(bot.clone(), msg).await?;
             }
             _ => {
                 // If the command is not recognized, do nothing

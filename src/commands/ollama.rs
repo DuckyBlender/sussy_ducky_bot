@@ -32,7 +32,7 @@ pub async fn ollama(
     };
 
     // Check if prompt is nothing
-    if prompt.is_empty() {
+    if prompt.trim().is_empty() {
         if let ModelType::MistralCaveman = model_type {
             bot.send_message(msg.chat.id, "NO PROMPT PROVIDED!!!!!")
                 .reply_to_message_id(msg.id)

@@ -62,13 +62,6 @@ pub async fn llava(bot: Bot, msg: Message, mut prompt: String) -> Result<Message
     };
 
     // Save this request in json to the disk
-    // let request_body_json = json!(request_body);
-    // let request_body_json = serde_json::to_string_pretty(&request_body_json).unwrap();
-    // use std::fs::File;
-    // use std::io::Write;
-    // let mut file = File::create("request.json").unwrap();
-    // file.write_all(request_body_json.as_bytes()).unwrap();
-
     let client = reqwest::Client::new();
     // let now = std::time::Instant::now();
     let response = client

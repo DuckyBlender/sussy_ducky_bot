@@ -41,3 +41,36 @@ pub struct PerplexityRequestMessage {
     pub role: String,
     pub content: String,
 }
+
+#[allow(non_snake_case)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BedrockRequest {
+    pub taskType: String,
+    pub textToImageParams: BedrockTextToImageParams,
+    pub imageGenerationConfig: BedrockImageGenerationConfig,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BedrockTextToImageParams {
+    pub text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub negativeText: Option<String>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BedrockImageGenerationConfig {
+    pub numberOfImages: i32,
+    pub quality: String, // standard | premium
+    pub height: i32,
+    pub width: i32,
+    pub cfgScale: f32,
+    pub seed: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BedrockResponse {
+    pub images: Vec<String>,
+    pub error: Option<String>,
+}

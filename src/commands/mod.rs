@@ -1,17 +1,20 @@
-pub mod help;
+mod help;
 pub use help::help;
 
-pub mod httpcat;
+mod httpcat;
 pub use httpcat::httpcat;
 
-pub mod llava;
+mod llava;
 pub use llava::llava;
 
-pub mod ollama;
+mod ollama;
 pub use ollama::ollama;
 
-pub mod ping;
+mod ping;
 pub use ping::ping;
 
-pub mod perplexity;
+mod perplexity;
 pub use perplexity::perplexity;
+
+mod img;
+pub use img::img;
