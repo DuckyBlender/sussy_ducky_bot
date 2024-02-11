@@ -47,7 +47,6 @@ impl Commands {
                 BotCommand::new("ping", "Check the bot's latency"),
                 BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
                 BotCommand::new("caveman", "Generate text using mistral LLM in caveman language"),
-                // BotCommand::new("perplexity", "/perplexity [model] - Test the perplexity AI [TESTING]"),
                 BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
                 BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
             ]
@@ -77,7 +76,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
 
     // Check if the message is a message or an image with a caption
     if msg.photo().is_some() && msg.caption().is_some() {
-        info!("Message is an image with a caption");
         let (command, args) = parse_command_in_caption(msg.clone());
         let command = command.unwrap_or(String::new());
         let args = args.unwrap_or(String::new());
@@ -92,7 +90,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             _ => {}
         }
     } else if msg.text().is_some() {
-        // info!("Message is a text message");
         let (command, args) = parse_command(msg.clone());
         let command = command.unwrap_or(String::new());
         let args = args.unwrap_or(String::new());
