@@ -1,12 +1,29 @@
+use std::fmt;
 use teloxide::types::Message;
 
 pub enum ModelType {
-    MistralStandard, // mistral
-    MistralCaveman,  // caveman-mistral (custom model)
-    MistralDolphin,  // dolphin-mistral
-    MistralOpenOrca, // mistral-openorca
-    TinyLlama,       // tiny-llama
-    StableCode,      // stable-code
+    // Ollama (local)
+    MistralCaveman,    // caveman-mistral (custom model)
+    MistralUncensored, // dolphin-mistral
+    Mistral,           // mistral-openorca
+    TinyLlama,         // tiny-llama
+
+    // Perplexity (online)
+    Mixtral, // mixtral-8x7b-instruct
+    Online,  // pplx-7b-online
+}
+
+impl fmt::Display for ModelType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ModelType::MistralCaveman => write!(f, "caveman-mistral"),
+            ModelType::MistralUncensored => write!(f, "dolphin-mistral"),
+            ModelType::Mistral => write!(f, "mistral-openorca"),
+            ModelType::TinyLlama => write!(f, "tiny-llama"),
+            ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
+            ModelType::Online => write!(f, "pplx-7b-online"),
+        }
+    }
 }
 
 pub fn parse_command(msg: Message) -> (Option<String>, Option<String>) {

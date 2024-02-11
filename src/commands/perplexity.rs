@@ -9,8 +9,14 @@ use teloxide::{
 };
 
 use crate::structs::{PerplexityRequest, PerplexityRequestMessage};
+use crate::utils::ModelType;
 
-pub async fn perplexity(bot: Bot, msg: Message, prompt: String) -> Result<Message, RequestError> {
+pub async fn perplexity(
+    bot: Bot,
+    msg: Message,
+    prompt: String,
+    model: ModelType,
+) -> Result<Message, RequestError> {
     // Check if the user is from the owner
     if msg.from().unwrap().id != UserId(5337682436) {
         bot.send_message(msg.chat.id, "You are not the owner")
@@ -19,32 +25,6 @@ pub async fn perplexity(bot: Bot, msg: Message, prompt: String) -> Result<Messag
         return Ok(msg);
     }
     info!("Starting perplexity request function");
-    // If the prompt is empty, check if there is a reply
-    // get the word for the model
-    let model = prompt.split_whitespace().next().unwrap_or_default();
-    // if models is "models", send the available models
-    let models = [
-        "codellama-34b-instruct",
-        "llama-2-70b-chat",
-        "mistral-7b-instruct",
-        "mixtral-8x7b-instruct",
-        "pplx-7b-chat",
-        "pplx-70b-chat",
-        "pplx-7b-online",
-        "pplx-70b-online",
-    ];
-    if model == "models" {
-        bot.send_message(
-            msg.chat.id,
-            format!("Available models: {}", models.join(", ")),
-        )
-        .reply_to_message_id(msg.id)
-        .await?;
-        return Ok(msg);
-    }
-
-    // trim the prompt from the model
-    let prompt = prompt.trim_start_matches(model).trim_start();
 
     let prompt: String = if prompt.is_empty() {
         if let Some(reply) = msg.reply_to_message() {

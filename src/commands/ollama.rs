@@ -46,14 +46,8 @@ pub async fn ollama(
         return Ok(msg);
     }
 
-    let model = match model_type {
-        ModelType::MistralStandard => "mistral",
-        ModelType::MistralCaveman => "caveman-mistral",
-        ModelType::MistralDolphin => "dolphin-mistral",
-        ModelType::MistralOpenOrca => "mistral-openorca",
-        ModelType::TinyLlama => "tinyllama",
-        ModelType::StableCode => "stable-code",
-    };
+    // Get the model
+    let model = ModelType::to_string(&model_type);
 
     // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
