@@ -1,9 +1,10 @@
 use crate::structs::{
     BedrockImageGenerationConfig, BedrockRequest, BedrockResponse, BedrockTextToImageParams,
 };
+use aws_sdk_bedrockruntime::error::ProvideErrorMetadata;
 use aws_sdk_bedrockruntime::primitives::Blob;
 use base64::prelude::*;
-use log::{error, info};
+use log::{info, warn};
 use serde_json::json;
 use std::env;
 use teloxide::payloads::{SendMessageSetters, SendPhotoSetters};
@@ -94,12 +95,15 @@ pub async fn img(bot: Bot, msg: Message) -> ResponseResult<Message> {
     let response = match response {
         Ok(response) => response,
         Err(e) => {
-            // TODO: Check if request was blocked because of unsafe content
-            error!("Error sending request: {}", e);
-            bot.send_message(msg.chat.id, format!("Error: {}", e))
-                .reply_to_message_id(msg.id)
-                .await?;
-            return Ok(msg);
+            // Check if request was blocked because of unsafe content (search for validationerror)
+                let err_message = e.message().unwrap_or("No error message");
+                warn!("Error sending request to AWS bedrock: {}", err_message);
+                bot.send_message(msg.chat.id, format!("Error sending request to OpenAI bedrock: {}", err_message))
+                    .reply_to_message_id(msg.id)
+                    .await?;
+                return Ok(msg);
+            
+            
         }
     };
 
