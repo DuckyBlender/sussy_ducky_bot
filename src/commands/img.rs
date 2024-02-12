@@ -94,8 +94,9 @@ pub async fn img(bot: Bot, msg: Message) -> ResponseResult<Message> {
     let response = match response {
         Ok(response) => response,
         Err(e) => {
-            error!("Error sending request: {:?}", e);
-            bot.send_message(msg.chat.id, format!("Error: {:?}", e))
+            // TODO: Check if request was blocked because of unsafe content
+            error!("Error sending request: {}", e);
+            bot.send_message(msg.chat.id, format!("Error: {}", e))
                 .reply_to_message_id(msg.id)
                 .await?;
             return Ok(msg);
