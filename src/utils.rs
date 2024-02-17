@@ -1,3 +1,4 @@
+use log::info;
 use std::fmt;
 use teloxide::types::Message;
 
@@ -43,19 +44,18 @@ pub fn parse_command(msg: Message) -> (Option<String>, Option<String>) {
     }
 }
 
-pub fn parse_command_in_caption(msg: Message) -> (Option<String>, Option<String>) {
+// Remove the command from the message. Supports /command and /command@botname
+pub fn remove_prefix(msg: Message) -> String {
     let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
-    let caption = msg.caption().unwrap_or("");
-    let mut iter = caption.splitn(2, ' ');
-    let command = iter.next().map(std::string::ToString::to_string);
-    let args = iter.next().map(std::string::ToString::to_string);
-
-    match &command {
-        Some(command) if command.ends_with(&bot_name) => {
-            let command = &command[..command.len() - bot_name.len() - 1]; // -1 to remove @
-            (Some(command.to_string()), args)
-        }
-        Some(command) if !command.contains('@') => (Some(command.to_string()), args),
-        _ => (None, None),
+    let text = msg.text().unwrap_or("");
+    let mut iter = text.splitn(2, ' ');
+    let command = iter.next().unwrap_or("");
+    let args = iter.next().unwrap_or("");
+    if command.ends_with(&bot_name) {
+        info!("Removed prefix: {}", args);
+        args.to_string()
+    } else {
+        info!("Removed prefix: {}", text);
+        text.to_string()
     }
 }

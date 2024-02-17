@@ -96,14 +96,15 @@ pub async fn img(bot: Bot, msg: Message) -> ResponseResult<Message> {
         Ok(response) => response,
         Err(e) => {
             // Check if request was blocked because of unsafe content (search for validationerror)
-                let err_message = e.message().unwrap_or("No error message");
-                warn!("Error sending request to AWS bedrock: {}", err_message);
-                bot.send_message(msg.chat.id, format!("Error sending request to OpenAI bedrock: {}", err_message))
-                    .reply_to_message_id(msg.id)
-                    .await?;
-                return Ok(msg);
-            
-            
+            let err_message = e.message().unwrap_or("No error message");
+            warn!("Error sending request to AWS bedrock: {}", err_message);
+            bot.send_message(
+                msg.chat.id,
+                format!("Error sending request to OpenAI bedrock: {}", err_message),
+            )
+            .reply_to_message_id(msg.id)
+            .await?;
+            return Ok(msg);
         }
     };
 

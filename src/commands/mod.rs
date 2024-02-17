@@ -4,9 +4,6 @@ pub use help::help;
 mod httpcat;
 pub use httpcat::httpcat;
 
-mod llava;
-pub use llava::llava;
-
 mod ollama;
 pub use ollama::ollama;
 

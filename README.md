@@ -6,16 +6,13 @@ This is a AI telegram bot which currently supports Mistral. It requires Ollama t
 
 ## Features
 - Supports variations of Mistral
-- Supports LLaVa (image recognition)
 - Supports Tinyllama
 - Supports models from Perplexity AI
+- Context using replies (this currently only works with one message - the one the user is replying to)
 - Other small gimmicks
 
 ## Todo
 
-- [x] Mistral (base model)
-- [x] Llava (image recognition)
-- [x] Bot rewrite (to make it more modular)
 - [ ] MarkdownV2 support
 
 ## Prerequisites
@@ -31,7 +28,6 @@ This is a AI telegram bot which currently supports Mistral. It requires Ollama t
 
 bash
 ```
-ollama pull llava
 ollama pull dolphin-mistral
 ollama pull mistral-openorca
 ollama pull tinyllama

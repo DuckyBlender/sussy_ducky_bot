@@ -1,4 +1,4 @@
-use log::{debug, error, info};
+use log::{error, info};
 
 use teloxide::{
     prelude::*,
@@ -7,10 +7,10 @@ use teloxide::{
 };
 
 mod structs;
-use structs::{OllamaRequest, OllamaResponse};
+use structs::*;
 
 mod utils;
-use utils::{parse_command, parse_command_in_caption, ModelType};
+use utils::{parse_command, ModelType};
 
 mod commands;
 use commands::*;
@@ -42,7 +42,6 @@ impl Commands {
                 BotCommand::new("uncensored", "Generate text using 7B dolphin-mistral LLM"),
                 BotCommand::new("mistral", "Generate text using 7B mistral-openorca LLM"),
                 BotCommand::new("tinyllama", "Generate text using 1B tinyllama LLM [EXPERIMENTAL]",),
-                BotCommand::new("llava", "Generate text from image using 7B llava multi-modal LLM",),
                 BotCommand::new("help", "Show available commands"),
                 BotCommand::new("ping", "Check the bot's latency"),
                 BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
@@ -75,22 +74,22 @@ impl Commands {
 async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
     // info!("Received message: {}", msg.text().unwrap_or(""));
 
-    // Check if the message is a message or an image with a caption
-    if msg.photo().is_some() && msg.caption().is_some() {
-        let (command, args) = parse_command_in_caption(msg.clone());
-        let command = command.unwrap_or(String::new());
-        let args = args.unwrap_or(String::new());
-        let msg = msg.clone(); // Clone the message here
+    if msg.text().is_some() {
+        // List of all HTTP status codes
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses
+        let status_codes = vec![
+            "100", "103", "200", "201", "204", "206", "301", "302", "303", "304", "307", "308",
+            "401", "403", "404", "406", "407", "409", "410", "412", "416", "418", "425", "451",
+            "500", "501", "502", "503", "504",
+        ];
 
-        match command.as_str() {
-            "/llava" | "/l" => {
-                let prompt = args;
-                debug!("Executing llava command with prompt: {}", prompt);
-                llava(bot, msg.clone(), prompt).await?;
+        // Check if the command has any 3 digit numbers in it. If so, respond with a cat image
+        for code in status_codes {
+            if msg.text().unwrap().contains(code) {
+                httpcat(bot.clone(), msg.clone(), code.to_string()).await?;
             }
-            _ => {}
         }
-    } else if msg.text().is_some() {
+
         let (command, args) = parse_command(msg.clone());
         let command = command.unwrap_or(String::new());
         let args = args.unwrap_or(String::new());
@@ -107,9 +106,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
             "/tinyllama" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::TinyLlama).await?;
-            }
-            "/llava" | "/l" => {
-                llava(bot.clone(), msg, args.clone()).await?;
             }
             "/help" | "/h" => {
                 help(bot.clone(), msg).await?;
