@@ -13,5 +13,5 @@ pub use ping::ping;
 mod perplexity;
 pub use perplexity::perplexity;
 
-mod img;
-pub use img::img;
+mod bedrock;
+pub use bedrock::bedrock;

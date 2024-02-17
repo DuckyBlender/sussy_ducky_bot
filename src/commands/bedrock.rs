@@ -13,7 +13,7 @@ use teloxide::requests::ResponseResult;
 use teloxide::types::{ChatAction, UserId};
 use teloxide::{types::Message, Bot};
 
-pub async fn img(bot: Bot, msg: Message) -> ResponseResult<Message> {
+pub async fn bedrock(bot: Bot, msg: Message) -> ResponseResult<Message> {
     // Check if the user is from the owner
     if msg.from().unwrap().id != UserId(5337682436) {
         bot.send_message(msg.chat.id, "You are not the owner")
@@ -87,7 +87,7 @@ pub async fn img(bot: Bot, msg: Message) -> ResponseResult<Message> {
         .invoke_model()
         .content_type("application/json")
         .model_id(model_id)
-        .body(body)
+        .body(body.clone())
         .send()
         .await;
     let elapsed = now.elapsed().as_secs_f32();
@@ -100,7 +100,7 @@ pub async fn img(bot: Bot, msg: Message) -> ResponseResult<Message> {
             warn!("Error sending request to AWS bedrock: {}", err_message);
             bot.send_message(
                 msg.chat.id,
-                format!("Error sending request to OpenAI bedrock: {}", err_message),
+                format!("Error sending request to AWS bedrock: {}", err_message),
             )
             .reply_to_message_id(msg.id)
             .await?;

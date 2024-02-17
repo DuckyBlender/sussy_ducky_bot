@@ -123,7 +123,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                 perplexity(bot.clone(), msg, args.clone(), ModelType::Mixtral).await?;
             }
             "/img" => {
-                img(bot.clone(), msg).await?;
+                bedrock(bot.clone(), msg).await?;
             }
             _ => {
                 // If the command is not recognized, do nothing
