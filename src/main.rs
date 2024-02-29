@@ -84,9 +84,17 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
         ];
 
         // Check if the command has any 3 digit numbers in it. If so, respond with a cat image
-        for code in status_codes {
-            if msg.text().unwrap().contains(&format!("{} ", code)) {
-                httpcat(bot.clone(), msg.clone(), code.to_string()).await?;
+        // The text needs to have a space before and after the number, but sometimes it's the beginning or end of the string
+        for status_code in status_codes {
+            if msg.text().unwrap().contains(&format!(" {} ", status_code))
+                || msg
+                    .text()
+                    .unwrap()
+                    .starts_with(&format!("{} ", status_code))
+                || msg.text().unwrap().ends_with(&format!(" {}", status_code))
+            {
+                httpcat(bot.clone(), msg, status_code.to_string()).await?;
+                return Ok(());
             }
         }
 
