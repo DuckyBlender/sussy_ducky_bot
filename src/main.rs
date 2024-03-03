@@ -18,6 +18,7 @@ use commands::*;
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
+    std::env::set_var("RUST_LOG", "info");
     pretty_env_logger::init();
     info!("Starting command bot...");
 
@@ -132,6 +133,9 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
             "/img" => {
                 bedrock(bot.clone(), msg).await?;
+            }
+            "/racist" => {
+                ollama(bot.clone(), msg, args.clone(), ModelType::MistralRacist).await?;
             }
             _ => {
                 // If the command is not recognized, do nothing

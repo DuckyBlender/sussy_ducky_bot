@@ -5,6 +5,7 @@ use teloxide::types::Message;
 pub enum ModelType {
     // Ollama (local)
     MistralCaveman,    // caveman-mistral (custom model)
+    MistralRacist,     // racist-mistral (custom model)
     MistralUncensored, // dolphin-mistral
     Mistral,           // mistral-openorca
     TinyLlama,         // tiny-llama
@@ -18,6 +19,7 @@ impl fmt::Display for ModelType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ModelType::MistralCaveman => write!(f, "caveman-mistral"),
+            ModelType::MistralRacist => write!(f, "racist-mistral"),
             ModelType::MistralUncensored => write!(f, "dolphin-mistral"),
             ModelType::Mistral => write!(f, "mistral-openorca"),
             ModelType::TinyLlama => write!(f, "tinyllama"),
