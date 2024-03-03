@@ -41,12 +41,13 @@ impl Commands {
         Self(
             vec![
                 BotCommand::new("uncensored", "Generate text using 7B dolphin-mistral LLM"),
+                BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
+                BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("mistral", "Generate text using 7B mistral-openorca LLM"),
                 BotCommand::new("tinyllama", "Generate text using 1B tinyllama LLM [EXPERIMENTAL]",),
                 BotCommand::new("help", "Show available commands"),
                 BotCommand::new("ping", "Check the bot's latency"),
                 BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
-                BotCommand::new("caveman", "Generate text using mistral LLM in caveman language"),
                 BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
                 BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
                 BotCommand::new("img", "Generate an image using the Amazon Titan Image Generator G1 [TESTING]"),
