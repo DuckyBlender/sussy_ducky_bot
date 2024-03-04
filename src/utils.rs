@@ -9,7 +9,7 @@ pub enum ModelType {
     MistralUncensored, // dolphin-mistral
     Mistral,           // mistral-openorca
     TinyLlama,         // tiny-llama
-    MistralGreentext   // greentext-mistral
+    MistralGreentext,  // greentext-mistral
 
     // Perplexity (online)
     Mixtral, // mixtral-8x7b-instruct
@@ -21,7 +21,7 @@ impl fmt::Display for ModelType {
         match self {
             ModelType::MistralCaveman => write!(f, "caveman-mistral"),
             ModelType::MistralRacist => write!(f, "racist-mistral"),
-            ModelType::MistralGreentext => write!(f, "greentext-mistral")
+            ModelType::MistralGreentext => write!(f, "greentext-mistral"),
             ModelType::MistralUncensored => write!(f, "dolphin-mistral"),
             ModelType::Mistral => write!(f, "mistral-openorca"),
             ModelType::TinyLlama => write!(f, "tinyllama"),
