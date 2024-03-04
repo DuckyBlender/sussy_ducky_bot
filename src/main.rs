@@ -43,6 +43,7 @@ impl Commands {
                 BotCommand::new("uncensored", "Generate text using 7B dolphin-mistral LLM"),
                 BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
+                BotCommand::new("greentext", ">be me >be [input]"),
                 BotCommand::new("mistral", "Generate text using 7B mistral-openorca LLM"),
                 BotCommand::new("tinyllama", "Generate text using 1B tinyllama LLM [EXPERIMENTAL]",),
                 BotCommand::new("help", "Show available commands"),
@@ -111,7 +112,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             "/uncensored" | "/u" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::MistralUncensored).await?;
             }
-            "/caveman" => {
+            "/caveman" | "/cv" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::MistralCaveman).await?;
             }
             "/tinyllama" => {
@@ -137,6 +138,9 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
             "/racist" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::MistralRacist).await?;
+            }
+            "/greentext" => {
+                ollama(bot.clone(), msg, args.clone(), ModelType::MistralGreentext).await?;
             }
             _ => {
                 // If the command is not recognized, do nothing

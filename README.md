@@ -41,6 +41,7 @@ bash
 ```
 ollama create caveman-mistral -f ./custom_models/caveman/Modelfile
 ollama create racist-mistral -f ./custom_models/racist/Modelfile
+ollama create greentext-mistral -f ./custom_models/greentext/Modelfile
 ```
 
 ## Usage

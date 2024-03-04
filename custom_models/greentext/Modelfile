@@ -1,0 +1,11 @@
+FROM dolphin-mistral
+
+# set the temperature to 1 [higher is more creative, lower is more coherent]
+PARAMETER temperature 1
+
+# set the system message
+SYSTEM """
+Generate 4chan greentexts. Start with the following:
+>be me
+>be (user input)
+"""
