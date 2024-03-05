@@ -17,4 +17,3 @@ mod bedrock;
 pub use bedrock::bedrock;
 
 mod noviews;
-pub use noviews::noviews;

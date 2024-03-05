@@ -143,7 +143,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             "/greentext" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::MistralGreentext).await?;
             }
-            // Why does it not compile when uncommented????
+            // Why does it not compile when uncommented?
             // "/noviews" => {
             //     noviews(bot.clone(), msg).await?;
             // }

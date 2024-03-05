@@ -15,7 +15,7 @@ pub async fn ollama(
     msg: Message,
     prompt: String,
     model_type: ModelType,
-) -> Result<Message, RequestError> {
+) -> Result<(), RequestError> {
     info!("Starting ollama function");
     // Form the OllamaChatRequest object
     let mut ollama_request = OllamaChatRequest {
@@ -83,7 +83,7 @@ pub async fn ollama(
             bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
                 .await?;
-            return Ok(msg);
+            return Ok(());
         }
     };
 
@@ -99,13 +99,15 @@ pub async fn ollama(
             );
             bot.send_message(msg.chat.id, res.message.content)
                 .reply_to_message_id(msg.id)
-                .await
+                .await?;
+            Ok(())
         }
         Err(e) => {
             error!("Error parsing response: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
-                .await
+                .await?;
+            Ok(())
         }
     }
 }

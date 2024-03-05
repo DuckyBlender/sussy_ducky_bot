@@ -2,16 +2,16 @@ use log::error;
 use reqwest::StatusCode;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::payloads::SendPhotoSetters;
-use teloxide::requests::ResponseResult;
 use teloxide::types::InputFile;
 
+use teloxide::RequestError;
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
     Bot,
 };
 
-pub async fn httpcat(bot: Bot, msg: Message, args: String) -> ResponseResult<()> {
+pub async fn httpcat(bot: Bot, msg: Message, args: String) -> Result<(), RequestError> {
     // Ping http://http.cat/{argument}
     if args.is_empty() {
         bot.send_message(

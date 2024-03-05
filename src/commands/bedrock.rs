@@ -8,7 +8,7 @@ use log::{info, warn};
 use serde_json::json;
 use std::env;
 use teloxide::payloads::{SendMessageSetters, SendPhotoSetters};
-use teloxide::prelude::Requester;
+use teloxide::prelude::*;
 use teloxide::requests::ResponseResult;
 use teloxide::types::{ChatAction, UserId};
 use teloxide::{types::Message, Bot};

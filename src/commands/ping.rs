@@ -1,6 +1,6 @@
 use log::error;
 use teloxide::payloads::SendMessageSetters;
-use teloxide::prelude::Requester;
+use teloxide::prelude::*;
 use teloxide::requests::ResponseResult;
 
 use teloxide::{types::Message, Bot};

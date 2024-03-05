@@ -16,13 +16,13 @@ pub async fn perplexity(
     msg: Message,
     prompt: String,
     model: ModelType,
-) -> Result<Message, RequestError> {
+) -> Result<(), RequestError> {
     // Check if the user is from the owner
     if msg.from().unwrap().id != UserId(5337682436) {
         bot.send_message(msg.chat.id, "You are not the owner")
             .reply_to_message_id(msg.id)
             .await?;
-        return Ok(msg);
+        return Ok(());
     }
     info!("Starting perplexity request function");
 
@@ -33,7 +33,7 @@ pub async fn perplexity(
             bot.send_message(msg.chat.id, "No prompt provided")
                 .reply_to_message_id(msg.id)
                 .await?;
-            return Ok(msg);
+            return Ok(());
         }
     } else {
         prompt.to_owned()
@@ -76,7 +76,7 @@ pub async fn perplexity(
             bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
                 .await?;
-            return Ok(msg);
+            return Ok(());
         }
     };
 
@@ -95,13 +95,15 @@ pub async fn perplexity(
             );
             bot.send_message(msg.chat.id, content)
                 .reply_to_message_id(msg.id)
-                .await
+                .await?;
+            Ok(())
         }
         Err(e) => {
             error!("Error parsing response: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
-                .await
+                .await?;
+            Ok(())
         }
     }
 }

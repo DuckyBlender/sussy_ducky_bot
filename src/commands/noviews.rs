@@ -1,9 +1,9 @@
 use scraper::{Html, Selector};
-use teloxide::{prelude::*, RequestError};
+use teloxide::payloads::SendMessageSetters;
 
-use teloxide::{types::Message, Bot};
+use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
-pub async fn noviews(bot: Bot, msg: Message) -> Result<Message, RequestError> {
+pub async fn noviews(bot: Bot, msg: Message) -> Result<(), RequestError> {
     // Fetch the HTML content
     let url = "https://petittube.com/";
     let body = reqwest::get(url).await.unwrap().text().await.unwrap();
@@ -15,41 +15,42 @@ pub async fn noviews(bot: Bot, msg: Message) -> Result<Message, RequestError> {
     let selector = Selector::parse("iframe").unwrap();
 
     if document.select(&selector).next().is_none() {
-        return bot.send_message(
+        bot.send_message(
             msg.chat.id,
             "There was a problem fetching a video. Please try later.",
         )
         .reply_to_message_id(msg.id)
-        .await;
+        .await?;
+        return Ok(());
     }
 
     // Extract iframe attributes
-    for iframe in document.select(&selector) {
+    if let Some(iframe) = document.select(&selector).next() {
         // Get the iframe source attribute
         let src_attribute = iframe.value().attr("src");
 
         if src_attribute.is_none() {
-            return bot
-                .send_message(
-                    msg.chat.id,
-                    "There was a problem fetching a video. Please try later.",
-                )
-                .reply_to_message_id(msg.id)
-                .await;
+            bot.send_message(
+                msg.chat.id,
+                "There was a problem fetching a video. Please try later.",
+            )
+            .reply_to_message_id(msg.id)
+            .await?;
+            return Ok(());
         }
 
         let src = src_attribute.unwrap();
-        return bot
-            .send_message(msg.chat.id, src)
+        bot.send_message(msg.chat.id, src)
             .reply_to_message_id(msg.id)
-            .await;
+            .await?;
+        return Ok(());
     }
 
-    return bot
-        .send_message(
-            msg.chat.id,
-            "There was a problem fetching a video. Please try later.",
-        )
-        .reply_to_message_id(msg.id)
-        .await;
+    bot.send_message(
+        msg.chat.id,
+        "There was a problem fetching a video. Please try later.",
+    )
+    .reply_to_message_id(msg.id)
+    .await?;
+    Ok(())
 }
