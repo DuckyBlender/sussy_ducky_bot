@@ -1,4 +1,3 @@
-use scraper::{Html, Selector};
 use teloxide::payloads::SendMessageSetters;
 
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
@@ -8,49 +7,21 @@ pub async fn noviews(bot: Bot, msg: Message) -> Result<(), RequestError> {
     let url = "https://petittube.com/";
     let body = reqwest::get(url).await.unwrap().text().await.unwrap();
 
-    // Parse HTML with scraper
-    let document = Html::parse_document(&body);
+    // Search for the video
+    // <body bgcolor=000000><div align=center><br/><a href="https://petittube.com"><img src="title.png"/></a><br/><iframe width="630" height="473" src="https://www.youtube.com/embed/r8cvg4Cby68?version=3&f=videos&app=youtube_gdata&autoplay=1" frameborder="0" allowfullscreen></iframe><br/><br/></div></body>
+    
+    // Split by "<iframe width="630" height="473" src=" to get the video URL
+    let video_split: Vec<&str> = body.split("<iframe width=\"630\" height=\"473\" src=\"").collect();
+    let video = video_split[1].split("\"").collect::<Vec<&str>>()[0];
+    // Extract this r8cvg4Cby68
+    let video = video.split("/").collect::<Vec<&str>>()[4];
+    let video = video.split("?").collect::<Vec<&str>>()[0];
 
-    // Define a CSS selector for the iframe
-    let selector = Selector::parse("iframe").unwrap();
+    let video = "https://www.youtube.com/watch?v=".to_string() + video; 
 
-    if document.select(&selector).next().is_none() {
-        bot.send_message(
-            msg.chat.id,
-            "There was a problem fetching a video. Please try later.",
-        )
+    // Send the video
+    bot.send_message(msg.chat.id, video)
         .reply_to_message_id(msg.id)
         .await?;
-        return Ok(());
-    }
-
-    // Extract iframe attributes
-    if let Some(iframe) = document.select(&selector).next() {
-        // Get the iframe source attribute
-        let src_attribute = iframe.value().attr("src");
-
-        if src_attribute.is_none() {
-            bot.send_message(
-                msg.chat.id,
-                "There was a problem fetching a video. Please try later.",
-            )
-            .reply_to_message_id(msg.id)
-            .await?;
-            return Ok(());
-        }
-
-        let src = src_attribute.unwrap();
-        bot.send_message(msg.chat.id, src)
-            .reply_to_message_id(msg.id)
-            .await?;
-        return Ok(());
-    }
-
-    bot.send_message(
-        msg.chat.id,
-        "There was a problem fetching a video. Please try later.",
-    )
-    .reply_to_message_id(msg.id)
-    .await?;
     Ok(())
 }

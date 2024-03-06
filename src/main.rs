@@ -144,9 +144,9 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                 ollama(bot.clone(), msg, args.clone(), ModelType::MistralGreentext).await?;
             }
             // Why does it not compile when uncommented?
-            // "/noviews" => {
-            //     noviews(bot.clone(), msg).await?;
-            // }
+            "/noviews" => {
+                noviews(bot.clone(), msg).await?;
+            }
             _ => {
                 // If the command is not recognized, do nothing
             }
