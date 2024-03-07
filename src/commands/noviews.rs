@@ -3,6 +3,9 @@ use teloxide::payloads::SendMessageSetters;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
 pub async fn noviews(bot: Bot, msg: Message) -> Result<(), RequestError> {
+    // Send "typing indicator"
+    bot.send_chat_action(msg.chat.id, teloxide::types::ChatAction::Typing)
+        .await?;
     // Fetch the HTML content
     let url = "https://petittube.com/";
     let body = reqwest::get(url).await.unwrap().text().await.unwrap();
