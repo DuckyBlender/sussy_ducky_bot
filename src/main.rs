@@ -44,14 +44,13 @@ impl Commands {
                 BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("lobotomy", "Geterate text using 1.1B 2Q 480MB tinyllama-openorca LLM"),
-                BotCommand::new("tinyllama", "Generate text using 1.1B tinyllama-openorca LLM [EXPERIMENTAL]",),
-                BotCommand::new("greentext", ">be me >be [input]"),
+                BotCommand::new("tinyllama", "Generate text using 1.1B 8Q tinyllama-openorca LLM [EXPERIMENTAL]",),
+                BotCommand::new("greentext", "Generate a 4chan greentext about a topic [EXPERIMENTAL]"),
                 BotCommand::new("help", "Show available commands"),
                 BotCommand::new("ping", "Check the bot's latency"),
                 BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
                 BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
                 BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
-                BotCommand::new("img", "Generate an image using the Amazon Titan Image Generator G1 [TESTING]"),
                 BotCommand::new("noviews", "Get a random video with no views (or very few views)"),
             ]
         )
@@ -136,9 +135,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
             "/mixtral" => {
                 perplexity(bot.clone(), msg, args.clone(), ModelType::Mixtral).await?;
-            }
-            "/img" => {
-                bedrock(bot.clone(), msg).await?;
             }
             "/racist" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::MistralRacist).await?;
