@@ -14,6 +14,7 @@ This is a AI telegram bot which currently supports Mistral. It requires Ollama t
 ## Todo
 
 - [ ] MarkdownV2 support
+- [ ] Refactor bot so it's more modular and more readable (this code is terrible)
 
 ## Prerequisites
 
@@ -23,26 +24,30 @@ This is a AI telegram bot which currently supports Mistral. It requires Ollama t
 
 ## Installation
 
-1. Install Ollama following the instructions on its [official website](https://ollama.ai/).
-2. Download the following models: 
+
+1. Clone this repository: `git clone https://github.com/DuckyBlender/sussy_ducky_bot`
+2. Navigate to the cloned repository: `cd sussy_ducky_bot`
+3. Install the caveman and racist model model:
+4. Install Ollama following the instructions on its [official website](https://ollama.ai/).
+5. Download the following models and create custom models
 
 bash
 ```
 ollama pull dolphin-mistral
-ollama pull mistral-openorca
 ollama pull tinyllama
-```
-
-3. Clone this repository: `git clone https://github.com/DuckyBlender/sussy_ducky_bot`
-4. Navigate to the cloned repository: `cd sussy_ducky_bot`
-5. Install the caveman and racist model model:
-
-bash
-```
+ollama pull tinyllama:1.1b-chat-v0.6-q2_K
 ollama create caveman-mistral -f ./custom_models/caveman/Modelfile
 ollama create racist-mistral -f ./custom_models/racist/Modelfile
 ollama create greentext-mistral -f ./custom_models/greentext/Modelfile
 ```
+
+One-liner:
+bash
+```
+ollama pull dolphin-mistral && ollama pull tinyllama && ollama pull tinyllama:1.1b-chat-v0.6-q2_K && ollama create caveman-mistral -f ./custom_models/caveman/Modelfile && ollama create racist-mistral -f ./custom_models/racist/Modelfile && ollama create greentext-mistral -f ./custom_models/greentext/Modelfile
+```
+
+
 
 ## Usage
 

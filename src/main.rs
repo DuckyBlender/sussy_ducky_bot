@@ -40,12 +40,12 @@ impl Commands {
     pub fn new() -> Self {
         Self(
             vec![
-                BotCommand::new("uncensored", "Generate text using 7B dolphin-mistral LLM"),
+                BotCommand::new("mistral", "Generate text using 7B dolphin-mistral LLM"),
                 BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
+                BotCommand::new("lobotomy", "Geterate text using 1.1B 2Q 480MB tinyllama-openorca LLM"),
+                BotCommand::new("tinyllama", "Generate text using 1.1B tinyllama-openorca LLM [EXPERIMENTAL]",),
                 BotCommand::new("greentext", ">be me >be [input]"),
-                BotCommand::new("mistral", "Generate text using 7B mistral-openorca LLM"),
-                BotCommand::new("tinyllama", "Generate text using 1B tinyllama LLM [EXPERIMENTAL]",),
                 BotCommand::new("help", "Show available commands"),
                 BotCommand::new("ping", "Check the bot's latency"),
                 BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
@@ -110,14 +110,14 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             "/mistral" | "/m" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::Mistral).await?;
             }
-            "/uncensored" | "/u" => {
-                ollama(bot.clone(), msg, args.clone(), ModelType::MistralUncensored).await?;
-            }
             "/caveman" | "/cv" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::MistralCaveman).await?;
             }
             "/tinyllama" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::TinyLlama).await?;
+            }
+            "/lobotomy" => {
+                ollama(bot.clone(), msg, args.clone(), ModelType::Lobotomy).await?;
             }
             "/help" | "/h" => {
                 help(bot.clone(), msg).await?;

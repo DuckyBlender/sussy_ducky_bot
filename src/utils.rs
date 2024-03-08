@@ -4,12 +4,12 @@ use teloxide::types::Message;
 
 pub enum ModelType {
     // Ollama (local)
-    MistralCaveman,    // caveman-mistral (custom model)
-    MistralRacist,     // racist-mistral (custom model)
-    MistralUncensored, // dolphin-mistral
-    Mistral,           // mistral-openorca
-    TinyLlama,         // tiny-llama
-    MistralGreentext,  // greentext-mistral
+    MistralCaveman,   // caveman-mistral (custom model)
+    MistralRacist,    // racist-mistral (custom model)
+    Mistral,          // dolphin-mistral
+    TinyLlama,        // tiny-llama
+    MistralGreentext, // greentext-mistral
+    Lobotomy,         // tinyllama:1.1b-chat-v0.6-q2_K
 
     // Perplexity (online)
     Mixtral, // mixtral-8x7b-instruct
@@ -19,12 +19,12 @@ pub enum ModelType {
 impl fmt::Display for ModelType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            ModelType::Mistral => write!(f, "dolphin-mistral"),
             ModelType::MistralCaveman => write!(f, "caveman-mistral"),
             ModelType::MistralRacist => write!(f, "racist-mistral"),
             ModelType::MistralGreentext => write!(f, "greentext-mistral"),
-            ModelType::MistralUncensored => write!(f, "dolphin-mistral"),
-            ModelType::Mistral => write!(f, "mistral-openorca"),
             ModelType::TinyLlama => write!(f, "tinyllama"),
+            ModelType::Lobotomy => write!(f, "tinyllama:1.1b-chat-v0.6-q2_K"),
             ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
             ModelType::Online => write!(f, "pplx-7b-online"),
         }
