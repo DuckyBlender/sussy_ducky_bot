@@ -7,7 +7,7 @@ pub enum ModelType {
     MistralCaveman,   // caveman-mistral (custom model)
     MistralRacist,    // racist-mistral (custom model)
     Mistral,          // dolphin-mistral
-    TinyLlama,        // tiny-llama
+    TinyLlama,        // tinyllama
     MistralGreentext, // greentext-mistral
     Lobotomy,         // tinyllama:1.1b-chat-v0.6-q2_K
 
