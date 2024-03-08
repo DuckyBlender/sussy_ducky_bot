@@ -31,8 +31,7 @@ impl fmt::Display for ModelType {
     }
 }
 
-pub fn parse_command(msg: Message) -> (Option<String>, Option<String>) {
-    let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
+pub fn parse_command(msg: Message, bot_name: String) -> (Option<String>, Option<String>) {
     let text = msg.text().unwrap_or("");
     let mut iter = text.splitn(2, ' ');
     let command = iter.next().map(std::string::ToString::to_string);
@@ -49,8 +48,7 @@ pub fn parse_command(msg: Message) -> (Option<String>, Option<String>) {
 }
 
 // Remove the command from the message. Supports /command and /command@botname
-pub fn remove_prefix(msg: Message) -> String {
-    let bot_name = std::env::var("BOT_NAME").unwrap_or("sussy_ducky_bot".to_string());
+pub fn remove_prefix(msg: Message, bot_name: String) -> String {
     let text = msg.text().unwrap_or("");
     let mut iter = text.splitn(2, ' ');
     let command = iter.next().unwrap_or("");

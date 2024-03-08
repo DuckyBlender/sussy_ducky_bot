@@ -102,7 +102,10 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             }
         }
 
-        let (command, args) = parse_command(msg.clone());
+        let (command, args) = parse_command(
+            msg.clone(),
+            bot.get_me().await.unwrap().username.clone().unwrap(),
+        );
         let command = command.unwrap_or(String::new());
         let args = args.unwrap_or(String::new());
         let msg = msg.clone(); // Clone the message here

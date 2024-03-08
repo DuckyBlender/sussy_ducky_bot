@@ -57,7 +57,7 @@ ollama pull dolphin-mistral && ollama pull tinyllama && ollama pull tinyllama:1.
 
 # Docker
 (keep in mind im a total docker noob so there may be a better way to do this. this is also untested)
-`docker run -e TELOXIDE_TOKEN=xxx OPENAI_KEY=xxx BOT_NAME=xxx `
+`docker run -e TELOXIDE_TOKEN=xxx OPENAI_KEY=xxx`
 
 ## Contributing
 

@@ -42,7 +42,10 @@ pub async fn ollama(
             "user"
         };
         // Remove the command from the message using the remove_prefix function
-        let content = remove_prefix(reply.clone());
+        let content = remove_prefix(
+            reply.clone(),
+            bot.get_me().await.unwrap().username.clone().unwrap(),
+        );
         history.push((role, content));
         message = reply.clone();
     }
