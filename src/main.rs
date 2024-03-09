@@ -43,15 +43,15 @@ impl Commands {
                 BotCommand::new("mistral", "Generate text using 7B dolphin-mistral LLM"),
                 BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
-                BotCommand::new("lobotomy", "Geterate text using 1.1B 2Q 480MB tinyllama-openorca LLM"),
+                BotCommand::new("lobotomy", "Geterate text using 1.1B 2Q 480MB tinyllama:1.1b-chat-v0.6-q2_K LLM"),
                 BotCommand::new("tinyllama", "Generate text using 1.1B 8Q tinyllama-openorca LLM [EXPERIMENTAL]",),
                 BotCommand::new("greentext", "Generate a 4chan greentext about a topic [EXPERIMENTAL]"),
                 BotCommand::new("help", "Show available commands"),
                 BotCommand::new("ping", "Check the bot's latency"),
                 BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
+                BotCommand::new("noviews", "Get a random video with no views (or very few views)"),
                 BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
                 BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
-                BotCommand::new("noviews", "Get a random video with no views (or very few views)"),
             ]
         )
     }
@@ -61,7 +61,7 @@ impl Commands {
     }
 
     pub fn help_message(&self) -> String {
-        let header = "⚠️ SINCE THIS BOT IS SELF-HOSTED, IT CAN BE QUITE SLOW. REWRITE IS IN PROGRESS ⚠️\nThis bot is open source! Check it out at https://github.com/DuckyBlender/sussy_ducky_bot\nOh and the bot works with replies too! (for example you can reply to a photo with /llava)\nCommands marked with [TESTING] are only available for the owner\n\n";
+        let header = "⚠️ SINCE THIS BOT IS SELF-HOSTED, IT CAN BE QUITE SLOW. ⚠️\nThis bot is open source and uses <code>ollama</code>! Check it out at https://github.com/DuckyBlender/sussy_ducky_bot\nOh and the bot works with replies too! (for example you can reply to a photo with /llava)\nCommands marked with [TESTING] are only available for the owner\n\n";
         let mut help_message = String::from(header);
         help_message.push_str("<b>Available commands:</b>\n");
         for command in &self.0 {
