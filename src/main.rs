@@ -96,8 +96,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
                     .starts_with(&format!("{} ", status_code))
                 || msg.text().unwrap().ends_with(&format!(" {}", status_code))
             {
-                httpcat(bot.clone(), msg, status_code.to_string()).await?;
-                return Ok(());
+                httpcat(bot.clone(), msg.clone(), status_code.to_string()).await?;
             }
         }
 
