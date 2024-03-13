@@ -4,6 +4,8 @@
 
 This is a AI telegram bot which currently supports Mistral. It requires Ollama to run in the background. This bot is mainly for fun and learning purposes. It is probably not very useful for anything else.
 
+If you want to use the bot you can add it to your group by clicking [here](https://t.me/sussy_ducky_bot). If you want you can give it permission to delete messages.
+
 ## Features
 - Supports variations of Mistral (and two custom prompt models)
 - Supports Tinyllama
@@ -46,8 +48,6 @@ bash
 ```
 ollama pull dolphin-mistral && ollama pull tinyllama && ollama pull tinyllama:1.1b-chat-v0.6-q2_K && ollama create caveman-mistral -f ./custom_models/caveman/Modelfile && ollama create racist-mistral -f ./custom_models/racist/Modelfile && ollama create greentext-mistral -f ./custom_models/greentext/Modelfile
 ```
-
-
 
 ## Usage
 

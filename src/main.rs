@@ -1,4 +1,4 @@
-use log::{error, info};
+use log::{error, info, warn};
 
 use teloxide::{
     prelude::*,
@@ -106,7 +106,19 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
         );
         let command = command.unwrap_or(String::new());
         let args = args.unwrap_or(String::new());
-        let msg = msg.clone(); // Clone the message here
+        let msg = msg.clone();
+        // Check if the args is empty and there is no reply
+        if args.is_empty() && msg.reply_to_message().is_none() {
+            // The user probably sent the message as a mistake without any arguments. Delete the message
+            if let Ok(_) = bot.delete_message(msg.chat.id, msg.id).await {
+                info!("Deleted message with no argument or reply",);
+            } else {
+                warn!(
+                    "Failed to delete message with no argument or reply. Probably no permission.",
+                );
+            }
+            return Ok(());
+        }
         match command.as_str() {
             "/mistral" | "/m" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::Mistral).await?;
@@ -141,7 +153,6 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
             "/greentext" => {
                 ollama(bot.clone(), msg, args.clone(), ModelType::MistralGreentext).await?;
             }
-            // Why does it not compile when uncommented?
             "/noviews" => {
                 noviews(bot.clone(), msg).await?;
             }
