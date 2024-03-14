@@ -108,7 +108,7 @@ async fn handler(bot: Bot, msg: Message) -> ResponseResult<()> {
         let args = args.unwrap_or(String::new());
         let msg = msg.clone();
         // Check if the args is empty and there is no reply
-        if args.is_empty() && msg.reply_to_message().is_none() {
+        if command.is_some() && args.is_empty() && msg.reply_to_message().is_none() {
             // The user probably sent the message as a mistake without any arguments. Delete the message
             if let Ok(_) = bot.delete_message(msg.chat.id, msg.id).await {
                 info!("Deleted message with no argument or reply",);
