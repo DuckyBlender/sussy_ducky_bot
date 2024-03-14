@@ -1,7 +1,6 @@
 use log::{error, info};
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
-
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
@@ -26,6 +25,7 @@ pub async fn perplexity(
     }
     info!("Starting perplexity request function");
 
+    // Determine the prompt
     let prompt: String = if prompt.is_empty() {
         if let Some(reply) = msg.reply_to_message() {
             reply.text().unwrap_or_default().to_string()
@@ -39,12 +39,19 @@ pub async fn perplexity(
         prompt.to_owned()
     };
 
+    // Send generating... message
+    let generating_message = bot
+        .send_message(msg.chat.id, "Generating...")
+        .reply_to_message_id(msg.id)
+        .disable_notification(true)
+        .await?;
+
     // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
 
     let now = std::time::Instant::now();
-    // Send the request
+    // Send the request to the Perplexity API
     let res = reqwest::Client::new()
         .post("https://api.perplexity.ai/chat/completions")
         .header("accept", "application/json")
@@ -73,6 +80,8 @@ pub async fn perplexity(
         }
         Err(e) => {
             error!("Error sending request: {}", e);
+            bot.delete_message(generating_message.chat.id, generating_message.id)
+                .await?;
             bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
                 .await?;
@@ -93,6 +102,8 @@ pub async fn perplexity(
                 "Replying to message using perplexity. Generation took {}s",
                 (elapsed * 10.0).round() / 10.0
             );
+            bot.delete_message(generating_message.chat.id, generating_message.id)
+                .await?;
             bot.send_message(msg.chat.id, content)
                 .reply_to_message_id(msg.id)
                 .await?;
@@ -100,6 +111,8 @@ pub async fn perplexity(
         }
         Err(e) => {
             error!("Error parsing response: {}", e);
+            bot.delete_message(generating_message.chat.id, generating_message.id)
+                .await?;
             bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
                 .await?;

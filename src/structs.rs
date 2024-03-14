@@ -44,3 +44,11 @@ pub struct OllamaChatResponseMessage {
     pub role: String,
     pub content: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct OllamaLlavaRequest {
+    pub model: String,
+    pub prompt: String,
+    pub stream: bool,
+    pub images: Vec<String>,
+}

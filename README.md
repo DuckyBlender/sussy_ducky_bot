@@ -7,10 +7,11 @@ This is a AI telegram bot which currently supports Mistral. It requires Ollama t
 If you want to use the bot you can add it to your group by clicking [here](https://t.me/sussy_ducky_bot). If you want you can give it permission to delete messages.
 
 ## Features
-- Supports variations of Mistral (and two custom prompt models)
+- Supports variations of Mistral (and three custom prompt models)
 - Supports Tinyllama
 - Supports models from Perplexity AI
 - Context using replies (this currently only works with one message - the one the user is replying to)
+- Threaded responses (the bot can accept messages while it's still processing the previous one)
 - Other small gimmicks
 
 ## Todo
@@ -21,7 +22,7 @@ If you want to use the bot you can add it to your group by clicking [here](https
 ## Prerequisites
 
 - At least $1 on perplexity.ai
-- Ollama
+- Ollama (so at least 8GB of RAM)
 - Rust
 
 ## Installation

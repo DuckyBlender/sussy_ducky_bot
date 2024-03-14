@@ -3,13 +3,17 @@ use std::fmt;
 use teloxide::types::Message;
 
 pub enum ModelType {
-    // Ollama (local)
+    // Ollama (text)
     MistralCaveman,   // caveman-mistral (custom model)
     MistralRacist,    // racist-mistral (custom model)
     Mistral,          // dolphin-mistral
     TinyLlama,        // tinyllama
     MistralGreentext, // greentext-mistral
     Lobotomy,         // tinyllama:1.1b-chat-v0.6-q2_K
+
+    // Ollama (image recognition)
+    // LLaVa7B,  // llava
+    // LLaVa13B, // llava:13b
 
     // Perplexity (online)
     Mixtral, // mixtral-8x7b-instruct
@@ -27,6 +31,8 @@ impl fmt::Display for ModelType {
             ModelType::Lobotomy => write!(f, "tinyllama:1.1b-chat-v0.6-q2_K"),
             ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
             ModelType::Online => write!(f, "pplx-7b-online"),
+            // ModelType::LLaVa7B => write!(f, "llava"),
+            // ModelType::LLaVa13B => write!(f, "llava:13b"),
         }
     }
 }
@@ -46,7 +52,6 @@ pub fn parse_command(msg: Message, bot_name: String) -> (Option<String>, Option<
         _ => (None, None),
     }
 }
-
 // Remove the command from the message. Supports /command and /command@botname
 pub fn remove_prefix(msg: Message, bot_name: String) -> String {
     let text = msg.text().unwrap_or("");

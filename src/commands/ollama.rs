@@ -17,6 +17,7 @@ pub async fn ollama(
     model_type: ModelType,
 ) -> Result<(), RequestError> {
     info!("Starting ollama function");
+
     // Form the OllamaChatRequest object
     let mut ollama_request = OllamaChatRequest {
         model: ModelType::to_string(&model_type),
@@ -61,6 +62,21 @@ pub async fn ollama(
     // Reverse the messages so that the prompt is first
     ollama_request.messages.reverse();
 
+    // If the prompt is empty, return an error
+    if ollama_request.messages[0].content.is_empty() {
+        bot.send_message(msg.chat.id, "Error: Prompt is empty")
+            .reply_to_message_id(msg.id)
+            .await?;
+        return Ok(());
+    }
+
+    // Send a message to the chat to show that the bot is generating a response
+    let generating_message = bot
+        .send_message(msg.chat.id, "Generating response...")
+        .reply_to_message_id(msg.id)
+        .disable_notification(true)
+        .await?;
+
     // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
@@ -100,6 +116,12 @@ pub async fn ollama(
                 "Replying to message using ollama. Generation took {}s",
                 (elapsed * 10.0).round() / 10.0
             );
+
+            // Remove the "Generating response..." message
+            bot.delete_message(generating_message.chat.id, generating_message.id)
+                .await?;
+
+            // Send the response
             bot.send_message(msg.chat.id, res.message.content)
                 .reply_to_message_id(msg.id)
                 .await?;
@@ -107,6 +129,9 @@ pub async fn ollama(
         }
         Err(e) => {
             error!("Error parsing response: {}", e);
+            // Remove the "Generating response..." message
+            bot.delete_message(generating_message.chat.id, generating_message.id)
+                .await?;
             bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
                 .await?;
