@@ -118,6 +118,7 @@ async fn handle_command(
                     .unwrap()
                     .starts_with(&format!("{} ", status_code))
                 || msg.text().unwrap().ends_with(&format!(" {}", status_code))
+                || msg.text() == Some(status_code)
             {
                 httpcat(bot.clone(), msg.clone(), status_code.to_string()).await?;
             }
