@@ -28,7 +28,7 @@ impl fmt::Display for ModelType {
             ModelType::MistralRacist => write!(f, "racist-mistral"),
             ModelType::MistralGreentext => write!(f, "greentext-mistral"),
             ModelType::TinyLlama => write!(f, "tinyllama"),
-            ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2"),
+            ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),
             ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
             ModelType::Online => write!(f, "pplx-7b-online"),
             // ModelType::LLaVa7B => write!(f, "llava"),
