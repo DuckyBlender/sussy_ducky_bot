@@ -10,6 +10,7 @@ pub enum ModelType {
     TinyLlama,        // tinyllama
     MistralGreentext, // greentext-mistral
     Lobotomy,         // qwen:0.5b-chat-v1.5-q2
+    Solar,            // solar
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -31,6 +32,7 @@ impl fmt::Display for ModelType {
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),
             ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
             ModelType::Online => write!(f, "pplx-7b-online"),
+            ModelType::Solar => write!(f, "solar"),
             // ModelType::LLaVa7B => write!(f, "llava"),
             // ModelType::LLaVa13B => write!(f, "llava:13b"),
         }

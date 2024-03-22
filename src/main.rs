@@ -91,18 +91,19 @@ impl Commands {
     pub fn new() -> Self {
         Self(
             vec![
-                BotCommand::new("mistral", "Generate text using 7B dolphin-mistral LLM"),
+                BotCommand::new("solar", "Generate text using the 10.7B solar LLM. This should be the best model in this bot."),
+                BotCommand::new("mistral", "Generate text using 7B dolphin-mistral LLM."),
                 BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("lobotomy", "Geterate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2 LLM"),
-                BotCommand::new("tinyllama", "Generate text using 1.1B 8Q tinyllama-openorca LLM [EXPERIMENTAL]",),
-                BotCommand::new("greentext", "Generate a 4chan greentext about a topic [EXPERIMENTAL]"),
+                BotCommand::new("tinyllama", "Generate text using 1.1B 8Q tinyllama-openorca LLM",),
+                BotCommand::new("greentext", "Generate a 4chan greentext about a topic"),
                 BotCommand::new("help", "Show available commands"),
                 BotCommand::new("ping", "Check the bot's latency"),
                 BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
                 BotCommand::new("noviews", "Get a random video with no views (or very few views)"),
-                BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
-                BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
+                // BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
+                // BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
             ]
         )
     }
@@ -222,6 +223,9 @@ async fn handle_command(
                     args.clone(),
                     ModelType::MistralRacist,
                 ));
+            }
+            "/solar" => {
+                tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Solar));
             }
             "/greentext" => {
                 tokio::spawn(ollama(
