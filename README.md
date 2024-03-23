@@ -11,7 +11,6 @@ If you want to use the bot you can add it to your group by clicking [here](https
 - Supports variations of Mistral 7B (and three custom prompt models)
 - Supports Tinyllama
 - Supports Solar 10.7B
-- Supports Dolphin-Coder 16B
 - Supports models from Perplexity AI
 - Context using replies (this currently only works with one message - the one the user is replying to)
 - Threaded responses (the bot can accept messages while it's still processing the previous one)
@@ -25,7 +24,7 @@ If you want to use the bot you can add it to your group by clicking [here](https
 ## Prerequisites
 
 - At least $1 on perplexity.ai
-- Ollama (at least 16GB of ram because of the high parameter count models)
+- Ollama (at least 8GB of ram because of the high parameter count models)
 - AMD or NVIDIA GPU is recommended
 - Rust
 

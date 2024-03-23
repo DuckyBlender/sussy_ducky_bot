@@ -228,14 +228,6 @@ async fn handle_command(
             "/solar" => {
                 tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Solar));
             }
-            "/coder" => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg,
-                    args.clone(),
-                    ModelType::DolphinCoder,
-                ));
-            }
             "/greentext" => {
                 tokio::spawn(ollama(
                     bot.clone(),
