@@ -96,7 +96,7 @@ impl Commands {
                 BotCommand::new("mistral", "Generate text using 7B dolphin-mistral LLM."),
                 BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
-                BotCommand::new("lobotomy", "Geterate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2 LLM"),
+                BotCommand::new("lobotomy", "Geterate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2_K LLM"),
                 BotCommand::new("tinyllama", "Generate text using 1.1B 8Q tinyllama-openorca LLM",),
                 BotCommand::new("greentext", "Generate a 4chan greentext about a topic"),
                 BotCommand::new("help", "Show available commands"),
