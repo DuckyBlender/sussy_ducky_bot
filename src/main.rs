@@ -91,7 +91,8 @@ impl Commands {
     pub fn new() -> Self {
         Self(
             vec![
-                BotCommand::new("solar", "Generate text using the 10.7B solar LLM. This should be the best model in this bot."),
+                BotCommand::new("coder", "Generate code using 16B dolphincoder LLM. This is the best model for coding in this bot."),
+                BotCommand::new("solar", "Generate text using the 10.7B solar LLM. This is the best general purpouse model in this bot."),
                 BotCommand::new("mistral", "Generate text using 7B dolphin-mistral LLM."),
                 BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
@@ -226,6 +227,14 @@ async fn handle_command(
             }
             "/solar" => {
                 tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Solar));
+            }
+            "/coder" => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg,
+                    args.clone(),
+                    ModelType::DolphinCoder,
+                ));
             }
             "/greentext" => {
                 tokio::spawn(ollama(
