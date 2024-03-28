@@ -31,7 +31,7 @@ impl fmt::Display for ModelType {
             ModelType::TinyLlama => write!(f, "tinyllama"),
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),
             ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
-            ModelType::Online => write!(f, "pplx-7b-online"),
+            ModelType::Online => write!(f, "sonar-medium-online"),
             ModelType::Solar => write!(f, "solar"),
             // ModelType::LLaVa7B => write!(f, "llava"),
             // ModelType::LLaVa13B => write!(f, "llava:13b"),
