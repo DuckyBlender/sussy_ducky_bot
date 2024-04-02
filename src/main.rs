@@ -56,6 +56,7 @@ impl Commands {
                 BotCommand::new("noviews", "Get a random video with no views (or very few views)"),
                 BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
                 BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
+                BotCommand::new("chatlgbt", "Goofy ahh bot which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/"),
             ]
         )
     }
@@ -182,6 +183,9 @@ async fn handle_command(
                     args.clone(),
                     ModelType::MistralGreentext,
                 ));
+            }
+            "/chatlgbt" => {
+                tokio::spawn(chatlgbt(bot.clone(), msg, args.clone()));
             }
             "/noviews" => {
                 tokio::spawn(noviews(bot.clone(), msg));

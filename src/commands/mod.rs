@@ -15,3 +15,6 @@ pub use perplexity::perplexity;
 
 mod noviews;
 pub use noviews::noviews;
+
+mod chatlgbt;
+pub use chatlgbt::chatlgbt;
