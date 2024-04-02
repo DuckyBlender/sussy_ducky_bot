@@ -9,7 +9,8 @@ pub enum ModelType {
     Mistral,          // dolphin-mistral
     TinyLlama,        // tinyllama
     MistralGreentext, // greentext-mistral
-    Lobotomy,         // tinyllama:1.1b-chat-v0.6-q2_K
+    Lobotomy,         // qwen:0.5b-chat-v1.5-q2
+    Solar,            // solar
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -28,9 +29,10 @@ impl fmt::Display for ModelType {
             ModelType::MistralRacist => write!(f, "racist-mistral"),
             ModelType::MistralGreentext => write!(f, "greentext-mistral"),
             ModelType::TinyLlama => write!(f, "tinyllama"),
-            ModelType::Lobotomy => write!(f, "tinyllama:1.1b-chat-v0.6-q2_K"),
+            ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),
             ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
-            ModelType::Online => write!(f, "pplx-7b-online"),
+            ModelType::Online => write!(f, "sonar-medium-online"),
+            ModelType::Solar => write!(f, "solar"),
             // ModelType::LLaVa7B => write!(f, "llava"),
             // ModelType::LLaVa13B => write!(f, "llava:13b"),
         }

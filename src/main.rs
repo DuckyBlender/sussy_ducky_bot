@@ -23,6 +23,53 @@ async fn main() {
     pretty_env_logger::init();
     info!("Starting command bot...");
 
+    // If the --download flag is present in the command line arguments, download the models
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() > 1 && args[1] == "--download" {
+        info!("Downloading models...");
+        // Run commands and make sure the models are downloaded
+        let models = [
+            ModelType::Mistral,
+            ModelType::TinyLlama,
+            ModelType::Lobotomy,
+        ];
+
+        // Run ollama pull model
+        for model in models.iter() {
+            let model = model.to_string();
+            info!("Downloading model: {}", model);
+            let output = std::process::Command::new("ollama")
+                .arg("pull")
+                .arg(&model)
+                .output()
+                .expect("Failed to download model");
+            info!("Model download output: {:?}", output);
+        }
+
+        // Create the custom models
+        let custom_models = [
+            ModelType::MistralCaveman,
+            ModelType::MistralRacist,
+            ModelType::MistralGreentext,
+        ];
+
+        // Create the model eg: ollama create caveman-mistral -f ./custom_models/caveman/Modelfile
+        for model in custom_models.iter() {
+            let model = model.to_string();
+            info!("Creating custom model: {}", model);
+            let output = std::process::Command::new("ollama")
+                .arg("create")
+                .arg(&model)
+                .arg("-f")
+                .arg(format!("./custom_models/{}/Modelfile", model))
+                .output()
+                .expect("Failed to create custom model");
+            info!("Custom model creation output: {:?}", output);
+        }
+    } else {
+        info!("Running without --download flag")
+    }
+
     let bot = Bot::from_env();
 
     let commands = Commands::new();
@@ -44,18 +91,20 @@ impl Commands {
     pub fn new() -> Self {
         Self(
             vec![
-                BotCommand::new("mistral", "Generate text using 7B dolphin-mistral LLM"),
+                BotCommand::new("coder", "Generate code using 16B dolphincoder LLM. This is the best model for coding in this bot."),
+                BotCommand::new("solar", "Generate text using the 10.7B solar LLM. This is the best general purpouse model in this bot."),
+                BotCommand::new("mistral", "Generate text using 7B dolphin-mistral LLM."),
                 BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
-                BotCommand::new("lobotomy", "Geterate text using 1.1B 2Q 480MB tinyllama:1.1b-chat-v0.6-q2_K LLM"),
-                BotCommand::new("tinyllama", "Generate text using 1.1B 8Q tinyllama-openorca LLM [EXPERIMENTAL]",),
-                BotCommand::new("greentext", "Generate a 4chan greentext about a topic [EXPERIMENTAL]"),
+                BotCommand::new("lobotomy", "Geterate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2_K LLM"),
+                BotCommand::new("tinyllama", "Generate text using 1.1B 8Q tinyllama-openorca LLM",),
+                BotCommand::new("greentext", "Generate a 4chan greentext about a topic"),
                 BotCommand::new("help", "Show available commands"),
                 BotCommand::new("ping", "Check the bot's latency"),
                 BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
                 BotCommand::new("noviews", "Get a random video with no views (or very few views)"),
-                BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
-                BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
+                // BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
+                // BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
                 BotCommand::new("chatlgbt", "Goofy ahh bot which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/"),
             ]
         )
@@ -119,6 +168,7 @@ async fn handle_command(
                     .unwrap()
                     .starts_with(&format!("{} ", status_code))
                 || msg.text().unwrap().ends_with(&format!(" {}", status_code))
+                || msg.text() == Some(status_code)
             {
                 httpcat(bot.clone(), msg.clone(), status_code.to_string()).await?;
             }
@@ -175,6 +225,9 @@ async fn handle_command(
                     args.clone(),
                     ModelType::MistralRacist,
                 ));
+            }
+            "/solar" => {
+                tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Solar));
             }
             "/greentext" => {
                 tokio::spawn(ollama(
