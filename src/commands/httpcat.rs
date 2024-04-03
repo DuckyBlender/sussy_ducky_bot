@@ -39,7 +39,7 @@ pub async fn httpcat(bot: Bot, msg: Message, args: String) -> Result<(), Request
     // Send the image
     match res {
         Ok(res) => {
-            let body = res.bytes().await?;
+            let body = res.bytes().await.unwrap();
             let buf = body.to_vec();
             let file = InputFile::memory(buf);
             bot.send_chat_action(msg.chat.id, ChatAction::UploadPhoto)

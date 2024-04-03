@@ -11,10 +11,9 @@ mod structs;
 use structs::*;
 
 mod utils;
+use std::borrow::BorrowMut;
 use tokio::io::AsyncWriteExt;
-use futures_util::StreamExt;
 use utils::{parse_command, ModelType};
-
 
 mod commands;
 use commands::*;
@@ -42,20 +41,22 @@ async fn main() {
             if model == &ModelType::Polka {
                 // This is a custom model which is not on the ollama repo
                 // Make sure if the file is downloaded first
-                if std::path::Path::new("./custom_models/polka/polka-1.1b-chat-Q8_0.gguf").exists() {
+                if std::path::Path::new("./custom_models/polka/polka-1.1b-chat-Q8_0.gguf").exists()
+                {
                     continue;
                 }
                 info!("Downloading model: polka-1.1b-chat-Q8_0.gguf");
-                
+
                 // https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true
                 // wget https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true -O ./custom_models/polka/polka-1.1b-chat-Q8_0.gguf
                 let client = reqwest::Client::new();
                 let url = "https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true";
                 let path = "./custom_models/polka/polka-1.1b-chat-Q8_0.gguf";
-                let mut stream = client.get(url).send().await.unwrap().bytes_stream();
+                let mut response = client.get(dbg!(url)).send().await.unwrap();
                 let mut file = tokio::fs::File::create(path).await.unwrap();
-                while let Some(item) = stream.next().await {
-                    file.write_buf(&mut item.unwrap()).await.unwrap();
+
+                while let Some(mut item) = response.chunk().await.unwrap() {
+                    file.write_all_buf(item.borrow_mut()).await.unwrap();
                 }
                 continue;
             }
@@ -263,7 +264,6 @@ async fn handle_command(
                 ));
             }
             "/polka" => {
-                
                 tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Polka));
             }
             "/chatlgbt" => {
