@@ -1,0 +1,17 @@
+# https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true
+FROM ./polka-1.1b-chat-Q8_0.gguf
+
+PARAMETER num_ctx 2048
+PARAMETER temperature 0.2
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+
+# set the system message
+TEMPLATE """
+<|im_start|>system
+Jesteś pomocnym asystentem.<|im_end|>
+<|im_start|>user
+{{.Prompt}}<|im_end|>
+<|im_start|>assistant
+"""
+

@@ -2,6 +2,7 @@ use log::info;
 use std::fmt;
 use teloxide::types::Message;
 
+#[derive(Debug, PartialEq)]
 pub enum ModelType {
     // Ollama (text)
     MistralCaveman,   // caveman-mistral (custom model)
@@ -11,6 +12,7 @@ pub enum ModelType {
     MistralGreentext, // greentext-mistral
     Lobotomy,         // qwen:0.5b-chat-v1.5-q2
     Solar,            // solar
+    Polka,            // polka
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -33,6 +35,7 @@ impl fmt::Display for ModelType {
             ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
             ModelType::Online => write!(f, "sonar-medium-online"),
             ModelType::Solar => write!(f, "solar"),
+            ModelType::Polka => write!(f, "polka"),
             // ModelType::LLaVa7B => write!(f, "llava"),
             // ModelType::LLaVa13B => write!(f, "llava:13b"),
         }

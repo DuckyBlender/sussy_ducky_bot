@@ -11,7 +11,10 @@ mod structs;
 use structs::*;
 
 mod utils;
+use tokio::io::AsyncWriteExt;
+use futures_util::StreamExt;
 use utils::{parse_command, ModelType};
+
 
 mod commands;
 use commands::*;
@@ -36,6 +39,26 @@ async fn main() {
 
         // Run ollama pull model
         for model in models.iter() {
+            if model == &ModelType::Polka {
+                // This is a custom model which is not on the ollama repo
+                // Make sure if the file is downloaded first
+                if std::path::Path::new("./custom_models/polka/polka-1.1b-chat-Q8_0.gguf").exists() {
+                    continue;
+                }
+                info!("Downloading model: polka-1.1b-chat-Q8_0.gguf");
+                
+                // https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true
+                // wget https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true -O ./custom_models/polka/polka-1.1b-chat-Q8_0.gguf
+                let client = reqwest::Client::new();
+                let url = "https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true";
+                let path = "./custom_models/polka/polka-1.1b-chat-Q8_0.gguf";
+                let mut stream = client.get(url).send().await.unwrap().bytes_stream();
+                let mut file = tokio::fs::File::create(path).await.unwrap();
+                while let Some(item) = stream.next().await {
+                    file.write_buf(&mut item.unwrap()).await.unwrap();
+                }
+                continue;
+            }
             let model = model.to_string();
             info!("Downloading model: {}", model);
             let output = std::process::Command::new("ollama")
@@ -51,6 +74,7 @@ async fn main() {
             ModelType::MistralCaveman,
             ModelType::MistralRacist,
             ModelType::MistralGreentext,
+            ModelType::Polka,
         ];
 
         // Create the model eg: ollama create caveman-mistral -f ./custom_models/caveman/Modelfile
@@ -106,6 +130,7 @@ impl Commands {
                 // BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
                 // BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
                 BotCommand::new("chatlgbt", "Goofy ahh bot which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/"),
+                BotCommand::new("polka", "Generate Polish text using the polka 1.1B model"),
             ]
         )
     }
@@ -236,6 +261,10 @@ async fn handle_command(
                     args.clone(),
                     ModelType::MistralGreentext,
                 ));
+            }
+            "/polka" => {
+                
+                tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Polka));
             }
             "/chatlgbt" => {
                 tokio::spawn(chatlgbt(bot.clone(), msg, args.clone()));
