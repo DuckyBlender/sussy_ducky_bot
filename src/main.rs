@@ -11,8 +11,6 @@ mod structs;
 use structs::*;
 
 mod utils;
-use std::borrow::BorrowMut;
-use tokio::io::AsyncWriteExt;
 use utils::{parse_command, ModelType};
 
 mod commands;
@@ -49,15 +47,14 @@ async fn main() {
 
                 // https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true
                 // wget https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true -O ./custom_models/polka/polka-1.1b-chat-Q8_0.gguf
-                let client = reqwest::Client::new();
-                let url = "https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true";
-                let path = "./custom_models/polka/polka-1.1b-chat-Q8_0.gguf";
-                let mut response = client.get(dbg!(url)).send().await.unwrap();
-                let mut file = tokio::fs::File::create(path).await.unwrap();
-
-                while let Some(mut item) = response.chunk().await.unwrap() {
-                    file.write_all_buf(item.borrow_mut()).await.unwrap();
-                }
+                // curl https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true -o ./custom_models/polka/polka-1.1b-chat-Q8_0.gguf
+                let output = std::process::Command::new("wget")
+                    .arg("https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true")
+                    .arg("-O")
+                    .arg("./custom_models/polka/polka-1.1b-chat-Q8_0.gguf")
+                    .output()
+                    .expect("Failed to download model");
+                info!("Model download output: {:?}", output);
                 continue;
             }
             let model = model.to_string();
