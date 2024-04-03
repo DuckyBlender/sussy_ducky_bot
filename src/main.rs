@@ -28,11 +28,7 @@ async fn main() {
     if args.len() > 1 && args[1] == "--download" {
         info!("Downloading models...");
         // Run commands and make sure the models are downloaded
-        let models = [
-            ModelType::Mistral,
-            ModelType::TinyLlama,
-            ModelType::Lobotomy,
-        ];
+        let models = ModelType::return_all();
 
         // Run ollama pull model
         for model in models.iter() {

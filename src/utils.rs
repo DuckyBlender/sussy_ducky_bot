@@ -1,8 +1,9 @@
+use enum_iterator::Sequence;
 use log::info;
 use std::fmt;
 use teloxide::types::Message;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
     // Ollama (text)
     MistralCaveman,   // caveman-mistral (custom model)
@@ -21,6 +22,13 @@ pub enum ModelType {
     // Perplexity (online)
     Mixtral, // mixtral-8x7b-instruct
     Online,  // pplx-7b-online
+}
+
+impl ModelType {
+    pub fn return_all() -> Vec<ModelType> {
+        let all = enum_iterator::all::<ModelType>().into_iter().collect();
+        return all;
+    }
 }
 
 impl fmt::Display for ModelType {
