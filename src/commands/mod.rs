@@ -18,3 +18,6 @@ pub use noviews::noviews;
 
 mod chatlgbt;
 pub use chatlgbt::chatlgbt;
+
+mod groq;
+pub use groq::groq;

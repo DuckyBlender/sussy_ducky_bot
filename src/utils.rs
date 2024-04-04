@@ -6,46 +6,47 @@ use teloxide::types::Message;
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
     // Ollama (text)
-    MistralCaveman,   // caveman-mistral (custom model)
-    MistralRacist,    // racist-mistral (custom model)
-    Mistral,          // dolphin-mistral
-    TinyLlama,        // tinyllama
-    MistralGreentext, // greentext-mistral
-    Lobotomy,         // qwen:0.5b-chat-v1.5-q2
-    Solar,            // solar
-    Polka,            // polka
+    MistralCaveman, // caveman-mistral (custom model)
+    MistralRacist,  // racist-mistral (custom model)
+    Mistral,        // dolphin-mistral
+    TinyLlama,      // tinyllama
+    Lobotomy,       // qwen:0.5b-chat-v1.5-q2
+    Solar,          // solar
+    Polka,          // polka
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
     // LLaVa13B, // llava:13b
 
     // Perplexity (online)
-    Mixtral, // mixtral-8x7b-instruct
-    Online,  // pplx-7b-online
+    // Mixtral, // mixtral-8x7b-instruct
+    Online, // pplx-7b-online
+
+    // Groq
+    Mixtral, // mixtral-8x7b-32768
+    Gemma,   // gemma-7b-it
 }
 
 impl ModelType {
     pub fn return_all() -> Vec<ModelType> {
-        let all = enum_iterator::all::<ModelType>().into_iter().collect();
-        return all;
+        enum_iterator::all::<ModelType>().collect()
     }
 }
 
 impl fmt::Display for ModelType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ModelType::Mistral => write!(f, "dolphin-mistral"),
-            ModelType::MistralCaveman => write!(f, "caveman-mistral"),
-            ModelType::MistralRacist => write!(f, "racist-mistral"),
-            ModelType::MistralGreentext => write!(f, "greentext-mistral"),
-            ModelType::TinyLlama => write!(f, "tinyllama"),
-            ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),
-            ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"),
-            ModelType::Online => write!(f, "sonar-medium-online"),
-            ModelType::Solar => write!(f, "solar"),
-            ModelType::Polka => write!(f, "polka"),
-            // ModelType::LLaVa7B => write!(f, "llava"),
-            // ModelType::LLaVa13B => write!(f, "llava:13b"),
+            ModelType::Mistral => write!(f, "dolphin-mistral"), // for ollama
+            ModelType::MistralCaveman => write!(f, "caveman-mistral"), // for ollama
+            ModelType::MistralRacist => write!(f, "racist-mistral"), // for ollama
+            ModelType::TinyLlama => write!(f, "tinyllama"),     // for ollama
+            ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"), // ollama
+            // ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"), // for perplexity.ai
+            ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"), // for groq.com
+            ModelType::Gemma => write!(f, "gemma-7b-it"),          // for groq.com
+            ModelType::Online => write!(f, "sonar-medium-online"), // for perplexity.ai
+            ModelType::Solar => write!(f, "solar"),                // for ollama
+            ModelType::Polka => write!(f, "polka"),                // for ollama
         }
     }
 }

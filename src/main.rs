@@ -1,11 +1,11 @@
 // Import necessary dependencies
 use log::{error, info};
+use std::borrow::BorrowMut;
 use teloxide::{
     prelude::*,
     types::{BotCommand, True},
     RequestError,
 };
-use std::borrow::BorrowMut;
 use tokio::io::AsyncWriteExt;
 
 // Import custom modules
@@ -70,7 +70,6 @@ async fn main() {
         let custom_models = [
             ModelType::MistralCaveman,
             ModelType::MistralRacist,
-            ModelType::MistralGreentext,
             ModelType::Polka,
         ];
 
@@ -114,18 +113,18 @@ impl Commands {
             vec![
                 BotCommand::new("coder", "Generate code using 16B dolphincoder LLM. This is the best model for coding in this bot."),
                 BotCommand::new("solar", "Generate text using the 10.7B solar LLM. This is the best general purpouse model in this bot."),
-                BotCommand::new("mistral", "Generate text using 7B dolphin-mistral LLM."),
+                BotCommand::new("mistral", "Generate text using 7B uncensored dolphin-mistral LLM."),
                 BotCommand::new("caveman", "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("racist", "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"),
                 BotCommand::new("lobotomy", "Geterate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2_K LLM"),
                 BotCommand::new("tinyllama", "Generate text using 1.1B 8Q tinyllama-openorca LLM",),
-                BotCommand::new("greentext", "Generate a 4chan greentext about a topic"),
                 BotCommand::new("help", "Show available commands"),
                 BotCommand::new("ping", "Check the bot's latency"),
                 BotCommand::new("httpcat", "Get an image of a cat for a given HTTP status code",),
                 BotCommand::new("noviews", "Get a random video with no views (or very few views)"),
                 // BotCommand::new("online", "Generate text using the pplx-7b-online model from PerplexityAI [TESTING]"),
-                // BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from PerplexityAI [TESTING]"),
+                BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from groq.com"),
+                BotCommand::new("gemma", "Generate text using the gemma-7b-it model from groq.com"),
                 BotCommand::new("chatlgbt", "Goofy ahh bot which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/"),
                 BotCommand::new("polka", "Generate Polish text using the polka 1.1B model"),
             ]
@@ -233,12 +232,10 @@ async fn handle_command(
                 ));
             }
             "/mixtral" => {
-                tokio::spawn(perplexity(
-                    bot.clone(),
-                    msg,
-                    args.clone(),
-                    ModelType::Mixtral,
-                ));
+                tokio::spawn(groq(bot.clone(), msg, args.clone(), ModelType::Mixtral));
+            }
+            "/gemma" => {
+                tokio::spawn(groq(bot.clone(), msg, args.clone(), ModelType::Gemma));
             }
             "/racist" => {
                 tokio::spawn(ollama(
@@ -250,14 +247,6 @@ async fn handle_command(
             }
             "/solar" => {
                 tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Solar));
-            }
-            "/greentext" => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg,
-                    args.clone(),
-                    ModelType::MistralGreentext,
-                ));
             }
             "/polka" => {
                 tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Polka));
