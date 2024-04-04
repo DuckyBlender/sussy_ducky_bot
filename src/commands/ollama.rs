@@ -37,11 +37,7 @@ pub async fn ollama(
 
     let mut message = msg.clone();
     while let Some(reply) = message.reply_to_message() {
-        let role = if history.len() % 2 == 0 {
-            "assistant"
-        } else {
-            "user"
-        };
+        let role = "user";
         // Remove the command from the message using the remove_prefix function
         let content = remove_prefix(
             reply.clone(),

@@ -19,7 +19,7 @@ If you want to use the bot you can add it to your group by clicking [here](https
 ## Todo
 
 - [ ] MarkdownV2 support
-- [ ] Refactor bot so it's more modular and more readable (this code is terrible)
+- [ ] Refactor bot so it's more modular and more readable (this code is terrible). Maybe even make it serverless?
 
 ## Prerequisites
 
