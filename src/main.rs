@@ -1,12 +1,12 @@
 // Import necessary dependencies
 use log::{error, info};
-use std::borrow::BorrowMut;
+
 use teloxide::{
     prelude::*,
     types::{BotCommand, True},
     RequestError,
 };
-use tokio::io::AsyncWriteExt;
+
 
 // Import custom modules
 mod structs;
@@ -30,47 +30,47 @@ async fn main() {
     if args.len() > 1 && args[1] == "--download" {
         info!("Downloading models...");
         // Run commands and make sure the models are downloaded
-        let models = ModelType::return_all();
+        let _models = ModelType::return_all();
 
         // Run ollama pull model
-        for model in models.iter() {
-            if model == &ModelType::Polka {
-                // This is a custom model which is not on the ollama repo
-                // Make sure if the file is downloaded first
-                if std::path::Path::new("./custom_models/polka/polka-1.1b-chat-Q8_0.gguf").exists()
-                {
-                    continue;
-                }
-                info!("Downloading model: polka-1.1b-chat-Q8_0.gguf");
+        // THIS CODE HAS BEEN COMMENTED IN CASE I ADD A MODEL WHICH NEEDS MANUAL DOWNLOAD
+        // for model in models.iter() {
+        //     if model == &ModelType::Polka {
+        //         // This is a custom model which is not on the ollama repo
+        //         // Make sure if the file is downloaded first
+        //         if std::path::Path::new("./custom_models/polka/polka-1.1b-chat-Q8_0.gguf").exists()
+        //         {
+        //             continue;
+        //         }
+        //         info!("Downloading model: polka-1.1b-chat-Q8_0.gguf");
 
-                // https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true
-                // wget https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true -O ./custom_models/polka/polka-1.1b-chat-Q8_0.gguf
-                let client = reqwest::Client::new();
-                let url = "https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true";
-                let path = "./custom_models/polka/polka-1.1b-chat-Q8_0.gguf";
-                let mut response = client.get(dbg!(url)).send().await.unwrap();
-                let mut file = tokio::fs::File::create(path).await.unwrap();
+        //         // https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true
+        //         // wget https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true -O ./custom_models/polka/polka-1.1b-chat-Q8_0.gguf
+        //         let client = reqwest::Client::new();
+        //         let url = "https://huggingface.co/eryk-mazus/polka-1.1b-chat-gguf/resolve/main/polka-1.1b-chat-Q8_0.gguf?download=true";
+        //         let path = "./custom_models/polka/polka-1.1b-chat-Q8_0.gguf";
+        //         let mut response = client.get(dbg!(url)).send().await.unwrap();
+        //         let mut file = tokio::fs::File::create(path).await.unwrap();
 
-                while let Some(mut item) = response.chunk().await.unwrap() {
-                    file.write_all_buf(item.borrow_mut()).await.unwrap();
-                }
-                continue;
-            }
-            let model = model.to_string();
-            info!("Downloading model: {}", model);
-            let output = std::process::Command::new("ollama")
-                .arg("pull")
-                .arg(&model)
-                .output()
-                .expect("Failed to download model");
-            info!("Model download output: {:?}", output);
-        }
+        //         while let Some(mut item) = response.chunk().await.unwrap() {
+        //             file.write_all_buf(item.borrow_mut()).await.unwrap();
+        //         }
+        //         continue;
+        //     }
+        //     let model = model.to_string();
+        //     info!("Downloading model: {}", model);
+        //     let output = std::process::Command::new("ollama")
+        //         .arg("pull")
+        //         .arg(&model)
+        //         .output()
+        //         .expect("Failed to download model");
+        //     info!("Model download output: {:?}", output);
+        // }
 
         // Create the custom models
         let custom_models = [
             ModelType::MistralCaveman,
             ModelType::MistralRacist,
-            ModelType::Polka,
         ];
 
         // Create the model eg: ollama create caveman-mistral -f ./custom_models/caveman/Modelfile
@@ -126,7 +126,6 @@ impl Commands {
                 BotCommand::new("mixtral", "Generate text using the mixtral-8x7b-instruct model from groq.com"),
                 BotCommand::new("gemma", "Generate text using the gemma-7b-it model from groq.com"),
                 BotCommand::new("chatlgbt", "Goofy ahh bot which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/"),
-                BotCommand::new("polka", "Generate Polish text using the polka 1.1B model"),
             ]
         )
     }
@@ -247,9 +246,6 @@ async fn handle_command(
             }
             "/solar" => {
                 tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Solar));
-            }
-            "/polka" => {
-                tokio::spawn(ollama(bot.clone(), msg, args.clone(), ModelType::Polka));
             }
             "/chatlgbt" => {
                 tokio::spawn(chatlgbt(bot.clone(), msg, args.clone()));

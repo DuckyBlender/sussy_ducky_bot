@@ -12,7 +12,6 @@ pub enum ModelType {
     TinyLlama,      // tinyllama
     Lobotomy,       // qwen:0.5b-chat-v1.5-q2
     Solar,          // solar
-    Polka,          // polka
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -46,7 +45,6 @@ impl fmt::Display for ModelType {
             ModelType::Gemma => write!(f, "gemma-7b-it"),          // for groq.com
             ModelType::Online => write!(f, "sonar-medium-online"), // for perplexity.ai
             ModelType::Solar => write!(f, "solar"),                // for ollama
-            ModelType::Polka => write!(f, "polka"),                // for ollama
         }
     }
 }
