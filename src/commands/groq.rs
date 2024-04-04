@@ -28,6 +28,9 @@ pub async fn groq(
     };
 
     // groq is too fast for generating message 🔥
+    // Send "typing indicator" to show that the bot is typing
+    bot.send_chat_action(msg.chat.id, teloxide::types::ChatAction::Typing)
+        .await?;
 
     let now = std::time::Instant::now();
     // Send the request to the Perplexity API
