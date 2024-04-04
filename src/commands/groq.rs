@@ -1,11 +1,6 @@
 use log::{error, info};
 use teloxide::payloads::SendMessageSetters;
-use teloxide::prelude::*;
-use teloxide::{
-    requests::Requester,
-    types::{ChatAction, Message},
-    Bot, RequestError,
-};
+use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
 use crate::structs::{PerplexityRequest, PerplexityRequestMessage};
 use crate::utils::ModelType;
@@ -32,16 +27,7 @@ pub async fn groq(
         prompt.to_owned()
     };
 
-    // Send generating... message
-    let generating_message = bot
-        .send_message(msg.chat.id, "Generating...")
-        .reply_to_message_id(msg.id)
-        .disable_notification(true)
-        .await?;
-
-    // Send typing indicator
-    bot.send_chat_action(msg.chat.id, ChatAction::Typing)
-        .await?;
+    // groq is too fast for generating message 🔥
 
     let now = std::time::Instant::now();
     // Send the request to the Perplexity API
@@ -74,8 +60,6 @@ pub async fn groq(
         }
         Err(e) => {
             error!("Error sending request: {}", e);
-            bot.delete_message(generating_message.chat.id, generating_message.id)
-                .await?;
             bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
                 .await?;
@@ -96,8 +80,6 @@ pub async fn groq(
                 "Replying to message using groq. Generation took {}s",
                 (elapsed * 10.0).round() / 10.0
             );
-            bot.delete_message(generating_message.chat.id, generating_message.id)
-                .await?;
             bot.send_message(msg.chat.id, content)
                 .reply_to_message_id(msg.id)
                 .await?;
@@ -105,8 +87,6 @@ pub async fn groq(
         }
         Err(e) => {
             error!("Error parsing response: {}", e);
-            bot.delete_message(generating_message.chat.id, generating_message.id)
-                .await?;
             bot.send_message(msg.chat.id, format!("Error: {e}"))
                 .reply_to_message_id(msg.id)
                 .await?;
