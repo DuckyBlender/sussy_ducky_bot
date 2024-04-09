@@ -30,7 +30,7 @@ The bot supports the following commands:
 - [x] Code refactor
 - [x] Streaming support
 - [x] Auto-delete invalid commands after 5 seconds (requires permission)
-- [x] MarkdownV2 support
+- [ ] MarkdownV2 support
 - [ ] Maybe even make it serverless?
 
 ## Prerequisites

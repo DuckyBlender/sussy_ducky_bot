@@ -1,11 +1,6 @@
 use enum_iterator::Sequence;
 use log::info;
-use teloxide::{
-    payloads::{EditMessageTextSetters, SendMessageSetters},
-    requests::Requester,
-    types::Message,
-    Bot, RequestError,
-};
+
 
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
@@ -103,77 +98,5 @@ pub fn setup_models() {
             .output()
             .expect("Failed to create custom model");
         info!("Model {} created!", model);
-    }
-}
-
-pub async fn try_edit_markdownv2(
-    bot: &Bot,
-    generating_message: &Message,
-    entire_response: String,
-) -> Result<(), RequestError> {
-    // Escape some characters
-    let escape_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
-    let mut entire_response = entire_response.clone();
-    for c in escape_chars.iter() {
-        entire_response = entire_response.replace(*c, &format!("\\{}", c));
-    }
-
-    // Edit the message one last time
-    let res = bot
-        .edit_message_text(
-            generating_message.chat.id,
-            generating_message.id,
-            entire_response.clone(),
-        )
-        .parse_mode(teloxide::types::ParseMode::MarkdownV2)
-        .await;
-
-    // If there is a problem, send the response without markdown
-    match res {
-        Ok(_) => {
-            info!("Markdown-formatted message was edited successfully");
-            Ok(())
-        }
-        Err(e) => {
-            info!("Error editing message: {}", e);
-            bot.edit_message_text(
-                generating_message.chat.id,
-                generating_message.id,
-                entire_response,
-            )
-            .await?;
-            Ok(())
-        }
-    }
-}
-
-// Tries to send a message with markdownv2 formatting. If it fails, it sends the message without markdownv2 formatting
-pub async fn try_send_markdownv2(bot: &Bot, user_message: &Message, entire_response: String) {
-    // Escape some characters
-    let escape_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
-    let mut entire_response = entire_response.clone();
-    for c in escape_chars.iter() {
-        entire_response = entire_response.replace(*c, &format!("\\{}", c));
-    }
-
-    // Try to send the message with markdownv2 formatting
-    let res = bot
-        .send_message(user_message.chat.id, entire_response.clone())
-        .reply_to_message_id(user_message.id)
-        .parse_mode(teloxide::types::ParseMode::MarkdownV2)
-        .await;
-
-    // If there is a problem, send the response without markdown
-    match res {
-        Ok(_) => {
-            info!("Markdown-formatted message was sent successfully");
-        }
-        Err(e) => {
-            info!("Error sending message: {}", e);
-            bot.send_message(user_message.chat.id, entire_response)
-                .reply_to_message_id(user_message.id)
-                .await
-                .expect("Failed to send message");
-        }
     }
 }

@@ -11,7 +11,7 @@ use teloxide::{
 };
 use tokio_stream::StreamExt;
 
-use crate::utils::{try_edit_markdownv2, ModelType};
+use crate::utils::ModelType;
 
 const INTERVAL_SEC: u64 = 5;
 
@@ -152,7 +152,12 @@ pub async fn ollama(
             info!("Final response received");
 
             // Edit the message one last time
-            try_edit_markdownv2(&bot, &generating_message, entire_response).await?;
+            bot.edit_message_text(
+                generating_message.chat.id,
+                generating_message.id,
+                current_string.clone(),
+            )
+            .await?;
 
             // TODO: Stop the typing indicator somehow
             break;

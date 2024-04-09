@@ -1,8 +1,8 @@
 // curl -X POST -d "input=put some text here" https://chatlgbtapi.bemani.radom.pl/
 
-use teloxide::{types::Message, Bot, RequestError};
-
-use crate::utils::try_send_markdownv2;
+use teloxide::{
+    payloads::SendMessageSetters, requests::Requester, types::Message, Bot, RequestError,
+};
 
 pub async fn chatlgbt(bot: Bot, msg: Message, prompt: String) -> Result<(), RequestError> {
     // This is too fast for the typing indicator
@@ -20,6 +20,8 @@ pub async fn chatlgbt(bot: Bot, msg: Message, prompt: String) -> Result<(), Requ
         .unwrap();
 
     // Send the response
-    try_send_markdownv2(&bot, &msg, body).await;
+    bot.send_message(msg.chat.id, body)
+        .reply_to_message_id(msg.id)
+        .await?;
     Ok(())
 }

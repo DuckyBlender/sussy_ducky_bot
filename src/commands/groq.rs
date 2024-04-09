@@ -3,7 +3,7 @@ use teloxide::payloads::SendMessageSetters;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
 use crate::structs::{PerplexityRequest, PerplexityRequestMessage};
-use crate::utils::{try_send_markdownv2, ModelType};
+use crate::utils::ModelType;
 
 pub async fn groq(
     bot: Bot,
@@ -83,7 +83,9 @@ pub async fn groq(
                 "Replying to message using groq. Generation took {}s",
                 (elapsed * 10.0).round() / 10.0
             );
-            try_send_markdownv2(&bot, &msg, content.to_string()).await;
+            bot.send_message(msg.chat.id, content)
+                .reply_to_message_id(msg.id)
+                .await?;
             Ok(())
         }
         Err(e) => {

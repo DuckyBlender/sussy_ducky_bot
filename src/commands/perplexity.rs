@@ -8,7 +8,7 @@ use teloxide::{
 };
 
 use crate::structs::{PerplexityRequest, PerplexityRequestMessage};
-use crate::utils::{try_send_markdownv2, ModelType};
+use crate::utils::ModelType;
 
 pub async fn perplexity(
     bot: Bot,
@@ -104,7 +104,9 @@ pub async fn perplexity(
             );
             bot.delete_message(generating_message.chat.id, generating_message.id)
                 .await?;
-            try_send_markdownv2(&bot, &msg, content.to_string()).await;
+            bot.send_message(msg.chat.id, content)
+                .reply_to_message_id(msg.id)
+                .await?;
             Ok(())
         }
         Err(e) => {
