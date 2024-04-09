@@ -24,8 +24,7 @@ async fn main() {
     if args.len() > 1 && args[1] == "--download" {
         info!("Running with --download flag");
         setup_models();
-    }
-        else {
+    } else {
         info!("Running without --download flag")
     }
 
@@ -35,8 +34,12 @@ async fn main() {
         // .branch(Update::filter_callback_query().endpoint(callback_handler))
         .branch(Update::filter_message().endpoint(handler));
     // Start the bot's event loop
+    info!(
+        "{} has started!",
+        bot.get_me().send().await.unwrap().user.username.unwrap()
+    );
     Dispatcher::builder(bot, handler)
-        .enable_ctrlc_handler()       
+        .enable_ctrlc_handler()
         .build()
         .dispatch()
         .await;

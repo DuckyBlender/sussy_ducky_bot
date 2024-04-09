@@ -1,7 +1,5 @@
 // curl -X POST -d "input=put some text here" https://chatlgbtapi.bemani.radom.pl/
 
-use teloxide::payloads::SendMessageSetters;
-
 use teloxide::{types::Message, Bot, RequestError};
 
 use crate::utils::try_send_markdownv2;

@@ -1,7 +1,10 @@
 use enum_iterator::Sequence;
 use log::info;
 use teloxide::{
-    payloads::{EditMessageTextSetters, SendMessageSetters}, requests::Requester, types::Message, Bot, RequestError,
+    payloads::{EditMessageTextSetters, SendMessageSetters},
+    requests::Requester,
+    types::Message,
+    Bot, RequestError,
 };
 
 #[derive(Debug, PartialEq, Sequence)]
@@ -79,13 +82,13 @@ pub fn setup_models() {
     // Download all of the ollama models
     for model in ollama_models.iter() {
         let model = model.to_string();
-        info!("Downloading model: {}", model);
+        info!("Downloading/verifying model: {}", model);
         let _ = std::process::Command::new("ollama")
             .arg("pull")
             .arg(&model)
             .output()
             .expect("Failed to download model");
-        info!("Model {} downloaded!", model);
+        info!("Model {} downloaded/verified!", model);
     }
 
     // Create the model eg: ollama create caveman-mistral -f ./custom_models/caveman/Modelfile
@@ -102,8 +105,6 @@ pub fn setup_models() {
         info!("Model {} created!", model);
     }
 }
-
-
 
 pub async fn try_edit_markdownv2(
     bot: &Bot,
@@ -140,11 +141,7 @@ pub async fn try_edit_markdownv2(
 }
 
 // Tries to send a message with markdownv2 formatting. If it fails, it sends the message without markdownv2 formatting
-pub async fn try_send_markdownv2(
-    bot: &Bot,
-    user_message: &Message,
-    entire_response: String
-) {
+pub async fn try_send_markdownv2(bot: &Bot, user_message: &Message, entire_response: String) {
     // Try to send the message with markdownv2 formatting
     let res = bot
         .send_message(user_message.chat.id, entire_response.clone())
