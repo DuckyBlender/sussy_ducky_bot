@@ -78,19 +78,6 @@ pub async fn ollama(
 
                     current_string = entire_response.clone();
 
-                    // If the message is last, force edit the message
-                    // Don't know if this actually works
-                    if ele.final_data.is_some() {
-                        info!("Final response received using method 1");
-                        bot.edit_message_text(
-                            generating_message.chat.id,
-                            generating_message.id,
-                            current_string.clone(),
-                        )
-                        .await?;
-                        break;
-                    }
-
                     // Edit the message
                     bot.edit_message_text(
                         generating_message.chat.id,
@@ -109,13 +96,15 @@ pub async fn ollama(
             }
         } else {
             // If the stream has no more responses, break the loop
-            info!("Final response received using method 2");
+            info!("Final response received");
             bot.edit_message_text(
                 generating_message.chat.id,
                 generating_message.id,
                 entire_response,
             )
             .await?;
+
+            // TODO: Stop the typing indicator somehow
             break;
         }
     }
@@ -126,3 +115,4 @@ pub async fn ollama(
 
     Ok(())
 }
+
