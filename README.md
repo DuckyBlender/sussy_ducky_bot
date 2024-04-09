@@ -2,29 +2,42 @@
 
 ## Description
 
-This is a AI telegram bot which currently supports Mistral. It requires Ollama to run in the background. This bot is mainly for fun and learning purposes. It is probably not very useful for anything else.
+This is a Telegram bot written in Rust. It requires Ollama to run in the background. This bot is mainly for fun and learning purposes. It is probably not very useful for anything else.
 
 If you want to use the bot you can add it to your group by clicking [here](https://t.me/sussy_ducky_bot). If you want you can give it permission to delete messages.
 
 ## Features
 
-- Supports variations of Mistral 7B (and three custom prompt models)
-- Supports Tinyllama
-- Supports Solar 10.7B
-- Supports models from Perplexity AI
-- Context using replies (this currently only works with one message - the one the user is replying to)
-- Threaded responses (the bot can accept messages while it's still processing the previous one)
-- Other small gimmicks
+The bot supports the following commands:
+
+- `/solar`: Generate text using the 10.7B solar LLM. This is the best general-purpose model in this bot.
+- `/mistral` or `/m`: Generate text using 7B uncensored dolphin-mistral LLM.
+- `/caveman` or `/cv`: Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL].
+- `/racist`: Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL].
+- `/lobotomy`: Generate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2_K LLM.
+- `/tinyllama`: Generate text using 1.1B 8Q tinyllama-openorca LLM.
+- `/help`: Show available commands.
+- `/ping`: Check the bot's latency.
+- `/httpcat`: Get an image of a cat for a given HTTP status code.
+- `/noviews`: Get a random video with no views (or very few views).
+- `/mixtral`: Generate text using the mixtral-8x7b-instruct model from groq.com.
+- `/gemma`: Generate text using the gemma-7b-it model from groq.com.
+- `/chatlgbt` or `/lgbt`: Goofy ahh bot which responds with earlier user inputs.
+- `/online`: Generate text using the pplx-7b-online model from PerplexityAI [DEV ONLY].
 
 ## Todo
 
-- [ ] MarkdownV2 support
-- [ ] Refactor bot so it's more modular and more readable (this code is terrible). Maybe even make it serverless?
+- [x] Code refactor
+- [x] Streaming support
+- [x] Auto-delete invalid commands after 5 seconds (requires permission)
+- [x] MarkdownV2 support
+- [ ] Maybe even make it serverless?
 
 ## Prerequisites
 
 - At least $1 on perplexity.ai
 - Ollama (at least 8GB of ram because of the high parameter count models)
+- groq.com API key
 - AMD or NVIDIA GPU is recommended
 - Rust
 
@@ -39,7 +52,7 @@ If you want to use the bot you can add it to your group by clicking [here](https
 
 1. Set the .env from the .env.example
 2. Make sure ollama is running in the background
-3. Run the bot with `cargo run --release -- --download` (--download to download all of the models)
+3. Run the bot with `cargo run --release -- --download` (--download to automatically download all of the models)
 
 ## Contributing
 

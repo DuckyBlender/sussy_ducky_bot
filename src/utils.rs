@@ -1,6 +1,8 @@
 use enum_iterator::Sequence;
-use std::fmt;
-use teloxide::types::Message;
+use log::info;
+use teloxide::{
+    payloads::{EditMessageTextSetters, SendMessageSetters}, requests::Requester, types::Message, Bot, RequestError,
+};
 
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
@@ -52,13 +54,13 @@ impl ModelType {
     }
 }
 
-impl fmt::Display for ModelType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for ModelType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             ModelType::Mistral => write!(f, "dolphin-mistral"), // for ollama
             ModelType::MistralCaveman => write!(f, "caveman-mistral"), // for ollama
             ModelType::MistralRacist => write!(f, "racist-mistral"), // for ollama
-            ModelType::TinyLlama => write!(f, "tinyllama:1.1b-chat-v0.6-q8_0"),     // for ollama
+            ModelType::TinyLlama => write!(f, "tinyllama:1.1b-chat-v0.6-q8_0"), // for ollama
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"), // ollama
             // ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"), // for perplexity.ai
             ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"), // for groq.com
@@ -69,18 +71,98 @@ impl fmt::Display for ModelType {
     }
 }
 
-pub fn parse_command(msg: Message, bot_name: String) -> (Option<String>, Option<String>) {
-    let text = msg.text().unwrap_or("");
-    let mut iter = text.splitn(2, ' ');
-    let command = iter.next().map(std::string::ToString::to_string);
-    let args = iter.next().map(std::string::ToString::to_string);
+pub fn setup_models() {
+    // Get all of the ollama models
+    let custom_models = ModelType::return_custom();
+    let ollama_models = ModelType::return_ollama();
 
-    match &command {
-        Some(command) if command.ends_with(&bot_name) => {
-            let command = &command[..command.len() - bot_name.len() - 1]; // -1 to remove @
-            (Some(command.to_string()), args)
+    // Download all of the ollama models
+    for model in ollama_models.iter() {
+        let model = model.to_string();
+        info!("Downloading model: {}", model);
+        let _ = std::process::Command::new("ollama")
+            .arg("pull")
+            .arg(&model)
+            .output()
+            .expect("Failed to download model");
+        info!("Model {} downloaded!", model);
+    }
+
+    // Create the model eg: ollama create caveman-mistral -f ./custom_models/caveman/Modelfile
+    for model in custom_models.iter() {
+        let model = model.to_string();
+        info!("Creating custom model: {}", model);
+        let _ = std::process::Command::new("ollama")
+            .arg("create")
+            .arg(&model)
+            .arg("-f")
+            .arg(format!("./custom_models/{}/Modelfile", model))
+            .output()
+            .expect("Failed to create custom model");
+        info!("Model {} created!", model);
+    }
+}
+
+
+
+pub async fn try_edit_markdownv2(
+    bot: &Bot,
+    generating_message: &Message,
+    entire_response: String,
+) -> Result<(), RequestError> {
+    // Edit the message one last time
+    let res = bot
+        .edit_message_text(
+            generating_message.chat.id,
+            generating_message.id,
+            entire_response.clone(),
+        )
+        .parse_mode(teloxide::types::ParseMode::MarkdownV2)
+        .await;
+
+    // If there is a problem, send the response without markdown
+    match res {
+        Ok(_) => {
+            info!("Markdown-formatted message was edited successfully");
+            Ok(())
         }
-        Some(command) if !command.contains('@') => (Some(command.to_string()), args),
-        _ => (None, None),
+        Err(e) => {
+            info!("Error editing message: {}", e);
+            bot.edit_message_text(
+                generating_message.chat.id,
+                generating_message.id,
+                entire_response,
+            )
+            .await?;
+            Ok(())
+        }
+    }
+}
+
+// Tries to send a message with markdownv2 formatting. If it fails, it sends the message without markdownv2 formatting
+pub async fn try_send_markdownv2(
+    bot: &Bot,
+    user_message: &Message,
+    entire_response: String
+) {
+    // Try to send the message with markdownv2 formatting
+    let res = bot
+        .send_message(user_message.chat.id, entire_response.clone())
+        .reply_to_message_id(user_message.id)
+        .parse_mode(teloxide::types::ParseMode::MarkdownV2)
+        .await;
+
+    // If there is a problem, send the response without markdown
+    match res {
+        Ok(_) => {
+            info!("Markdown-formatted message was sent successfully");
+        }
+        Err(e) => {
+            info!("Error sending message: {}", e);
+            bot.send_message(user_message.chat.id, entire_response)
+                .reply_to_message_id(user_message.id)
+                .await
+                .expect("Failed to send message");
+        }
     }
 }

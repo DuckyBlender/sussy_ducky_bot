@@ -3,13 +3,13 @@ use teloxide::prelude::*;
 use teloxide::requests::ResponseResult;
 
 use teloxide::types::ParseMode;
+use teloxide::utils::command::BotCommands;
 use teloxide::{types::Message, Bot};
 
-use crate::Commands;
+use crate::Command;
 
 pub async fn help(bot: Bot, msg: Message) -> ResponseResult<Message> {
-    let help_text = Commands::new().help_message();
-    bot.send_message(msg.chat.id, help_text)
+    bot.send_message(msg.chat.id, Command::descriptions().to_string())
         .reply_to_message_id(msg.id)
         .parse_mode(ParseMode::Html)
         .await
