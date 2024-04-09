@@ -1,14 +1,19 @@
-use log::{error, info};
+use log::info;
+use ollama_rs::{
+    generation::completion::{request::GenerationRequest, GenerationResponseStream},
+    Ollama,
+};
 use teloxide::payloads::SendMessageSetters;
-
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
     Bot, RequestError,
 };
+use tokio_stream::StreamExt;
 
-use crate::utils::{remove_prefix, ModelType};
-use crate::{OllamaChatRequest, OllamaChatRequestMessage, OllamaChatResponse};
+use crate::utils::ModelType;
+
+const INTERVAL_SEC: u64 = 5;
 
 pub async fn ollama(
     bot: Bot,
@@ -17,54 +22,6 @@ pub async fn ollama(
     model_type: ModelType,
 ) -> Result<(), RequestError> {
     info!("Starting ollama function");
-
-    // Form the OllamaChatRequest object
-    let mut ollama_request = OllamaChatRequest {
-        model: ModelType::to_string(&model_type),
-        messages: vec![],
-        stream: false,
-    };
-
-    // Add the prompt to the request
-    ollama_request.messages.push(OllamaChatRequestMessage {
-        role: "user".to_string(),
-        content: prompt,
-    });
-
-    // Get the prompt and add the replies as history. Bot is "assistant" and user is "user".
-    // Sadly, this can only work with one message. This is because the bot can't get the replies of the replies.
-    let mut history = vec![];
-
-    let mut message = msg.clone();
-    while let Some(reply) = message.reply_to_message() {
-        let role = "user";
-        // Remove the command from the message using the remove_prefix function
-        let content = remove_prefix(
-            reply.clone(),
-            bot.get_me().await.unwrap().username.clone().unwrap(),
-        );
-        history.push((role, content));
-        message = reply.clone();
-    }
-
-    // Add the history to the request
-    for (role, content) in history {
-        ollama_request.messages.push(OllamaChatRequestMessage {
-            role: role.to_string(),
-            content: content.to_string(),
-        });
-    }
-
-    // Reverse the messages so that the prompt is first
-    ollama_request.messages.reverse();
-
-    // If the prompt is empty, return an error
-    if ollama_request.messages[0].content.is_empty() {
-        bot.send_message(msg.chat.id, "Error: Prompt is empty")
-            .reply_to_message_id(msg.id)
-            .await?;
-        return Ok(());
-    }
 
     // Send a message to the chat to show that the bot is generating a response
     let generating_message = bot
@@ -78,60 +35,58 @@ pub async fn ollama(
         .await?;
 
     // Log the request (as JSON)
-    info!("Sending request to ollama: {:#?}", ollama_request);
+    info!("Sending request to ollama using model {} and length: {}", model_type, prompt.len());
 
-    // Send the request
-    let now = std::time::Instant::now();
-    let res = reqwest::Client::new()
-        .post("http://localhost:11434/api/chat")
-        .json(&ollama_request)
-        .send()
-        .await;
-    let elapsed = now.elapsed().as_secs_f32();
+    // Send the stream request using ollama-rs
+    let before_request   = std::time::Instant::now();
 
-    match res {
-        Ok(_) => {
-            info!("Ollama request was successful");
-        }
-        Err(e) => {
-            error!("Error sending request: {}", e);
-            bot.send_message(msg.chat.id, format!("Error: {e}"))
-                .reply_to_message_id(msg.id)
-                .await?;
-            return Ok(());
-        }
-    };
+    let ollama = Ollama::default();
+    let request = GenerationRequest::new(model_type.to_string(), prompt);
+    let mut stream: GenerationResponseStream = ollama.generate_stream(request).await.unwrap();
 
-    // Parse the response
-    let res = res.unwrap().json::<OllamaChatResponse>().await;
+    // Create a repeating interval that yields every 5 seconds
+    let mut now = std::time::Instant::now();
 
-    // Send the response
-    match res {
-        Ok(res) => {
-            info!(
-                "Replying to message using ollama. Generation took {}s",
-                (elapsed * 10.0).round() / 10.0
-            );
+    // Create a string to hold the entire responseAppend [...] when the bot is still recieving 
+    let mut entire_response = String::new();
 
-            // Remove the "Generating response..." message
-            bot.delete_message(generating_message.chat.id, generating_message.id)
-                .await?;
+    // Parse the response and edit the message every 5 seconds
+    loop {
+        // Parse the response
+        if let Some(Ok(res)) = stream.next().await {
+            for ele in res {
+                // Append the new response to the entire response
+                entire_response.push_str(&ele.response);
+                
+                // Check if 5 seconds have passed since last edit
+                if now.elapsed().as_secs() >= INTERVAL_SEC {
+                    // Edit the message
+                    bot.edit_message_text(
+                        generating_message.chat.id,
+                        generating_message.id,
+                        entire_response.clone() + " [...]",
+                    )
+                    .await?;
 
-            // Send the response
-            bot.send_message(msg.chat.id, res.message.content)
-                .reply_to_message_id(msg.id)
-                .await?;
-            Ok(())
-        }
-        Err(e) => {
-            error!("Error parsing response: {}", e);
-            // Remove the "Generating response..." message
-            bot.delete_message(generating_message.chat.id, generating_message.id)
-                .await?;
-            bot.send_message(msg.chat.id, format!("Error: {e}"))
-                .reply_to_message_id(msg.id)
-                .await?;
-            Ok(())
+                    // Reset the timer
+                    now = std::time::Instant::now();
+                }
+            }
+        } else {
+            // If the stream has no more responses, break the loop
+            bot.edit_message_text(
+                generating_message.chat.id,
+                generating_message.id,
+                entire_response,
+            )
+            .await?;
+            break;
         }
     }
+
+    let elapsed = before_request.elapsed().as_secs_f32();
+
+    info!("Generated ollama response in {} seconds", elapsed);
+
+    Ok(())
 }
