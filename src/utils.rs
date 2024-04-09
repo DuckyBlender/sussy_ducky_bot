@@ -111,6 +111,13 @@ pub async fn try_edit_markdownv2(
     generating_message: &Message,
     entire_response: String,
 ) -> Result<(), RequestError> {
+    // Escape some characters
+    let escape_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+    let mut entire_response = entire_response.clone();
+    for c in escape_chars.iter() {
+        entire_response = entire_response.replace(*c, &format!("\\{}", c));
+    }
+
     // Edit the message one last time
     let res = bot
         .edit_message_text(
@@ -142,6 +149,13 @@ pub async fn try_edit_markdownv2(
 
 // Tries to send a message with markdownv2 formatting. If it fails, it sends the message without markdownv2 formatting
 pub async fn try_send_markdownv2(bot: &Bot, user_message: &Message, entire_response: String) {
+    // Escape some characters
+    let escape_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+    let mut entire_response = entire_response.clone();
+    for c in escape_chars.iter() {
+        entire_response = entire_response.replace(*c, &format!("\\{}", c));
+    }
+
     // Try to send the message with markdownv2 formatting
     let res = bot
         .send_message(user_message.chat.id, entire_response.clone())
