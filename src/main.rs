@@ -27,7 +27,7 @@ async fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 && args[1] == "--download" {
         info!("Running with --download flag");
-        setup_models();
+        setup_models().await;
     } else {
         info!("Running without --download flag")
     }
@@ -92,8 +92,6 @@ enum Command {
     Mixtral,
     #[command(description = "Generate text using the gemma-7b-it model from groq.com")]
     Gemma,
-    #[command(description = "Generate text using the codegemma 7b model")]
-    CodeGemma,
     #[command(
         alias = "stablelm",
         description = "Generate text using the stablelm2 1.6b model"
@@ -201,16 +199,6 @@ async fn handler(
                     text.to_string(),
                     ModelType::Gemma,
                     
-                ));
-            }
-            Ok(Command::CodeGemma) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg_clone,
-                    text.to_string(),
-                    ModelType::CodeGemma,
-                    ollama_client,
-                    ollama_queue,
                 ));
             }
             Ok(Command::StableLM2) => {

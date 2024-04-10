@@ -95,12 +95,16 @@ pub async fn ollama(
         .disable_notification(true)
         .await?;
 
+    let now = std::time::Instant::now();
+
     // After sending the "Generating response..." message, store it in the ollama_queue
     ollama_queue
         .lock()
         .await
         .insert(msg.chat.id, generating_message.clone());
 
+    let waiting_time = now.elapsed().as_secs_f32();
+    
     // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
@@ -200,8 +204,10 @@ pub async fn ollama(
     let elapsed = before_request.elapsed().as_secs_f32();
 
     info!(
-        "Generated ollama response in {} seconds. Model used: {}",
-        elapsed, model_type
+        "Generated ollama response in {} seconds. Waited in queue for {} seconds. Model used: {}",
+        elapsed,
+        waiting_time,
+        model_type
     );
 
     Ok(())

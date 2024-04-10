@@ -1,6 +1,6 @@
 use enum_iterator::Sequence;
 use log::info;
-
+use ollama_rs::Ollama;
 
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
@@ -11,7 +11,6 @@ pub enum ModelType {
     TinyLlama,      // tinyllama
     Lobotomy,       // qwen:0.5b-chat-v1.5-q2_K
     Solar,          // solar
-    CodeGemma,      // codegemma
     StableLM2,      // stablelm2
 
     // Ollama (image recognition)
@@ -38,7 +37,6 @@ impl ModelType {
             ModelType::TinyLlama,
             ModelType::Lobotomy,
             ModelType::Solar,
-            ModelType::CodeGemma,
             ModelType::StableLM2,
         ]
     }
@@ -67,7 +65,6 @@ impl std::fmt::Display for ModelType {
             // ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"), // for perplexity.ai
             ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"), // for groq.com
             ModelType::Gemma => write!(f, "gemma-7b-it"),          // for groq.com
-            ModelType::CodeGemma => write!(f, "codegemma"),        // for ollama
             ModelType::Online => write!(f, "sonar-medium-online"), // for perplexity.ai
             ModelType::Solar => write!(f, "solar"),                // for ollama
             ModelType::StableLM2 => write!(f, "stablelm2"),        // for ollama
@@ -75,24 +72,30 @@ impl std::fmt::Display for ModelType {
     }
 }
 
-pub fn setup_models() {
+pub async fn setup_models() {
     // Get all of the ollama models
     let custom_models = ModelType::return_custom();
     let ollama_models = ModelType::return_ollama();
+
+    let ollama = Ollama::default();
 
     // Download all of the ollama models
     for model in ollama_models.iter() {
         let model = model.to_string();
         info!("Downloading/verifying model: {}", model);
-        let _ = std::process::Command::new("ollama")
-            .arg("pull")
-            .arg(&model)
-            .output()
-            .expect("Failed to download model");
-        info!("Model {} downloaded/verified!", model);
+        let res = ollama.pull_model(model.clone(), false).await;
+        match res {
+            Ok(_) => {
+                info!("Model {} downloaded/verified!", model);
+            }
+            Err(e) => {
+                info!("Error downloading/verifying model: {}", e);
+            }
+        }
     }
 
     // Create the model eg: ollama create caveman-mistral -f ./custom_models/caveman/Modelfile
+    // Todo: change this to use ollama-rs (i tried, the path is not working for some reason)
     for model in custom_models.iter() {
         let model = model.to_string();
         info!("Creating custom model: {}", model);

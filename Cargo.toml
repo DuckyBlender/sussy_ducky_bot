@@ -19,3 +19,4 @@ rand = "^0.8"
 enum-iterator = "2.0.0"
 ollama-rs = { version = "0.1.8", features = ["stream"] }
 tokio-stream = "0.1.15"
+# indicatif = "0.17.8"
