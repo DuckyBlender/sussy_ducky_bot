@@ -113,12 +113,13 @@ async fn handler(
 ) -> Result<(), RequestError> {
     let msg_clone = msg.clone();
     if let Some(text) = msg.text() {
+        let trimmed_text = text.split_once(' ').map(|x| x.1).unwrap_or_default().trim().to_string();
         match BotCommands::parse(text, me.username()) {
             Ok(Command::Mistral) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::Mistral,
                     ollama_client,
                 ));
@@ -127,7 +128,7 @@ async fn handler(
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::MistralCaveman,
                     ollama_client,
                 ));
@@ -136,7 +137,7 @@ async fn handler(
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::TinyLlama,
                     ollama_client,
                 ));
@@ -145,7 +146,7 @@ async fn handler(
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::Lobotomy,
                     ollama_client,
                 ));
@@ -157,10 +158,10 @@ async fn handler(
                 tokio::spawn(ping(bot.clone(), msg_clone));
             }
             Ok(Command::HttpCat) => {
-                tokio::spawn(httpcat(bot.clone(), msg_clone, text.to_string()));
+                tokio::spawn(httpcat(bot.clone(), msg_clone, trimmed_text));
             }
             Ok(Command::ChatLGBT) => {
-                tokio::spawn(chatlgbt(bot.clone(), msg_clone, text.to_string()));
+                tokio::spawn(chatlgbt(bot.clone(), msg_clone, trimmed_text));
             }
             Ok(Command::NoViews) => {
                 tokio::spawn(noviews(bot.clone(), msg_clone));
@@ -169,7 +170,7 @@ async fn handler(
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::Solar,
                     ollama_client,
                 ));
@@ -178,7 +179,7 @@ async fn handler(
                 tokio::spawn(groq(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::Mixtral,
                 ));
             }
@@ -186,7 +187,7 @@ async fn handler(
                 tokio::spawn(groq(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::Gemma,
                 ));
             }
@@ -194,7 +195,7 @@ async fn handler(
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::StableLM2,
                     ollama_client,
                 ));
@@ -204,7 +205,7 @@ async fn handler(
                 tokio::spawn(perplexity(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::Online,
                 ));
             }
@@ -212,7 +213,7 @@ async fn handler(
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg_clone,
-                    text.to_string(),
+                    trimmed_text,
                     ModelType::MistralRacist,
                     ollama_client,
                 ));
