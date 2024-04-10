@@ -84,6 +84,10 @@ enum Command {
     Mixtral,
     #[command(description = "Generate text using the gemma-7b-it model from groq.com")]
     Gemma,
+    #[command(description = "Generate text using the codegemma 7b model")]
+    CodeGemma,
+    #[command(description = "Generate text using the stablelm2 1.6b model")]
+    StableLM2,
     #[command(
         alias = "lgbt",
         description = "Goofy ahh bot which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/"
@@ -171,6 +175,25 @@ async fn handler(bot: Bot, msg: Message, me: Me) -> Result<(), RequestError> {
                     ModelType::Gemma,
                 ));
             }
+            Ok(Command::CodeGemma) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg_clone,
+                    text.to_string(),
+                    ModelType::CodeGemma,
+                ));
+            }
+            Ok(
+                Command::StableLM2
+            ) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg_clone,
+                    text.to_string(),
+                    ModelType::StableLM2,
+                ));
+            }
+            
             Ok(Command::Online) => {
                 tokio::spawn(perplexity(
                     bot.clone(),
