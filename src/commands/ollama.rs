@@ -20,6 +20,7 @@ pub async fn ollama(
     msg: Message,
     prompt: String,
     model_type: ModelType,
+    ollama_client: Ollama,
 ) -> Result<(), RequestError> {
     // Remove the first word (the command)
     let prompt = prompt
@@ -97,10 +98,8 @@ pub async fn ollama(
 
     // Send the stream request using ollama-rs
     let before_request = std::time::Instant::now();
-
-    let ollama = Ollama::default();
     let request = GenerationRequest::new(model_type.to_string(), prompt);
-    let stream = ollama.generate_stream(request).await;
+    let stream = ollama_client.generate_stream(request).await;
 
     match stream {
         Ok(_) => info!("Stream request successful"),
