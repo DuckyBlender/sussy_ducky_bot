@@ -1,6 +1,6 @@
 use log::info;
 use ollama_rs::{
-    generation::completion::{request::GenerationRequest, GenerationResponseStream},
+    generation::completion::request::GenerationRequest,
     Ollama,
 };
 use teloxide::payloads::SendMessageSetters;
@@ -84,12 +84,39 @@ pub async fn ollama(
         prompt.len()
     );
 
+    // Send a message to the chat to show that the bot is generating a response
+    let generating_message = bot
+        .send_message(msg.chat.id, "Generating response...")
+        .reply_to_message_id(msg.id)
+        .disable_notification(true)
+        .await?;
+
+    // Send typing indicator
+    bot.send_chat_action(msg.chat.id, ChatAction::Typing)
+        .await?;
+
     // Send the stream request using ollama-rs
     let before_request = std::time::Instant::now();
 
     let ollama = Ollama::default();
     let request = GenerationRequest::new(model_type.to_string(), prompt);
-    let mut stream: GenerationResponseStream = ollama.generate_stream(request).await.unwrap();
+    let stream = ollama.generate_stream(request).await;
+
+    match stream {
+        Ok(_) => info!("Stream request successful"),
+        Err(e) => {
+            info!("Stream request failed: {}", e);
+            bot.edit_message_text(
+                generating_message.chat.id,
+                generating_message.id,
+                format!("Failed to generate response: {}", e),
+            )
+            .await?;
+            return Ok(());
+        }
+    }
+
+    let mut stream = stream.unwrap(); // safe unwrap
 
     // Create a repeating interval that yields every 5 seconds
     let mut now = std::time::Instant::now();
@@ -102,17 +129,6 @@ pub async fn ollama(
     // This requires a global list of messages that are being edited to keep track of everything.
     // This is quite complicated and I'm not sure how to do it yet
     // Maybe a global mutex from the main function which is constantly updated? I'm not sure
-
-    // Send a message to the chat to show that the bot is generating a response
-    let generating_message = bot
-        .send_message(msg.chat.id, "Generating response...")
-        .reply_to_message_id(msg.id)
-        .disable_notification(true)
-        .await?;
-
-    // Send typing indicator
-    bot.send_chat_action(msg.chat.id, ChatAction::Typing)
-        .await?;
 
     // Parse the response and edit the message every 5 seconds
     loop {
@@ -150,6 +166,10 @@ pub async fn ollama(
         } else {
             // If the stream has no more responses, break the loop
             info!("Final response received");
+
+            if current_string.is_empty() {
+                current_string = "<no response>".to_string();
+            }
 
             // Edit the message one last time
             bot.edit_message_text(

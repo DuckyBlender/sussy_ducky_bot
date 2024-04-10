@@ -86,7 +86,10 @@ enum Command {
     Gemma,
     #[command(description = "Generate text using the codegemma 7b model")]
     CodeGemma,
-    #[command(description = "Generate text using the stablelm2 1.6b model")]
+    #[command(
+        alias = "stablelm",
+        description = "Generate text using the stablelm2 1.6b model"
+    )]
     StableLM2,
     #[command(
         alias = "lgbt",
@@ -183,9 +186,7 @@ async fn handler(bot: Bot, msg: Message, me: Me) -> Result<(), RequestError> {
                     ModelType::CodeGemma,
                 ));
             }
-            Ok(
-                Command::StableLM2
-            ) => {
+            Ok(Command::StableLM2) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg_clone,
@@ -193,7 +194,7 @@ async fn handler(bot: Bot, msg: Message, me: Me) -> Result<(), RequestError> {
                     ModelType::StableLM2,
                 ));
             }
-            
+
             Ok(Command::Online) => {
                 tokio::spawn(perplexity(
                     bot.clone(),
