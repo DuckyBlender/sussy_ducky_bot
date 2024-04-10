@@ -1,3 +1,5 @@
+use std::{collections::HashMap, sync::Arc};
+
 use log::info;
 
 use ollama_rs::Ollama;
@@ -6,6 +8,7 @@ use teloxide::{prelude::*, types::Me, utils::command::BotCommands, RequestError}
 mod structs;
 
 mod utils;
+use tokio::sync::Mutex;
 use utils::ModelType;
 
 mod commands;
@@ -31,6 +34,8 @@ async fn main() {
 
     let bot = Bot::from_env();
     let ollama = Ollama::default();
+    let ollama_queue: HashMap<ChatId, Message> = HashMap::new();
+    let ollama_queue = Arc::new(Mutex::new(ollama_queue));
 
     let handler = dptree::entry()
         // .branch(Update::filter_callback_query().endpoint(callback_handler))
@@ -41,7 +46,7 @@ async fn main() {
         bot.get_me().send().await.unwrap().user.username.unwrap()
     );
     Dispatcher::builder(bot, handler)
-        .dependencies(dptree::deps![ollama])
+        .dependencies(dptree::deps![ollama, ollama_queue])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
@@ -111,6 +116,7 @@ async fn handler(
     msg: Message,
     me: Me,
     ollama_client: Ollama,
+    ollama_queue: Arc<Mutex<HashMap<ChatId, Message>>>,
 ) -> Result<(), RequestError> {
     let msg_clone = msg.clone();
     if let Some(text) = msg.text() {
@@ -122,6 +128,7 @@ async fn handler(
                     text.to_string(),
                     ModelType::Mistral,
                     ollama_client,
+                    ollama_queue,
                 ));
             }
             Ok(Command::Caveman) => {
@@ -131,6 +138,7 @@ async fn handler(
                     text.to_string(),
                     ModelType::MistralCaveman,
                     ollama_client,
+                    ollama_queue,
                 ));
             }
             Ok(Command::TinyLlama) => {
@@ -140,6 +148,7 @@ async fn handler(
                     text.to_string(),
                     ModelType::TinyLlama,
                     ollama_client,
+                    ollama_queue,
                 ));
             }
             Ok(Command::Lobotomy) => {
@@ -149,6 +158,7 @@ async fn handler(
                     text.to_string(),
                     ModelType::Lobotomy,
                     ollama_client,
+                    ollama_queue,
                 ));
             }
             Ok(Command::Help) => {
@@ -173,6 +183,7 @@ async fn handler(
                     text.to_string(),
                     ModelType::Solar,
                     ollama_client,
+                    ollama_queue,
                 ));
             }
             Ok(Command::Mixtral) => {
@@ -189,6 +200,7 @@ async fn handler(
                     msg_clone,
                     text.to_string(),
                     ModelType::Gemma,
+                    
                 ));
             }
             Ok(Command::CodeGemma) => {
@@ -198,6 +210,7 @@ async fn handler(
                     text.to_string(),
                     ModelType::CodeGemma,
                     ollama_client,
+                    ollama_queue,
                 ));
             }
             Ok(Command::StableLM2) => {
@@ -207,6 +220,7 @@ async fn handler(
                     text.to_string(),
                     ModelType::StableLM2,
                     ollama_client,
+                    ollama_queue,
                 ));
             }
 
@@ -225,6 +239,7 @@ async fn handler(
                     text.to_string(),
                     ModelType::MistralRacist,
                     ollama_client,
+                    ollama_queue,
                 ));
             }
             _ => {}

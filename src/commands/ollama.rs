@@ -1,14 +1,16 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use log::info;
-use ollama_rs::{
-    generation::completion::request::GenerationRequest,
-    Ollama,
-};
+use ollama_rs::{generation::completion::request::GenerationRequest, Ollama};
 use teloxide::payloads::SendMessageSetters;
+use teloxide::types::ChatId;
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
     Bot, RequestError,
 };
+use tokio::sync::Mutex;
 use tokio_stream::StreamExt;
 
 use crate::utils::ModelType;
@@ -21,6 +23,7 @@ pub async fn ollama(
     prompt: String,
     model_type: ModelType,
     ollama_client: Ollama,
+    ollama_queue: Arc<Mutex<HashMap<ChatId, Message>>>,
 ) -> Result<(), RequestError> {
     // Remove the first word (the command)
     let prompt = prompt
@@ -92,6 +95,12 @@ pub async fn ollama(
         .disable_notification(true)
         .await?;
 
+    // After sending the "Generating response..." message, store it in the ollama_queue
+    ollama_queue
+        .lock()
+        .await
+        .insert(msg.chat.id, generating_message.clone());
+
     // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
@@ -146,13 +155,15 @@ pub async fn ollama(
 
                     current_string = entire_response.clone();
 
-                    // Edit the message
-                    bot.edit_message_text(
-                        generating_message.chat.id,
-                        generating_message.id,
-                        current_string.clone() + " [...]",
-                    )
-                    .await?;
+                    // Before editing the message, check if it's still in the ollama_queue
+                    if let Some(generating_message) = ollama_queue.lock().await.get(&msg.chat.id) {
+                        bot.edit_message_text(
+                            generating_message.chat.id,
+                            generating_message.id,
+                            current_string.clone() + " [...]",
+                        )
+                        .await?;
+                    }
 
                     // Send the typing indicator
                     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
@@ -177,6 +188,9 @@ pub async fn ollama(
                 current_string.clone(),
             )
             .await?;
+
+            // After finishing the generation, remove the message from the ollama_queue
+            ollama_queue.lock().await.remove(&msg.chat.id);
 
             // TODO: Stop the typing indicator somehow
             break;
