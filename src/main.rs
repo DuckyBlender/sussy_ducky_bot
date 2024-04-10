@@ -88,6 +88,8 @@ enum Command {
     Mixtral,
     #[command(description = "Generate text using the gemma-7b-it model from groq.com")]
     Gemma,
+    #[command(description = "Generate code using the codegemma 7b model")]
+    CodeGemma,
     #[command(
         alias = "stablelm",
         description = "Generate text using the stablelm2 1.6b model"
@@ -189,6 +191,14 @@ async fn handler(
                     msg_clone,
                     trimmed_text,
                     ModelType::Gemma,
+                ));
+            }
+            Ok(Command::CodeGemma) => {
+                tokio::spawn(groq(
+                    bot.clone(),
+                    msg_clone,
+                    trimmed_text,
+                    ModelType::CodeGemma,
                 ));
             }
             Ok(Command::StableLM2) => {

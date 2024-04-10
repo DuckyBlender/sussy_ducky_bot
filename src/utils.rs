@@ -12,6 +12,7 @@ pub enum ModelType {
     Lobotomy,       // qwen:0.5b-chat-v1.5-q2_K
     Solar,          // solar
     StableLM2,      // stablelm2
+    CodeGemma,      // codegemma
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -38,6 +39,7 @@ impl ModelType {
             ModelType::Lobotomy,
             ModelType::Solar,
             ModelType::StableLM2,
+            ModelType::CodeGemma,
         ]
     }
 
@@ -65,6 +67,7 @@ impl std::fmt::Display for ModelType {
             // ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"), // for perplexity.ai
             ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"), // for groq.com
             ModelType::Gemma => write!(f, "gemma-7b-it"),          // for groq.com
+            ModelType::CodeGemma => write!(f, "codegemma"),        // for ollama
             ModelType::Online => write!(f, "sonar-medium-online"), // for perplexity.ai
             ModelType::Solar => write!(f, "solar"),                // for ollama
             ModelType::StableLM2 => write!(f, "stablelm2"),        // for ollama
