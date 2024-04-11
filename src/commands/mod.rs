@@ -21,3 +21,6 @@ pub use chatlgbt::chatlgbt;
 
 mod groq;
 pub use groq::groq;
+
+mod openai;
+pub use openai::openai;

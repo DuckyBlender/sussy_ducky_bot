@@ -25,6 +25,9 @@ pub enum ModelType {
     // Groq
     Mixtral, // mixtral-8x7b-32768
     Gemma,   // gemma-7b-it
+
+    // OpenAI
+    GPT4,
 }
 
 impl ModelType {
@@ -59,6 +62,7 @@ impl ModelType {
 impl std::fmt::Display for ModelType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
+            ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
             ModelType::Mistral => write!(f, "dolphin-mistral"), // for ollama
             ModelType::MistralCaveman => write!(f, "caveman-mistral"), // for ollama
             ModelType::MistralRacist => write!(f, "racist-mistral"), // for ollama

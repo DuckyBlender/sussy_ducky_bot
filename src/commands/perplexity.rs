@@ -17,7 +17,7 @@ pub async fn perplexity(
     model: ModelType,
 ) -> Result<(), RequestError> {
     // Check if the user is from the owner
-    if msg.from().unwrap().id != UserId(5337682436) {
+    if msg.from().unwrap().id != UserId(std::env::var("OWNER_ID").unwrap().parse().unwrap()) {
         bot.send_message(msg.chat.id, "You are not the owner")
             .reply_to_message_id(msg.id)
             .await?;

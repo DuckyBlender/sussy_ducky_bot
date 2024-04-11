@@ -104,6 +104,8 @@ enum Command {
         hide
     )]
     Online,
+    #[command(description = "Multimodel GPT-4-vision [DEV ONLY]", hide)]
+    GPT4,
 }
 
 // Handler function for bot events
@@ -117,6 +119,14 @@ async fn handler(
     if let Some(text) = msg.text() {
         let trimmed_text = text.split_once(' ').map(|x| x.1).unwrap_or_default().trim().to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Command::GPT4) => {
+                tokio::spawn(openai(
+                    bot.clone(),
+                    msg_clone,
+                    trimmed_text,
+                    ModelType::GPT4,
+                ));
+            }
             Ok(Command::Mistral) => {
                 tokio::spawn(ollama(
                     bot.clone(),
