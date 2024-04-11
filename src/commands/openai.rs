@@ -17,7 +17,17 @@ pub async fn openai(
     model: ModelType,
 ) -> Result<(), RequestError> {
     // Check if the user is from the owner
-    if msg.from().unwrap().id != UserId(std::env::var("OWNER_ID").unwrap().parse().unwrap()) {
+    let owner_id = match std::env::var("OWNER_ID") {
+        Ok(id) => id.parse().unwrap(),
+        Err(_) => {
+            bot.send_message(msg.chat.id, "Error: Unable to fetch OWNER_ID")
+                .reply_to_message_id(msg.id)
+                .await?;
+            return Ok(());
+        }
+    };
+
+    if msg.from().unwrap().id != UserId(owner_id) {
         bot.send_message(msg.chat.id, "You are not the owner")
             .reply_to_message_id(msg.id)
             .await?;
@@ -72,10 +82,21 @@ pub async fn openai(
     // Get the image URL if it exists
     let img_url = if let Some(img_attachment) = img_attachment {
         let img_attachment = bot.get_file(&img_attachment.file.id).await?;
+        let teloxide_token = match std::env::var("TELOXIDE_TOKEN") {
+            Ok(token) => token,
+            Err(_) => {
+                bot.edit_message_text(
+                    generating_message.chat.id,
+                    generating_message.id,
+                    "Error: Unable to fetch TELOXIDE_TOKEN",
+                )
+                .await?;
+                return Ok(());
+            }
+        };
         let img_url = format!(
             "https://api.telegram.org/file/bot{}/{}",
-            std::env::var("TELOXIDE_TOKEN").unwrap(),
-            img_attachment.path
+            teloxide_token, img_attachment.path
         );
         Some(img_url)
     } else {
@@ -105,14 +126,29 @@ pub async fn openai(
             .as_array_mut()
             .unwrap()
             .push(json!({
-                "type": "image",
-                "url": img_url
+                "type": "image_url",
+                "image_url": {
+                    "url": img_url
+                }
             }));
     }
 
+    let openai_key = match std::env::var("OPENAI_KEY") {
+        Ok(key) => key,
+        Err(_) => {
+            bot.edit_message_text(
+                generating_message.chat.id,
+                generating_message.id,
+                "Error: Unable to fetch OPENAI_KEY",
+            )
+            .await?;
+            return Ok(());
+        }
+    };
+
     let res = reqwest::Client::new()
         .post("https://api.openai.com/v1/chat/completions")
-        .bearer_auth(std::env::var("OPENAI_KEY").unwrap_or_default())
+        .bearer_auth(openai_key)
         .json(&json)
         .send()
         .await;
