@@ -83,7 +83,6 @@ enum Command {
     HttpCat,
     #[command(description = "Get a random video with no views (or very few views)")]
     NoViews,
-    // Online,
     #[command(description = "Generate text using the mixtral-8x7b-instruct model from groq.com")]
     Mixtral,
     #[command(description = "Generate text using the gemma-7b-it model from groq.com")]
@@ -101,7 +100,8 @@ enum Command {
     )]
     ChatLGBT,
     #[command(
-        description = "Generate text using the pplx-7b-online model from PerplexityAI [DEV ONLY]"
+        description = "Generate text using the pplx-7b-online model from PerplexityAI [DEV ONLY]",
+        hide
     )]
     Online,
 }
