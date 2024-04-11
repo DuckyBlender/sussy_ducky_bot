@@ -106,6 +106,11 @@ enum Command {
     Online,
     #[command(description = "Multimodel GPT-4-vision [DEV ONLY]", hide)]
     GPT4,
+    #[command(
+        description = "Clone an image using GPT-4-Turbo and DALLE 2 [DEV ONLY]",
+        hide
+    )]
+    Clone,
 }
 
 // Handler function for bot events
@@ -117,7 +122,12 @@ async fn handler(
 ) -> Result<(), RequestError> {
     let msg_clone = msg.clone();
     if let Some(text) = msg.text() {
-        let trimmed_text = text.split_once(' ').map(|x| x.1).unwrap_or_default().trim().to_string();
+        let trimmed_text = text
+            .split_once(' ')
+            .map(|x| x.1)
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         match BotCommands::parse(text, me.username()) {
             Ok(Command::GPT4) => {
                 tokio::spawn(openai(
@@ -126,6 +136,9 @@ async fn handler(
                     trimmed_text,
                     ModelType::GPT4,
                 ));
+            }
+            Ok(Command::Clone) => {
+                tokio::spawn(clone_img(bot.clone(), msg_clone, ModelType::GPT4));
             }
             Ok(Command::Mistral) => {
                 tokio::spawn(ollama(
@@ -196,12 +209,7 @@ async fn handler(
                 ));
             }
             Ok(Command::Gemma) => {
-                tokio::spawn(groq(
-                    bot.clone(),
-                    msg_clone,
-                    trimmed_text,
-                    ModelType::Gemma,
-                ));
+                tokio::spawn(groq(bot.clone(), msg_clone, trimmed_text, ModelType::Gemma));
             }
             Ok(Command::CodeGemma) => {
                 tokio::spawn(groq(
