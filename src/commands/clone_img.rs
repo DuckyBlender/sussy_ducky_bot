@@ -1,6 +1,5 @@
 use log::{error, info};
 use reqwest::Url;
-use serde_json::json;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
 use teloxide::types::InputFile;
@@ -10,6 +9,9 @@ use teloxide::{
     Bot, RequestError,
 };
 
+use crate::structs::{
+    DallERequest, DallEResponse, GPT4Content, GPT4ImageUrl, GPT4Message, GPT4Request, GPT4Response,
+};
 use crate::utils::ModelType;
 
 /// Clone image works like this:
@@ -101,29 +103,25 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
         return Ok(());
     };
 
-    let json = json!(
-            {
-                "model": model.to_string(),
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "Describe the image in one sentence."
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": img_url
-                                }
-                            }
-                        ]
-                    }
-                ],
-                "max_tokens": 300,
-            }
-    );
+    let json = GPT4Request {
+        model: model.to_string(),
+        messages: vec![GPT4Message {
+            role: "user".to_string(),
+            content: vec![
+                GPT4Content {
+                    content_type: "text".to_string(),
+                    text: Some("Describe the image in one sentence.".to_string()),
+                    image_url: None,
+                },
+                GPT4Content {
+                    content_type: "image_url".to_string(),
+                    text: None,
+                    image_url: Some(GPT4ImageUrl { url: img_url }),
+                },
+            ],
+        }],
+        max_tokens: 300,
+    };
 
     let now = std::time::Instant::now();
 
@@ -152,14 +150,12 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
     };
 
     // Parse the response
-    let res = res.unwrap().json::<serde_json::Value>().await.unwrap();
+    let res = res.unwrap().json::<GPT4Response>().await.unwrap();
 
     // info!("Vision response: {:#?}", res);
 
     // Get the content
-    let summary = res["choices"][0]["message"]["content"]
-        .as_str()
-        .unwrap_or_default();
+    let summary = res.choices[0].message.content.as_str();
 
     // Edit the response
     bot.edit_message_text(
@@ -174,11 +170,11 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
     let dalle3_res = reqwest::Client::new()
         .post("https://api.openai.com/v1/images/generations")
         .bearer_auth(std::env::var("OPENAI_KEY").unwrap_or_default())
-        .json(&json!({
-            "model": "dall-e-3",
-            "prompt": summary,
-            "size": "1024x1024"
-        }))
+        .json(&DallERequest {
+            model: "dall-e-3".to_string(),
+            prompt: summary.to_string(),
+            size: "1024x1024".to_string(),
+        })
         .send()
         .await;
     let elapsed_dalle3 = now.elapsed().as_secs_f32();
@@ -189,7 +185,7 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
             // info!("DALL-E 3 response: {:#?}", dalle3_res);
 
             // Parse the response
-            let dalle3_res = dalle3_res.unwrap().json::<serde_json::Value>().await;
+            let dalle3_res = dalle3_res.unwrap().json::<DallEResponse>().await;
 
             if dalle3_res.is_err() {
                 let err = dalle3_res.err().unwrap();
@@ -206,10 +202,8 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
             let dalle3_res = dalle3_res.unwrap();
 
             // Get the image data
-            let img_url = dalle3_res["data"][0]["url"].as_str().unwrap_or_default();
-            let revised_prompt = dalle3_res["data"][0]["revised_prompt"]
-                .as_str()
-                .unwrap_or_default();
+            let img_url = dalle3_res.data[0].url.as_str();
+            let revised_prompt = dalle3_res.data[0].revised_prompt.as_str();
 
             if img_url.is_empty() {
                 bot.edit_message_text(
@@ -228,7 +222,7 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
                 .await?;
             bot.send_photo(msg.chat.id, InputFile::url(Url::parse(img_url).unwrap()))
                 .caption(format!(
-                    "Vision prompt: {summary}\nRevised prompt: {revised_prompt}"
+                    "Vision prompt: {summary}\n\nRevised prompt: {revised_prompt}"
                 ))
                 .reply_to_message_id(msg.id)
                 .await?;

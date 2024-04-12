@@ -2,7 +2,7 @@ use log::{error, info};
 use teloxide::payloads::SendMessageSetters;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
-use crate::structs::{PerplexityRequest, PerplexityRequestMessage};
+use crate::structs::{GPT4Content, PerplexityRequest, PerplexityRequestMessage};
 use crate::utils::ModelType;
 
 pub async fn groq(
@@ -71,14 +71,19 @@ pub async fn groq(
     };
 
     // Parse the response
-    let res = res.unwrap().json::<serde_json::Value>().await;
+    let res = res.unwrap().json::<GPT4Content>().await;
 
     // Send the response
     match res {
         Ok(res) => {
-            let content = res["choices"][0]["message"]["content"]
-                .as_str()
-                .unwrap_or_default();
+            let content = res.text.unwrap_or_default();
+            if content.is_empty() {
+                bot.send_message(msg.chat.id, "No response from groq")
+                    .reply_to_message_id(msg.id)
+                    .await?;
+                return Ok(());
+            }
+
             info!(
                 "Replying to message using groq. Generation took {}s",
                 (elapsed * 10.0).round() / 10.0
