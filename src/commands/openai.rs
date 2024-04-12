@@ -172,7 +172,7 @@ pub async fn openai(
     // Parse the response
     let res = res.unwrap().json::<GPT4Response>().await;
 
-    // info!("Response: {:#?}", res);
+    info!("Response: {:#?}", res);
 
     // Send the response
     match res {
@@ -188,7 +188,7 @@ pub async fn openai(
             Ok(())
         }
         Err(e) => {
-            error!("Error parsing response: {}", e);
+            error!("Error parsing response: {:#?}", e);
             bot.edit_message_text(
                 generating_message.chat.id,
                 generating_message.id,
