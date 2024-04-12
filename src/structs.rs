@@ -12,12 +12,12 @@ pub struct PerplexityRequestMessage {
     pub content: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct GPT4ImageUrl {
     pub url: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct GPT4Content {
     #[serde(rename = "type")]
     pub content_type: String,
@@ -25,20 +25,20 @@ pub struct GPT4Content {
     pub image_url: Option<GPT4ImageUrl>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct GPT4Message {
     pub role: String,
     pub content: Vec<GPT4Content>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct GPT4Request {
     pub model: String,
     pub messages: Vec<GPT4Message>,
     pub max_tokens: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct DallERequest {
     pub model: String,
     pub prompt: String,
@@ -46,13 +46,13 @@ pub struct DallERequest {
 }
 
 // GPT Response
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Message {
     pub role: String,
     pub content: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Choice {
     pub index: i32,
     pub message: Message,
@@ -60,18 +60,18 @@ pub struct Choice {
     pub finish_reason: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct TokenUsage {
     pub prompt_tokens: i32,
     pub completion_tokens: i32,
     pub total_tokens: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct GPT4Response {
-    pub id: Option<String>,
-    pub object: Option<String>,
-    pub created: Option<i64>,
+    pub id: String,
+    pub object: String,
+    pub created: i64,
     pub model: String,
     pub system_fingerprint: String,
     pub choices: Vec<Choice>,
@@ -79,19 +79,45 @@ pub struct GPT4Response {
 }
 
 // DALL-E Response
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Image {
     pub url: String,
     pub revised_prompt: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct DallEResponse {
     pub created: i64,
     pub data: Vec<Image>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+// {
+//   "id": "936518f4-f215-4ba5-9653-7766c0c1a1b9",
+//   "model": "sonar-small-online",
+//   "created": 11284578,
+//   "usage": {
+//     "prompt_tokens": 44,
+//     "completion_tokens": 21,
+//     "total_tokens": 65
+//   },
+//   "object": "chat.completion",
+//   "choices": [
+//     {
+//       "index": 0,
+//       "finish_reason": "stop",
+//       "message": {
+//         "role": "assistant",
+//         "content": "The Milky Way galaxy contains between 100 and 400 billion stars."
+//       },
+//       "delta": {
+//         "role": "assistant",
+//         "content": ""
+//       }
+//     }
+//   ]
+// }
+
+#[derive(Serialize, Deserialize)]
 pub struct PerplexityResponse {
     pub id: String,
     pub model: String,
