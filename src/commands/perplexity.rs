@@ -7,7 +7,7 @@ use teloxide::{
     Bot, RequestError,
 };
 
-use crate::structs::{PerplexityRequest, PerplexityRequestMessage, PerplexityResponse};
+use crate::structs::{GPT4Response, PerplexityRequest, PerplexityRequestMessage};
 use crate::utils::ModelType;
 
 pub async fn perplexity(
@@ -90,7 +90,7 @@ pub async fn perplexity(
     };
 
     // Parse the response
-    let res = res.unwrap().json::<PerplexityResponse>().await;
+    let res = res.unwrap().json::<GPT4Response>().await;
 
     // Send the response
     match res {

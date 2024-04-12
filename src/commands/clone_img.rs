@@ -17,7 +17,7 @@ use crate::utils::ModelType;
 /// Clone image works like this:
 /// 1. The user sends a reply to an image with the command `/clone`
 /// 2. GPT-4-turbo generates a response based on the image
-/// 3. The bot sends the response to DALLE 23 and generates an image
+/// 3. The bot sends the response to DALLE 2 and generates an image
 /// 4. The bot sends the image and the prompt back to the user
 pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), RequestError> {
     // Check if the user is from the owner
@@ -181,7 +181,7 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
 
     match dalle3_res {
         Ok(_) => {
-            info!("Request to DALL-E 3 sent successfully");
+            info!("Request to DALL-E 2 sent successfully");
             // info!("DALL-E 3 response: {:#?}", dalle3_res);
 
             // Parse the response
@@ -237,7 +237,7 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
             Ok(())
         }
         Err(e) => {
-            error!("Error sending request to DALL-E 3: {}", e);
+            error!("Error sending request to DALL-E 2: {}", e);
             bot.edit_message_text(
                 generating_message.chat.id,
                 generating_message.id,
