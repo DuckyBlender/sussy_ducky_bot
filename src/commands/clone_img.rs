@@ -228,9 +228,10 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
                 .await?;
             bot.send_photo(msg.chat.id, InputFile::url(Url::parse(img_url).unwrap()))
                 .caption(format!(
-                    "Vision prompt: {summary}\nRevised prompt: {revised_prompt}"
+                    "<b>Vision prompt</b>\n{summary}\n\n<b>Revised prompt</b>\n{revised_prompt}"
                 ))
                 .reply_to_message_id(msg.id)
+                .parse_mode(teloxide::types::ParseMode::Html)
                 .await?;
 
             info!(
