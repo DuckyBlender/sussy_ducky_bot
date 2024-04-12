@@ -26,12 +26,15 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
         return Ok(());
     }
 
-    // Check if there is an image attached in the reply
+    // Check if there is an image or sticker attached in the reply
     let img_attachment = if let Some(reply) = msg.reply_to_message() {
-        reply.photo().map(|photo| photo.last().unwrap())
+        reply
+            .photo()
+            .map(|photo| photo.last().unwrap().file.id.clone())
+            .or_else(|| reply.sticker().map(|sticker| &sticker.file.id).cloned())
     } else {
         let bot_msg = bot
-            .send_message(msg.chat.id, "No image provided")
+            .send_message(msg.chat.id, "No image or sticker provided")
             .reply_to_message_id(msg.id)
             .await?;
 
@@ -47,7 +50,7 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
 
     if img_attachment.is_none() {
         let bot_msg = bot
-            .send_message(msg.chat.id, "No image provided")
+            .send_message(msg.chat.id, "No image or sticker provided")
             .reply_to_message_id(msg.id)
             .await?;
 
@@ -75,7 +78,7 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
 
     // Get the image URL if it exists
     let img_url = if let Some(img_attachment) = img_attachment {
-        let img_attachment = bot.get_file(&img_attachment.file.id).await?;
+        let img_attachment = bot.get_file(&img_attachment).await?;
         let img_url = format!(
             "https://api.telegram.org/file/bot{}/{}",
             std::env::var("TELOXIDE_TOKEN").unwrap(),
