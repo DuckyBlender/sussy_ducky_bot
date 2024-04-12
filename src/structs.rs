@@ -90,3 +90,39 @@ pub struct DallEResponse {
     pub created: i64,
     pub data: Vec<Image>,
 }
+
+// {
+//   "id": "936518f4-f215-4ba5-9653-7766c0c1a1b9",
+//   "model": "sonar-small-online",
+//   "created": 11284578,
+//   "usage": {
+//     "prompt_tokens": 44,
+//     "completion_tokens": 21,
+//     "total_tokens": 65
+//   },
+//   "object": "chat.completion",
+//   "choices": [
+//     {
+//       "index": 0,
+//       "finish_reason": "stop",
+//       "message": {
+//         "role": "assistant",
+//         "content": "The Milky Way galaxy contains between 100 and 400 billion stars."
+//       },
+//       "delta": {
+//         "role": "assistant",
+//         "content": ""
+//       }
+//     }
+//   ]
+// }
+
+#[derive(Serialize, Deserialize)]
+pub struct PerplexityResponse {
+    pub id: String,
+    pub model: String,
+    pub created: i64,
+    pub usage: TokenUsage,
+    pub object: String,
+    pub choices: Vec<Choice>,
+}
