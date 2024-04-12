@@ -169,31 +169,31 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
     )
     .await?;
 
-    // Send the response to dalle 2
+    // Send the response to dalle 3
     let now = std::time::Instant::now();
-    let dalle2_res = reqwest::Client::new()
+    let dalle3_res = reqwest::Client::new()
         .post("https://api.openai.com/v1/images/generations")
         .bearer_auth(std::env::var("OPENAI_KEY").unwrap_or_default())
         .json(&json!({
-            "model": "dall-e-2",
+            "model": "dall-e-3",
             "prompt": summary,
-            "size": "512x512"
+            "size": "1024x1024"
         }))
         .send()
         .await;
-    let elapsed_dalle2 = now.elapsed().as_secs_f32();
+    let elapsed_dalle3 = now.elapsed().as_secs_f32();
 
-    match dalle2_res {
+    match dalle3_res {
         Ok(_) => {
             info!("Request to DALL-E 2 sent successfully");
-            // info!("DALL-E 2 response: {:#?}", dalle2_res);
+            // info!("DALL-E 3 response: {:#?}", dalle3_res);
 
             // Parse the response
-            let dalle2_res = dalle2_res.unwrap().json::<serde_json::Value>().await;
+            let dalle3_res = dalle3_res.unwrap().json::<serde_json::Value>().await;
 
-            if dalle2_res.is_err() {
-                let err = dalle2_res.err().unwrap();
-                error!("Error from DALLE2: {}", err);
+            if dalle3_res.is_err() {
+                let err = dalle3_res.err().unwrap();
+                error!("Error from dalle3: {}", err);
                 bot.edit_message_text(
                     generating_message.chat.id,
                     generating_message.id,
@@ -203,10 +203,10 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
                 return Ok(());
             }
 
-            let dalle2_res = dalle2_res.unwrap();
+            let dalle3_res = dalle3_res.unwrap();
 
             // Get the image URL
-            let img_url = dalle2_res["data"][0]["url"].as_str().unwrap_or_default();
+            let img_url = dalle3_res["data"][0]["url"].as_str().unwrap_or_default();
 
             if img_url.is_empty() {
                 bot.edit_message_text(
@@ -231,8 +231,8 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
             info!(
                 "Replying to message using OpenAI. Recognition took {}s. Generation took {}s. Total time: {}s",
                 (elapsed_summary * 10.0).round() / 10.0,
-                (elapsed_dalle2 * 10.0).round() / 10.0,
-                ((elapsed_summary + elapsed_dalle2) * 10.0).round() / 10.0
+                (elapsed_dalle3 * 10.0).round() / 10.0,
+                ((elapsed_summary + elapsed_dalle3) * 10.0).round() / 10.0
             );
 
             Ok(())
