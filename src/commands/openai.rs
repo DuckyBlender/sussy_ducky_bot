@@ -1,4 +1,5 @@
 use log::{error, info};
+use serde_json::json;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
 use teloxide::{
@@ -7,7 +8,6 @@ use teloxide::{
     Bot, RequestError,
 };
 
-use crate::structs::{GPT4Content, GPT4ImageUrl, GPT4Message, GPT4Request, GPT4Response};
 use crate::utils::ModelType;
 
 pub async fn openai(
@@ -103,33 +103,34 @@ pub async fn openai(
         None
     };
 
-    let mut json = GPT4Request {
-        model: model.to_string(),
-        messages: vec![GPT4Message {
-            role: "user".to_string(),
-            content: vec![
-                GPT4Content {
-                    content_type: "text".to_string(),
-                    text: Some("Describe the image in one sentence.".to_string()),
-                    image_url: None,
-                },
-                // this will be pushed if img_url is Some
-                // GPT4Content {
-                //     content_type: "image_url".to_string(),
-                //     text: None,
-                //     image_url: Some(GPT4ImageUrl { url: img_url }),
-                // },
-            ],
-        }],
-        max_tokens: 300,
-    };
+    let mut json = json!(
+            {
+                "model": model.to_string(),
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": prompt
+                            },
+                        ]
+                    }
+                ],
+                "max_tokens": 300,
+            }
+    );
 
     if let Some(img_url) = img_url {
-        json.messages[0].content.push(GPT4Content {
-            content_type: "image_url".to_string(),
-            text: None,
-            image_url: Some(GPT4ImageUrl { url: img_url }),
-        });
+        json["messages"][0]["content"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({
+                "type": "image_url",
+                "image_url": {
+                    "url": img_url
+                }
+            }));
     }
 
     let openai_key = match std::env::var("OPENAI_KEY") {
@@ -170,15 +171,16 @@ pub async fn openai(
     };
 
     // Parse the response
-    let res = res.unwrap().json::<GPT4Response>().await;
+    let res = res.unwrap().json::<serde_json::Value>().await;
 
-    // info!("Response: {:#?}", res);
+    info!("Response: {:#?}", res);
 
     // Send the response
     match res {
         Ok(res) => {
-            let content = res.choices[0].message.content.as_str();
-
+            let content = res["choices"][0]["message"]["content"]
+                .as_str()
+                .unwrap_or_default();
             info!(
                 "Replying to message using OpenAIs. Generation took {}s",
                 (elapsed * 10.0).round() / 10.0
