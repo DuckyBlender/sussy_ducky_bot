@@ -15,14 +15,21 @@ use crate::utils::ModelType;
 /// Clone image works like this:
 /// 1. The user sends a reply to an image with the command `/clone`
 /// 2. GPT-4-turbo generates a response based on the image
-/// 3. The bot sends the response to DALLE 2 and generates an image
+/// 3. The bot sends the response to DALLE 3 and generates an image
 /// 4. The bot sends the image and the prompt back to the user
 pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), RequestError> {
     // Check if the user is from the owner
     if msg.from().unwrap().id != UserId(std::env::var("OWNER_ID").unwrap().parse().unwrap()) {
-        bot.send_message(msg.chat.id, "You are not the owner")
+        let bot_msg = bot.send_message(msg.chat.id, "You are not the owner. Please mention @DuckyBlender if you want to use this command!")
             .reply_to_message_id(msg.id)
             .await?;
+
+        // Wait 5 seconds and delete the users and the bot's message
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+        // Deleting the messages
+        bot.delete_message(msg.chat.id, msg.id).await?;
+        bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
         return Ok(());
     }
 
@@ -185,7 +192,7 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
 
     match dalle3_res {
         Ok(_) => {
-            info!("Request to DALL-E 2 sent successfully");
+            info!("Request to DALL-E 3 sent successfully");
             // info!("DALL-E 3 response: {:#?}", dalle3_res);
 
             // Parse the response
@@ -224,14 +231,14 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
             // info!("Image URL: {img_url}");
 
             // Send the image
-            bot.delete_message(generating_message.chat.id, generating_message.id)
-                .await?;
             bot.send_photo(msg.chat.id, InputFile::url(Url::parse(img_url).unwrap()))
                 .caption(format!(
                     "<b>Vision prompt</b>\n{summary}\n\n<b>Revised prompt</b>\n{revised_prompt}"
                 ))
                 .reply_to_message_id(msg.id)
                 .parse_mode(teloxide::types::ParseMode::Html)
+                .await?;
+            bot.delete_message(generating_message.chat.id, generating_message.id)
                 .await?;
 
             info!(
@@ -244,7 +251,7 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
             Ok(())
         }
         Err(e) => {
-            error!("Error sending request to DALL-E 2: {}", e);
+            error!("Error sending request to DALL-E 3: {}", e);
             bot.edit_message_text(
                 generating_message.chat.id,
                 generating_message.id,

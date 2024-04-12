@@ -104,8 +104,20 @@ enum Command {
         hide
     )]
     Online,
-    #[command(description = "Multimodel GPT-4-vision [DEV ONLY]", hide)]
+    #[command(
+        alias = "gpt",
+        description = "Multimodel GPT-4-vision [DEV ONLY]",
+        hide,
+        hide_aliases
+    )]
     GPT4,
+    #[command(
+        alias = "dalle",
+        description = "DALLE 3 [DEV ONLY]",
+        hide,
+        hide_aliases
+    )]
+    Dalle3,
     #[command(
         description = "Clone an image using GPT-4-Turbo and DALLE 2 [DEV ONLY]",
         hide
@@ -135,6 +147,14 @@ async fn handler(
                     msg_clone,
                     trimmed_text,
                     ModelType::GPT4,
+                ));
+            }
+            Ok(Command::Dalle3) => {
+                tokio::spawn(dalle(
+                    bot.clone(),
+                    msg_clone,
+                    trimmed_text,
+                    ModelType::Dalle3,
                 ));
             }
             Ok(Command::Clone) => {

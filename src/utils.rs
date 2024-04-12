@@ -28,6 +28,7 @@ pub enum ModelType {
 
     // OpenAI
     GPT4,
+    Dalle3,
 }
 
 impl ModelType {
@@ -75,6 +76,7 @@ impl std::fmt::Display for ModelType {
             ModelType::Online => write!(f, "sonar-medium-online"), // for perplexity.ai
             ModelType::Solar => write!(f, "solar"),                // for ollama
             ModelType::StableLM2 => write!(f, "stablelm2"),        // for ollama
+            ModelType::Dalle3 => write!(f, "dall-e-3"),            // for openai
         }
     }
 }
