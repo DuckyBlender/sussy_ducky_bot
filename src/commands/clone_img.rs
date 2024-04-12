@@ -205,8 +205,11 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
 
             let dalle3_res = dalle3_res.unwrap();
 
-            // Get the image URL
+            // Get the image data
             let img_url = dalle3_res["data"][0]["url"].as_str().unwrap_or_default();
+            let revised_prompt = dalle3_res["data"][0]["revised_prompt"]
+                .as_str()
+                .unwrap_or_default();
 
             if img_url.is_empty() {
                 bot.edit_message_text(
@@ -224,7 +227,9 @@ pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), R
             bot.delete_message(generating_message.chat.id, generating_message.id)
                 .await?;
             bot.send_photo(msg.chat.id, InputFile::url(Url::parse(img_url).unwrap()))
-                .caption(format!("Prompt: {summary}"))
+                .caption(format!(
+                    "Vision prompt: {summary}\nRevised prompt: {revised_prompt}"
+                ))
                 .reply_to_message_id(msg.id)
                 .await?;
 
