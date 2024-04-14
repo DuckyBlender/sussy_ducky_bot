@@ -21,14 +21,6 @@ pub async fn ollama(
     model_type: ModelType,
     ollama_client: Ollama,
 ) -> Result<(), RequestError> {
-    // Remove the first word (the command)
-    let prompt = prompt
-        .split_once(' ')
-        .map(|x| x.1)
-        .unwrap_or_default()
-        .trim()
-        .to_string();
-
     if prompt.is_empty() {
         let bot_msg = bot
             .send_message(msg.chat.id, "Please provide a prompt")
