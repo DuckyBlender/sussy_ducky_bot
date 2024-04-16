@@ -132,7 +132,6 @@ async fn handler(
     me: Me,
     ollama_client: Ollama,
 ) -> Result<(), RequestError> {
-    let msg_clone = msg.clone();
     if let Some(text) = msg.text() {
         let trimmed_text = text
             .split_once(' ')
@@ -144,27 +143,27 @@ async fn handler(
             Ok(Command::GPT4) => {
                 tokio::spawn(openai(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::GPT4,
                 ));
             }
             Ok(Command::Dalle3) => {
                 tokio::spawn(dalle(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::Dalle3,
                 ));
             }
             Ok(Command::Clone) => {
-                tokio::spawn(clone_img(bot.clone(), msg_clone, ModelType::GPT4));
+                tokio::spawn(clone_img(bot.clone(), msg, ModelType::GPT4));
             }
             Ok(Command::Mistral) => {
                 tokio::spawn(ollama(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::Mistral,
                     ollama_client,
                 ));
@@ -172,8 +171,8 @@ async fn handler(
             Ok(Command::Caveman) => {
                 tokio::spawn(ollama(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::MistralCaveman,
                     ollama_client,
                 ));
@@ -181,8 +180,8 @@ async fn handler(
             Ok(Command::TinyLlama) => {
                 tokio::spawn(ollama(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::TinyLlama,
                     ollama_client,
                 ));
@@ -190,32 +189,34 @@ async fn handler(
             Ok(Command::Lobotomy) => {
                 tokio::spawn(ollama(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::Lobotomy,
                     ollama_client,
                 ));
             }
             Ok(Command::Help) => {
-                tokio::spawn(help(bot.clone(), msg_clone));
+                tokio::spawn(help(bot.clone(), msg));
             }
             Ok(Command::Ping) => {
-                tokio::spawn(ping(bot.clone(), msg_clone));
+                tokio::spawn(ping(bot.clone(), msg));
             }
             Ok(Command::HttpCat) => {
-                tokio::spawn(httpcat(bot.clone(), msg_clone, trimmed_text));
+                tokio::spawn(httpcat(bot.clone(), msg.clone(), get_prompt(trimmed_text, &msg),
+            ));
             }
             Ok(Command::ChatLGBT) => {
-                tokio::spawn(chatlgbt(bot.clone(), msg_clone, trimmed_text));
+                tokio::spawn(chatlgbt(bot.clone(), msg.clone(), get_prompt(trimmed_text, &msg),
+            ));
             }
             Ok(Command::NoViews) => {
-                tokio::spawn(noviews(bot.clone(), msg_clone));
+                tokio::spawn(noviews(bot.clone(), msg.clone()));
             }
             Ok(Command::Solar) => {
                 tokio::spawn(ollama(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::Solar,
                     ollama_client,
                 ));
@@ -223,27 +224,27 @@ async fn handler(
             Ok(Command::Mixtral) => {
                 tokio::spawn(groq(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::Mixtral,
                 ));
             }
             Ok(Command::Gemma) => {
-                tokio::spawn(groq(bot.clone(), msg_clone, trimmed_text, ModelType::Gemma));
+                tokio::spawn(groq(bot.clone(), msg.clone(), get_prompt(trimmed_text, &msg), ModelType::Gemma));
             }
             Ok(Command::CodeGemma) => {
                 tokio::spawn(groq(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::CodeGemma,
                 ));
             }
             Ok(Command::StableLM2) => {
                 tokio::spawn(ollama(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::StableLM2,
                     ollama_client,
                 ));
@@ -252,16 +253,16 @@ async fn handler(
             Ok(Command::Online) => {
                 tokio::spawn(perplexity(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::Online,
                 ));
             }
             Ok(Command::Racist) => {
                 tokio::spawn(ollama(
                     bot.clone(),
-                    msg_clone,
-                    trimmed_text,
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::MistralRacist,
                     ollama_client,
                 ));
@@ -270,4 +271,18 @@ async fn handler(
         }
     }
     Ok(())
+}
+
+
+/// If the prompt is empty, check the reply
+fn get_prompt(prompt: String, msg: &Message) -> String {
+    if prompt.is_empty() {
+        if let Some(reply) = msg.reply_to_message() {
+            reply.text().unwrap_or_default().to_string()
+        } else {
+            "No prompt provided".to_string()
+        }
+    } else {
+        prompt
+    }
 }
