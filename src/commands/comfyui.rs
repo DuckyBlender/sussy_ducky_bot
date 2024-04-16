@@ -65,11 +65,19 @@ pub async fn comfyui(
 
     match imgs {
         Ok(imgs) => {
-            let img = imgs.get("image").unwrap();
+            // Remove the empty images and get the correct image
+            let img = imgs
+                .iter()
+                .filter(|(_, img)| !img.is_empty())
+                .map(|(_, img)| img)
+                .next()
+                .unwrap();
             let img = InputFile::memory(img.to_vec());
             bot.send_photo(msg.chat.id, img)
                 .caption(format!("{prompt} | Generated image in {:.2}s", elapsed))
                 .reply_to_message_id(msg.id)
+                .await?;
+            bot.delete_message(generating_message.chat.id, generating_message.id)
                 .await?;
         }
         Err(e) => {
