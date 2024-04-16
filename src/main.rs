@@ -262,6 +262,15 @@ async fn handler(
                     ollama_client,
                 ));
             }
+            Ok(Command::Bielik) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Bielik,
+                    ollama_client,
+                ));
+            }
 
             Ok(Command::Online) => {
                 tokio::spawn(perplexity(
