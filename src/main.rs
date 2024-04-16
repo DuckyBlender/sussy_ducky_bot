@@ -125,6 +125,8 @@ enum Command {
     Clone,
     #[command(description = "Generate Polish text using the 7B-bielik model", hide)]
     Bielik,
+    #[command(description = "SDXL-Turbo locally on GTX950M")]
+    SdxlTurbo,
 }
 
 // Handler function for bot events
@@ -156,6 +158,14 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Dalle3,
+                ));
+            }
+            Ok(Command::SdxlTurbo) => {
+                tokio::spawn(comfyui(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::SDXLTurbo,
                 ));
             }
             Ok(Command::Clone) => {
@@ -296,14 +306,11 @@ async fn handler(
 }
 
 /// If the prompt is empty, check the reply
-fn get_prompt(prompt: String, msg: &Message) -> String {
+fn get_prompt(prompt: String, msg: &Message) -> Option<String> {
     if prompt.is_empty() {
-        if let Some(reply) = msg.reply_to_message() {
-            reply.text().unwrap_or_default().to_string()
-        } else {
-            "No prompt provided".to_string()
-        }
+        msg.reply_to_message()
+            .map(|reply| reply.text().unwrap_or_default().to_string())
     } else {
-        prompt
+        Some(prompt)
     }
 }

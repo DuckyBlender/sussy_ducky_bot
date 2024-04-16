@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+use comfyui_rs::ClientError;
 use enum_iterator::Sequence;
 use log::info;
 use ollama_rs::Ollama;
@@ -15,6 +18,9 @@ pub enum ModelType {
     CodeGemma,      // codegemma
     Bielik,
 
+    // Comfyui (image generation)
+    SDXLTurbo,
+
     // Ollama (image recognition)
     // LLaVa7B,  // llava
     // LLaVa13B, // llava:13b
@@ -23,11 +29,11 @@ pub enum ModelType {
     // Mixtral, // mixtral-8x7b-instruct
     Online, // pplx-7b-online
 
-    // Groq
+    // Groq (fast LLMs, free)
     Mixtral, // mixtral-8x7b-32768
     Gemma,   // gemma-7b-it
 
-    // OpenAI
+    // OpenAI (best LLMs, paid)
     GPT4,
     Dalle3,
 }
@@ -47,6 +53,10 @@ impl ModelType {
             ModelType::CodeGemma,
             ModelType::Bielik,
         ]
+    }
+
+    pub fn return_comfyui() -> Vec<ModelType> {
+        vec![ModelType::SDXLTurbo]
     }
 
     // pub fn return_perplexity() -> Vec<ModelType> {
@@ -82,6 +92,7 @@ impl std::fmt::Display for ModelType {
             ModelType::Solar => write!(f, "solar"),                // for ollama
             ModelType::StableLM2 => write!(f, "stablelm2"),        // for ollama
             ModelType::Dalle3 => write!(f, "dall-e-3"),            // for openai
+            ModelType::SDXLTurbo => write!(f, "sdxl-turbo"),       // for comfyui
         }
     }
 }
@@ -121,5 +132,29 @@ pub async fn setup_models() {
             .output()
             .expect("Failed to create custom model");
         info!("Model {} created!", model);
+    }
+}
+
+pub async fn process_image_generation(
+    prompt: &str,
+    model: &ModelType,
+) -> Result<HashMap<String, Vec<u8>>, ClientError> {
+    let client = comfyui_rs::Client::new("127.0.0.1:8188");
+    match model {
+        &ModelType::SDXLTurbo => {
+            let json_prompt =
+                serde_json::from_str(include_str!("../comfyui-rs/jsons/sdxl_turbo_api.json"))
+                    .unwrap();
+            let mut json_prompt: serde_json::Value = json_prompt;
+            json_prompt["6"]["inputs"]["text"] = serde_json::Value::String(prompt.to_string());
+            json_prompt["13"]["inputs"]["noise_seed"] =
+                serde_json::Value::Number(serde_json::Number::from(rand::random::<u64>()));
+            let images = client.get_images(json_prompt).await;
+            if images.is_err() {
+                return Err(images.err().unwrap());
+            }
+            Ok(images.unwrap())
+        }
+        _ => Err(ClientError::CustomError("Model not found".to_string())),
     }
 }

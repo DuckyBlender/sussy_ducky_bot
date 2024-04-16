@@ -28,6 +28,7 @@ The bot supports the following commands:
 ## Todo
 
 - [x] Code refactor
+- [ ] Another code refactor 
 - [x] Streaming support
 - [x] Auto-delete invalid commands after 5 seconds (requires permission)
 - [ ] MarkdownV2 support
@@ -39,6 +40,7 @@ The bot supports the following commands:
 - Ollama (at least 8GB of ram because of the high parameter count models)
 - groq.com API key
 - AMD or NVIDIA GPU is recommended
+- ComfyUI in the background with the SDXLTurbo model
 - Rust
 
 ## Installation

@@ -11,19 +11,27 @@ use teloxide::{
     Bot,
 };
 
-pub async fn httpcat(bot: Bot, msg: Message, args: String) -> Result<(), RequestError> {
+pub async fn httpcat(bot: Bot, msg: Message, prompt: Option<String>) -> Result<(), RequestError> {
     // Ping http://http.cat/{argument}
-    if args.is_empty() {
-        bot.send_message(
-            msg.chat.id,
-            "No argument provided: Please provide a status code",
-        )
-        .reply_to_message_id(msg.id)
-        .await?;
-        return Ok(());
-    }
-    let status_code = args.to_string();
-    let first_argument = args.split(' ').next().unwrap();
+    let prompt = match prompt {
+        Some(prompt) => prompt,
+        None => {
+            let bot_msg = bot
+                .send_message(msg.chat.id, "Please provide a status code.")
+                .reply_to_message_id(msg.id)
+                .await?;
+
+            // Wait 5 seconds
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+            // Deleting the messages
+            bot.delete_message(msg.chat.id, msg.id).await?;
+            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
+            return Ok(());
+        }
+    };
+    let status_code = prompt.to_string();
+    let first_argument = prompt.split(' ').next().unwrap();
     // Check if it's a 3 digit number
     if first_argument.len() != 3 {
         bot.send_message(

@@ -13,7 +13,7 @@ use crate::utils::ModelType;
 pub async fn openai(
     bot: Bot,
     msg: Message,
-    prompt: String,
+    prompt: Option<String>,
     model: ModelType,
 ) -> Result<(), RequestError> {
     // Check if the user is from the owner
@@ -23,6 +23,25 @@ pub async fn openai(
             bot.send_message(msg.chat.id, "Error: Unable to fetch OWNER_ID")
                 .reply_to_message_id(msg.id)
                 .await?;
+            return Ok(());
+        }
+    };
+
+    // Check if prompt is empty
+    let prompt = match prompt {
+        Some(prompt) => prompt,
+        None => {
+            let bot_msg = bot
+                .send_message(msg.chat.id, "No prompt provided")
+                .reply_to_message_id(msg.id)
+                .await?;
+
+            // Wait 5 seconds
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+            // Deleting the messages
+            bot.delete_message(msg.chat.id, msg.id).await?;
+            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
             return Ok(());
         }
     };

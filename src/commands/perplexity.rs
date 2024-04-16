@@ -13,7 +13,7 @@ use crate::utils::ModelType;
 pub async fn perplexity(
     bot: Bot,
     msg: Message,
-    prompt: String,
+    prompt: Option<String>,
     model: ModelType,
 ) -> Result<(), RequestError> {
     // Check if the user is from the owner
@@ -33,17 +33,22 @@ pub async fn perplexity(
     info!("Starting perplexity request function");
 
     // Determine the prompt
-    let prompt: String = if prompt.is_empty() {
-        if let Some(reply) = msg.reply_to_message() {
-            reply.text().unwrap_or_default().to_string()
-        } else {
-            bot.send_message(msg.chat.id, "No prompt provided")
+    let prompt = match prompt {
+        Some(prompt) => prompt,
+        None => {
+            let bot_msg = bot
+                .send_message(msg.chat.id, "No prompt provided")
                 .reply_to_message_id(msg.id)
                 .await?;
+
+            // Wait 5 seconds
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+            // Deleting the messages
+            bot.delete_message(msg.chat.id, msg.id).await?;
+            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
             return Ok(());
         }
-    } else {
-        prompt.to_owned()
     };
 
     // Send generating... message

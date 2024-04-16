@@ -17,24 +17,28 @@ const INTERVAL_SEC: u64 = 5;
 pub async fn ollama(
     bot: Bot,
     msg: Message,
-    prompt: String,
+    prompt: Option<String>,
     model_type: ModelType,
     ollama_client: Ollama,
 ) -> Result<(), RequestError> {
-    if prompt.is_empty() {
-        let bot_msg = bot
-            .send_message(msg.chat.id, "Please provide a prompt")
-            .reply_to_message_id(msg.id)
-            .await?;
+    // Check if prompt is empty
+    let prompt = match prompt {
+        Some(prompt) => prompt,
+        None => {
+            let bot_msg = bot
+                .send_message(msg.chat.id, "No prompt provided")
+                .reply_to_message_id(msg.id)
+                .await?;
 
-        // Wait 5 seconds and delete the users and the bot's message
-        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            // Wait 5 seconds
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-        // Deleting the messages
-        bot.delete_message(msg.chat.id, msg.id).await?;
-        bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
-        return Ok(());
-    }
+            // Deleting the messages
+            bot.delete_message(msg.chat.id, msg.id).await?;
+            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
+            return Ok(());
+        }
+    };
 
     // if the prompt is exactly "SIUDFNISUDF" then send a test message to the chat
     //     if prompt == "SIUDFNISUDF" {
@@ -97,7 +101,10 @@ pub async fn ollama(
     let stream = ollama_client.generate_stream(request).await;
 
     match stream {
-        Ok(_) => info!("Stream request successful, incoming token responses.."),
+        Ok(_) => info!(
+            "Stream request for model {} successful, incoming token responses..",
+            model_type
+        ),
         Err(e) => {
             error!("Stream request failed: {}", e);
             bot.edit_message_text(

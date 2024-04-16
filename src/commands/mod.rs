@@ -30,3 +30,6 @@ pub use clone_img::clone_img;
 
 mod dalle;
 pub use dalle::dalle;
+
+mod comfyui;
+pub use comfyui::comfyui;
