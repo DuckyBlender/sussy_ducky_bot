@@ -164,6 +164,10 @@ impl Client {
                 }
             }
         }
+
+        // Clear empty images
+        images.retain(|_, v| !v.is_empty());
+
         Ok(images)
     }
 

@@ -1,7 +1,15 @@
+use std::{
+    collections::HashMap,
+    time::{Duration, SystemTime},
+};
+
 use log::info;
 
 use ollama_rs::Ollama;
-use teloxide::{prelude::*, types::Me, utils::command::BotCommands, RequestError};
+use teloxide::{
+    dispatching::dialogue::GetChatId, prelude::*, types::Me, utils::command::BotCommands,
+    RequestError,
+};
 
 mod structs;
 
@@ -33,6 +41,8 @@ async fn main() {
     let bot = Bot::from_env();
     let ollama = Ollama::default();
 
+    let mut last_command: HashMap<u64, SystemTime> = HashMap::new();
+
     let handler = dptree::entry()
         // .branch(Update::filter_callback_query().endpoint(callback_handler))
         .branch(Update::filter_message().endpoint(handler));
@@ -42,7 +52,7 @@ async fn main() {
         bot.get_me().send().await.unwrap().user.username.unwrap()
     );
     Dispatcher::builder(bot, handler)
-        .dependencies(dptree::deps![ollama])
+        .dependencies(dptree::deps![ollama, last_command])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
@@ -135,8 +145,27 @@ async fn handler(
     msg: Message,
     me: Me,
     ollama_client: Ollama,
+    mut last_command: HashMap<u64, SystemTime>,
 ) -> Result<(), RequestError> {
     if let Some(text) = msg.text() {
+        let user_id = msg.from().unwrap().id.0;
+        let now = SystemTime::now();
+        let five_seconds = Duration::from_secs(5);
+
+        // Check if the user has executed a command in the last 5 seconds
+        if let Some(last_command) = last_command.get(&user_id) {
+            if now.duration_since(*last_command).unwrap() < five_seconds {
+                bot.send_message(msg.chat.id, "You are sending commands too quickly. Please wait a few seconds before sending another command.")
+                    .reply_to_message_id(msg.id)
+                    .await?;
+                
+                return Ok(());
+            }
+        }
+
+        // Update the last command execution time for the user
+        last_command.insert(user_id, now);
+
         let trimmed_text = text
             .split_once(' ')
             .map(|x| x.1)
