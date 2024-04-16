@@ -123,6 +123,8 @@ enum Command {
         hide
     )]
     Clone,
+    #[command(description = "Generate Polish text using the 7B-bielik model", hide)]
+    Bielik,
 }
 
 // Handler function for bot events
@@ -202,12 +204,18 @@ async fn handler(
                 tokio::spawn(ping(bot.clone(), msg));
             }
             Ok(Command::HttpCat) => {
-                tokio::spawn(httpcat(bot.clone(), msg.clone(), get_prompt(trimmed_text, &msg),
-            ));
+                tokio::spawn(httpcat(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                ));
             }
             Ok(Command::ChatLGBT) => {
-                tokio::spawn(chatlgbt(bot.clone(), msg.clone(), get_prompt(trimmed_text, &msg),
-            ));
+                tokio::spawn(chatlgbt(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                ));
             }
             Ok(Command::NoViews) => {
                 tokio::spawn(noviews(bot.clone(), msg.clone()));
@@ -230,7 +238,12 @@ async fn handler(
                 ));
             }
             Ok(Command::Gemma) => {
-                tokio::spawn(groq(bot.clone(), msg.clone(), get_prompt(trimmed_text, &msg), ModelType::Gemma));
+                tokio::spawn(groq(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Gemma,
+                ));
             }
             Ok(Command::CodeGemma) => {
                 tokio::spawn(groq(
@@ -272,7 +285,6 @@ async fn handler(
     }
     Ok(())
 }
-
 
 /// If the prompt is empty, check the reply
 fn get_prompt(prompt: String, msg: &Message) -> String {

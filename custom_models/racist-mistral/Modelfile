@@ -1,4 +1,4 @@
-FROM dolphin-mistral
+FROM dolphin-mistral:7b-v2.8-q5_K_M
 
 # set the temperature to 1 [higher is more creative, lower is more coherent]
 PARAMETER temperature 1

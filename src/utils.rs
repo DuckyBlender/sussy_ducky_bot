@@ -13,6 +13,7 @@ pub enum ModelType {
     Solar,          // solar
     StableLM2,      // stablelm2
     CodeGemma,      // codegemma
+    Bielik,
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -44,6 +45,7 @@ impl ModelType {
             ModelType::Solar,
             ModelType::StableLM2,
             ModelType::CodeGemma,
+            ModelType::Bielik,
         ]
     }
 
@@ -63,8 +65,11 @@ impl ModelType {
 impl std::fmt::Display for ModelType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
+            ModelType::Bielik => {
+                write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q5_K_M.gguf")
+            } // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
-            ModelType::Mistral => write!(f, "dolphin-mistral"), // for ollama
+            ModelType::Mistral => write!(f, "dolphin-mistral:7b-v2.8-q5_K_M"), // for ollama
             ModelType::MistralCaveman => write!(f, "caveman-mistral"), // for ollama
             ModelType::MistralRacist => write!(f, "racist-mistral"), // for ollama
             ModelType::TinyLlama => write!(f, "tinyllama:1.1b-chat-v0.6-q8_0"), // for ollama
