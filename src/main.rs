@@ -71,6 +71,8 @@ enum Command {
         description = "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"
     )]
     Racist,
+    #[command(description = "Generate uwu furry text using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]")]
+    Furry,
     #[command(description = "Geterate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2_K LLM")]
     Lobotomy,
     #[command(description = "Generate text using 1.1B 8Q tinyllama-openorca LLM")]
@@ -123,7 +125,7 @@ enum Command {
         hide
     )]
     Clone,
-    #[command(description = "Generate Polish text using the 7B-bielik model", hide)]
+    #[command(description = "Generate Polish text using the 7B-bielik model")]
     Bielik,
     #[command(description = "SDXL-Turbo locally on GTX950M", aliases = ["sdxl", "img", "sd"])]
     SdxlTurbo,
@@ -160,6 +162,15 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Dalle3,
+                ));
+            }
+            Ok(Command::Furry) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::MistralFurry,
+                    ollama_client
                 ));
             }
             Ok(Command::SdxlTurbo) => {

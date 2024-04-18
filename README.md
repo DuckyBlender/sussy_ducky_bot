@@ -31,6 +31,7 @@ The bot supports the following commands:
 - [ ] Another code refactor 
 - [x] Streaming support
 - [x] Auto-delete invalid commands after 5 seconds (requires permission)
+- [ ] Queue system (so the user knows the bot isn't stuck)
 - [ ] MarkdownV2 support
 - [ ] Maybe even make it serverless?
 

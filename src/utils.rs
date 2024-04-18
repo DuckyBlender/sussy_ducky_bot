@@ -10,6 +10,7 @@ pub enum ModelType {
     // Ollama (text)
     MistralCaveman, // caveman-mistral (custom model)
     MistralRacist,  // racist-mistral (custom model)
+    MistralFurry,
     Mistral,        // dolphin-mistral
     TinyLlama,      // tinyllama
     Lobotomy,       // qwen:0.5b-chat-v1.5-q2_K
@@ -18,6 +19,7 @@ pub enum ModelType {
     CodeGemma,      // codegemma
     Bielik,         // bielik
     LLAMA3,         // llama3
+
 
     // Comfyui (image generation)
     SDXLTurbo,
@@ -70,7 +72,7 @@ impl ModelType {
     // }
 
     pub fn return_custom() -> Vec<ModelType> {
-        vec![ModelType::MistralCaveman, ModelType::MistralRacist]
+        vec![ModelType::MistralCaveman, ModelType::MistralRacist, ModelType::MistralFurry]
     }
 }
 
@@ -85,6 +87,7 @@ impl std::fmt::Display for ModelType {
             ModelType::Mistral => write!(f, "dolphin-mistral:7b-v2.8-q5_K_M"), // for ollama
             ModelType::MistralCaveman => write!(f, "caveman-mistral"), // for ollama
             ModelType::MistralRacist => write!(f, "racist-mistral"), // for ollama
+            ModelType::MistralFurry => write!(f, "furry-mistral"), // for ollama
             ModelType::TinyLlama => write!(f, "tinyllama:1.1b-chat-v0.6-q8_0"), // for ollama
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"), // ollama
             // ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"), // for perplexity.ai
