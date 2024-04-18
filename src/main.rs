@@ -125,7 +125,7 @@ enum Command {
         hide
     )]
     Clone,
-    #[command(description = "Generate Polish text using the 7B-bielik model", hide)]
+    #[command(description = "Generate Polish text using the 7B-bielik model")]
     Bielik,
     #[command(description = "SDXL-Turbo locally on GTX950M", aliases = ["sdxl", "img", "sd"])]
     SdxlTurbo,
