@@ -16,7 +16,8 @@ pub enum ModelType {
     Solar,          // solar
     StableLM2,      // stablelm2
     CodeGemma,      // codegemma
-    Bielik,
+    Bielik,         // bielik
+    LLAMA3,         // llama3
 
     // Comfyui (image generation)
     SDXLTurbo,
@@ -52,6 +53,7 @@ impl ModelType {
             ModelType::StableLM2,
             ModelType::CodeGemma,
             ModelType::Bielik,
+            ModelType::LLAMA3,
         ]
     }
 
@@ -79,6 +81,7 @@ impl std::fmt::Display for ModelType {
                 write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q5_K_M.gguf")
             } // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
+            ModelType::LLAMA3 => write!(f, "llama3"),    // for ollama
             ModelType::Mistral => write!(f, "dolphin-mistral:7b-v2.8-q5_K_M"), // for ollama
             ModelType::MistralCaveman => write!(f, "caveman-mistral"), // for ollama
             ModelType::MistralRacist => write!(f, "racist-mistral"), // for ollama

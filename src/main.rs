@@ -127,6 +127,8 @@ enum Command {
     Bielik,
     #[command(description = "SDXL-Turbo locally on GTX950M", aliases = ["sdxl", "img", "sd"])]
     SdxlTurbo,
+    #[command(description = "Generate text using the 8B LLAMA 3 model", aliases = ["llama"])]
+    LLAMA3,
 }
 
 // Handler function for bot events
@@ -269,6 +271,15 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::StableLM2,
+                    ollama_client,
+                ));
+            }
+            Ok(Command::LLAMA3) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::LLAMA3,
                     ollama_client,
                 ));
             }
