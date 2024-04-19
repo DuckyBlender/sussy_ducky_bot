@@ -54,17 +54,17 @@ async fn main() {
 #[command(rename_rule = "lowercase")]
 enum Command {
     #[command(
-        description = "Generate text using the 10.7B solar LLM. This is the best general purpouse model in this bot."
+        description = "Generate text using 10.7B solar LLM. Fun to compare with the /llama3 model."
     )]
     Solar,
     #[command(
         alias = "m",
-        description = "Generate text using 7B uncensored dolphin-mistral LLM."
+        description = "Generate uncensored text using 7B dolphin-mistral LLM."
     )]
     Mistral,
     #[command(
         alias = "cv",
-        description = "Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"
+        description = "Generate caveman-like text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"
     )]
     Caveman,
     #[command(
@@ -127,9 +127,9 @@ enum Command {
     Clone,
     #[command(description = "Generate Polish text using the 7B-bielik model")]
     Bielik,
-    #[command(description = "SDXL-Turbo locally on GTX950M", aliases = ["sdxl", "img", "sd"])]
+    #[command(description = "SDXL-Turbo locally on GTX950M [VERY EXPERIMENTAL]", aliases = ["sdxl", "img", "sd"])]
     SdxlTurbo,
-    #[command(description = "Generate text using the 8B LLAMA 3 instruct-q5_K_M model", aliases = ["llama"])]
+    #[command(description = "Generate text using the 8B LLAMA 3 instruct-q5_K_M model. This should be the local model here by FAR.", aliases = ["llama"])]
     LLAMA3,
 }
 
