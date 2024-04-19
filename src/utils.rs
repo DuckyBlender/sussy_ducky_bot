@@ -83,7 +83,7 @@ impl std::fmt::Display for ModelType {
                 write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q5_K_M.gguf")
             } // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
-            ModelType::LLAMA3 => write!(f, "llama3"),    // for ollama
+            ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q5_K_M"),    // for ollama
             ModelType::Mistral => write!(f, "dolphin-mistral:7b-v2.8-q5_K_M"), // for ollama
             ModelType::MistralCaveman => write!(f, "caveman-mistral"), // for ollama
             ModelType::MistralRacist => write!(f, "racist-mistral"), // for ollama
