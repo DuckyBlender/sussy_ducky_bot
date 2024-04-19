@@ -129,7 +129,7 @@ enum Command {
     Bielik,
     #[command(description = "SDXL-Turbo locally on GTX950M [VERY EXPERIMENTAL]", aliases = ["sdxl", "img", "sd"])]
     SdxlTurbo,
-    #[command(description = "Generate text using the 8B LLAMA 3 instruct-q5_K_M model. This should be the local model here by FAR.", aliases = ["llama"])]
+    #[command(description = "Generate text using the 70B LLAMA 3 model from GroqCloud. This should be the best model here by FAR.", aliases = ["llama"])]
     LLAMA3,
 }
 
@@ -286,12 +286,18 @@ async fn handler(
                 ));
             }
             Ok(Command::LLAMA3) => {
-                tokio::spawn(ollama(
+                // tokio::spawn(ollama(
+                //     bot.clone(),
+                //     msg.clone(),
+                //     get_prompt(trimmed_text, &msg),
+                //     ModelType::LLAMA3,
+                //     ollama_client,
+                // ));
+                tokio::spawn(groq(
                     bot.clone(),
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::LLAMA3,
-                    ollama_client,
                 ));
             }
             Ok(Command::Bielik) => {

@@ -13,6 +13,15 @@ pub async fn groq(
 ) -> Result<(), RequestError> {
     info!("Starting perplexity request function");
 
+    // Check if the model is one of groq's models
+    let groq_models = ModelType::return_groq();
+    if !groq_models.contains(&model) {
+        bot.send_message(msg.chat.id, "Invalid model")
+            .reply_to_message_id(msg.id)
+            .await?;
+        return Ok(());
+    }
+
     let prompt = match prompt {
         Some(prompt) => prompt,
         None => {

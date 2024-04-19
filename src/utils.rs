@@ -55,7 +55,7 @@ impl ModelType {
             ModelType::StableLM2,
             ModelType::CodeGemma,
             ModelType::Bielik,
-            ModelType::LLAMA3,
+            // ModelType::LLAMA3,
         ]
     }
 
@@ -67,9 +67,9 @@ impl ModelType {
     //     vec![ModelType::Online]
     // }
 
-    // pub fn return_groq() -> Vec<ModelType> {
-    //     vec![ModelType::Mixtral, ModelType::Gemma]
-    // }
+    pub fn return_groq() -> Vec<ModelType> {
+        vec![ModelType::Mixtral, ModelType::Gemma, ModelType::LLAMA3]
+    }
 
     pub fn return_custom() -> Vec<ModelType> {
         vec![ModelType::MistralCaveman, ModelType::MistralRacist, ModelType::MistralFurry]
@@ -83,7 +83,8 @@ impl std::fmt::Display for ModelType {
                 write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q5_K_M.gguf")
             } // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
-            ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q5_K_M"),    // for ollama
+            // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q5_K_M"),    // for ollama
+            ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
             ModelType::Mistral => write!(f, "dolphin-mistral:7b-v2.8-q5_K_M"), // for ollama
             ModelType::MistralCaveman => write!(f, "caveman-mistral"), // for ollama
             ModelType::MistralRacist => write!(f, "racist-mistral"), // for ollama
