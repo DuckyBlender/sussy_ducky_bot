@@ -81,6 +81,7 @@ pub async fn perplexity(
                     content: prompt,
                 },
             ],
+            temperature: 0.2,
         })
         .send()
         .await;

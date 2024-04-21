@@ -4,6 +4,7 @@ use serde::Serialize;
 pub struct PerplexityRequest {
     pub model: String,
     pub messages: Vec<PerplexityRequestMessage>,
+    pub temperature: f32,
 }
 
 #[derive(Debug, Serialize)]

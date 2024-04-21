@@ -65,6 +65,7 @@ pub async fn groq(
                     content: prompt,
                 },
             ],
+            temperature: 0.2,
         })
         .send()
         .await;
