@@ -11,15 +11,14 @@ pub enum ModelType {
     MistralCaveman, // caveman-mistral (custom model)
     MistralRacist,  // racist-mistral (custom model)
     MistralFurry,
-    Mistral,        // dolphin-mistral
-    TinyLlama,      // tinyllama
-    Lobotomy,       // qwen:0.5b-chat-v1.5-q2_K
-    Solar,          // solar
-    StableLM2,      // stablelm2
-    CodeGemma,      // codegemma
-    Bielik,         // bielik
-    LLAMA3,         // llama3
-
+    Mistral,   // dolphin-mistral
+    TinyLlama, // tinyllama
+    Lobotomy,  // qwen:0.5b-chat-v1.5-q2_K
+    Solar,     // solar
+    StableLM2, // stablelm2
+    CodeGemma, // codegemma
+    Bielik,    // bielik
+    LLAMA3,    // llama3
 
     // Comfyui (image generation)
     SDXLTurbo,
@@ -72,7 +71,11 @@ impl ModelType {
     }
 
     pub fn return_custom() -> Vec<ModelType> {
-        vec![ModelType::MistralCaveman, ModelType::MistralRacist, ModelType::MistralFurry]
+        vec![
+            ModelType::MistralCaveman,
+            ModelType::MistralRacist,
+            ModelType::MistralFurry,
+        ]
     }
 }
 
@@ -80,12 +83,12 @@ impl std::fmt::Display for ModelType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             ModelType::Bielik => {
-                write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q5_K_M.gguf")
+                write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q4_K_M.gguf")
             } // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
-            // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q5_K_M"),    // for ollama
+            // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q4_K_M"),    // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
-            ModelType::Mistral => write!(f, "dolphin-mistral:7b-v2.8-q5_K_M"), // for ollama
+            ModelType::Mistral => write!(f, "dolphin-mistral:7b-v2.8-q4_K_M"), // for ollama
             ModelType::MistralCaveman => write!(f, "caveman-mistral"), // for ollama
             ModelType::MistralRacist => write!(f, "racist-mistral"), // for ollama
             ModelType::MistralFurry => write!(f, "furry-mistral"), // for ollama
