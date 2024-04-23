@@ -8,22 +8,8 @@ If you want to use the bot you can add it to your group by clicking [here](https
 
 ## Features
 
-The bot supports the following commands:
+Look at the `Commands` struct in `main.rs` to see all of the commands.
 
-- `/solar`: Generate text using the 10.7B solar LLM. This is the best general-purpose model in this bot.
-- `/mistral` or `/m`: Generate text using 7B uncensored dolphin-mistral LLM.
-- `/caveman` or `/cv`: Generate text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL].
-- `/racist`: Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL].
-- `/lobotomy`: Generate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2_K LLM.
-- `/tinyllama`: Generate text using 1.1B 8Q tinyllama-openorca LLM.
-- `/help`: Show available commands.
-- `/ping`: Check the bot's latency.
-- `/httpcat`: Get an image of a cat for a given HTTP status code.
-- `/noviews`: Get a random video with no views (or very few views).
-- `/mixtral`: Generate text using the mixtral-8x7b-instruct model from groq.com.
-- `/gemma`: Generate text using the gemma-7b-it model from groq.com.
-- `/chatlgbt` or `/lgbt`: Goofy ahh bot which responds with earlier user inputs.
-- `/online`: Generate text using the pplx-7b-online model from PerplexityAI [DEV ONLY].
 
 ## Todo
 

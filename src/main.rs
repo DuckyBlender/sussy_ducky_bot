@@ -54,24 +54,20 @@ async fn main() {
 #[command(rename_rule = "lowercase")]
 enum Command {
     #[command(
-        description = "Generate text using 10.7B solar LLM. Fun to compare with the /llama3 model."
+        alias = "u",
+        description = "Generate uncensored text using 8B dolphin-llama3 LLM. This should be the best local model here."
     )]
-    Solar,
-    #[command(
-        alias = "m",
-        description = "Generate uncensored text using 7B dolphin-mistral LLM."
-    )]
-    Mistral,
+    Uncensored,
     #[command(
         alias = "cv",
-        description = "Generate caveman-like text using 7B dolphin-mistral LLM in caveman language [CUSTOM PROMPT MODEL]"
+        description = "Generate caveman-like text using 8B dolphin-llama3 LLM in caveman language [CUSTOM PROMPT MODEL]"
     )]
     Caveman,
     #[command(
-        description = "Generate racist responses using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]"
+        description = "Generate racist responses using 8B dolphin-llama3 LLM [CUSTOM PROMPT MODEL]"
     )]
     Racist,
-    #[command(description = "Generate uwu furry text using 7B dolphin-mistral LLM [CUSTOM PROMPT MODEL]")]
+    #[command(description = "Generate uwu furry text using 8B dolphin-llama3 LLM [CUSTOM PROMPT MODEL]")]
     Furry,
     #[command(description = "Geterate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2_K LLM")]
     Lobotomy,
@@ -148,6 +144,15 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Command::Uncensored) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Uncensored,
+                    ollama_client,
+                ));
+            }
             Ok(Command::GPT4) => {
                 tokio::spawn(openai(
                     bot.clone(),
@@ -169,7 +174,7 @@ async fn handler(
                     bot.clone(),
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
-                    ModelType::MistralFurry,
+                    ModelType::Furry,
                     ollama_client
                 ));
             }
@@ -184,21 +189,12 @@ async fn handler(
             Ok(Command::Clone) => {
                 tokio::spawn(clone_img(bot.clone(), msg, ModelType::GPT4));
             }
-            Ok(Command::Mistral) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Mistral,
-                    ollama_client,
-                ));
-            }
             Ok(Command::Caveman) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
-                    ModelType::MistralCaveman,
+                    ModelType::Caveman,
                     ollama_client,
                 ));
             }
@@ -243,15 +239,6 @@ async fn handler(
             Ok(Command::NoViews) => {
                 tokio::spawn(noviews(bot.clone(), msg.clone()));
             }
-            Ok(Command::Solar) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Solar,
-                    ollama_client,
-                ));
-            }
             Ok(Command::Mixtral) => {
                 tokio::spawn(groq(
                     bot.clone(),
@@ -286,13 +273,6 @@ async fn handler(
                 ));
             }
             Ok(Command::LLAMA3) => {
-                // tokio::spawn(ollama(
-                //     bot.clone(),
-                //     msg.clone(),
-                //     get_prompt(trimmed_text, &msg),
-                //     ModelType::LLAMA3,
-                //     ollama_client,
-                // ));
                 tokio::spawn(groq(
                     bot.clone(),
                     msg.clone(),
@@ -323,7 +303,7 @@ async fn handler(
                     bot.clone(),
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
-                    ModelType::MistralRacist,
+                    ModelType::Racist,
                     ollama_client,
                 ));
             }
