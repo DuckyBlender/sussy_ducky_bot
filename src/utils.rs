@@ -51,7 +51,7 @@ impl ModelType {
             ModelType::StableLM2,
             ModelType::CodeGemma,
             ModelType::Bielik,
-            // ModelType::LLAMA3,
+            ModelType::Uncensored,
         ]
     }
 
@@ -83,7 +83,7 @@ impl std::fmt::Display for ModelType {
                 write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q4_K_M.gguf")
             } // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
-            ModelType::Uncensored => write!(f, "dolphin-llama3"), // for ollama
+            ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
             // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q4_K_M"),    // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
             ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama
