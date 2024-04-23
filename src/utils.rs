@@ -53,6 +53,7 @@ impl ModelType {
             ModelType::CodeGemma,
             ModelType::Bielik,
             ModelType::Uncensored,
+            ModelType::Phi3,
         ]
     }
 
