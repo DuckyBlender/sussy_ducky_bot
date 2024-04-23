@@ -63,7 +63,7 @@ enum Command {
         description = "Generate caveman-like text using 8B dolphin-llama3 LLM in caveman language [CUSTOM PROMPT MODEL]"
     )]
     Caveman,
-    #[command(description = "Generate text using the 3.8B phi3 LLM")]
+    #[command(description = "Generate text using the 3.8B phi3 LLM", alias = "phi")]
     Phi3,
     #[command(
         description = "Generate racist responses using 8B dolphin-llama3 LLM [CUSTOM PROMPT MODEL]"
