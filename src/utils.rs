@@ -9,26 +9,27 @@ use ollama_rs::Ollama;
 pub enum ModelType {
     // Ollama (text)
     Uncensored, // dolphin-llama3
-    Caveman, // caveman-llama3 (custom model)
-    Racist,  // racist-llama3 (custom model)
-    Furry,   // furry-llama3 (custom model)
-    TinyLlama, // tinyllama
-    Lobotomy,  // qwen:0.5b-chat-v1.5-q2_K
-    StableLM2, // stablelm2
-    CodeGemma, // codegemma
-    Bielik,    // bielik
-    
+    Caveman,    // caveman-llama3 (custom model)
+    Racist,     // racist-llama3 (custom model)
+    Furry,      // furry-llama3 (custom model)
+    TinyLlama,  // tinyllama
+    Lobotomy,   // qwen:0.5b-chat-v1.5-q2_K
+    StableLM2,  // stablelm2
+    CodeGemma,  // codegemma
+    Bielik,     // bielik
+    Phi3,       // phi3:3.8b-mini-instruct-4k-q4_K_M
+
     // Comfyui (image generation)
     SDXLTurbo,
-    
+
     // Ollama (image recognition)
     // LLaVa7B,  // llava
     // LLaVa13B, // llava:13b
-    
+
     // Perplexity (online)
     // Mixtral, // mixtral-8x7b-instruct
     Online, // pplx-7b-online
-    
+
     // Groq (fast LLMs, free)
     Mixtral, // mixtral-8x7b-32768
     Gemma,   // gemma-7b-it
@@ -68,11 +69,7 @@ impl ModelType {
     }
 
     pub fn return_custom() -> Vec<ModelType> {
-        vec![
-            ModelType::Caveman,
-            ModelType::Racist,
-            ModelType::Furry,
-        ]
+        vec![ModelType::Caveman, ModelType::Racist, ModelType::Furry]
     }
 }
 
@@ -82,13 +79,14 @@ impl std::fmt::Display for ModelType {
             ModelType::Bielik => {
                 write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q4_K_M.gguf")
             } // for ollama
-            ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
+            ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
+            ModelType::GPT4 => write!(f, "gpt-4-turbo"),                       // for perplexity.ai
             ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
             // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q4_K_M"),    // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
             ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama
-            ModelType::Racist => write!(f, "racist-llama3"), // for ollama
-            ModelType::Furry => write!(f, "furry-llama3"), // for ollama
+            ModelType::Racist => write!(f, "racist-llama3"),   // for ollama
+            ModelType::Furry => write!(f, "furry-llama3"),     // for ollama
             ModelType::TinyLlama => write!(f, "tinyllama:1.1b-chat-v0.6-q8_0"), // for ollama
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"), // ollama
             // ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"), // for perplexity.ai

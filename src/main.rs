@@ -63,11 +63,15 @@ enum Command {
         description = "Generate caveman-like text using 8B dolphin-llama3 LLM in caveman language [CUSTOM PROMPT MODEL]"
     )]
     Caveman,
+    #[command(description = "Generate text using the 3.8B phi3 LLM")]
+    Phi3,
     #[command(
         description = "Generate racist responses using 8B dolphin-llama3 LLM [CUSTOM PROMPT MODEL]"
     )]
     Racist,
-    #[command(description = "Generate uwu furry text using 8B dolphin-llama3 LLM [CUSTOM PROMPT MODEL]")]
+    #[command(
+        description = "Generate uwu furry text using 8B dolphin-llama3 LLM [CUSTOM PROMPT MODEL]"
+    )]
     Furry,
     #[command(description = "Geterate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2_K LLM")]
     Lobotomy,
@@ -153,6 +157,15 @@ async fn handler(
                     ollama_client,
                 ));
             }
+            Ok(Command::Phi3) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Phi3,
+                    ollama_client,
+                ));
+            }
             Ok(Command::GPT4) => {
                 tokio::spawn(openai(
                     bot.clone(),
@@ -175,7 +188,7 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Furry,
-                    ollama_client
+                    ollama_client,
                 ));
             }
             Ok(Command::SdxlTurbo) => {
