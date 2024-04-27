@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use comfyui_rs::ClientError;
 use enum_iterator::Sequence;
 use log::info;
