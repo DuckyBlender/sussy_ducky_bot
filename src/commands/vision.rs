@@ -1,109 +1,120 @@
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::engine::Engine as _;
 use log::{error, info, warn};
-use ollama_rs::{generation::completion::request::GenerationRequest, Ollama};
+use ollama_rs::generation::completion::request::GenerationRequest;
+use ollama_rs::generation::images::Image;
+use ollama_rs::Ollama;
 use teloxide::payloads::SendMessageSetters;
-
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
     Bot, RequestError,
 };
-
 use tokio_stream::StreamExt;
 
 use crate::structs::INTERVAL_SEC;
 use crate::utils::ModelType;
 
-pub async fn ollama(
+/// Vision works like this
+/// 1. Downloads the image
+/// 2. Sends it to ollama
+/// 3. Response
+pub async fn vision(
     bot: Bot,
     msg: Message,
-    prompt: Option<String>,
-    model_type: ModelType,
+    model: ModelType,
     ollama_client: Ollama,
 ) -> Result<(), RequestError> {
-    // Check if prompt is empty
-    let prompt = match prompt {
-        Some(prompt) => prompt,
-        None => {
-            let bot_msg = bot
-                .send_message(msg.chat.id, "No prompt provided")
-                .reply_to_message_id(msg.id)
-                .await?;
+    // Check if there is an image or sticker attached in the reply
+    let img_attachment = if let Some(reply) = msg.reply_to_message() {
+        reply
+            .photo()
+            .map(|photo| photo.last().unwrap().file.id.clone())
+            .or_else(|| reply.sticker().map(|sticker| &sticker.file.id).cloned())
+    } else {
+        let bot_msg = bot
+            .send_message(msg.chat.id, "No image or sticker provided")
+            .reply_to_message_id(msg.id)
+            .await?;
 
-            // Wait 5 seconds
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        // Wait 5 seconds and delete the users and the bot's message
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-            // Deleting the messages
-            bot.delete_message(msg.chat.id, msg.id).await?;
-            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
-            return Ok(());
-        }
+        // Deleting the messages
+        bot.delete_message(msg.chat.id, msg.id).await?;
+        bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
+
+        return Ok(());
     };
 
-    // if the prompt is exactly "SIUDFNISUDF" then send a test message to the chat
-    //     if prompt == "SIUDFNISUDF" {
-    //         let message = r#"""
-    //         *bold \*text*
-    // _italic \*text_
-    // __underline__
-    // ~strikethrough~
-    // ||spoiler||
-    // *bold _italic bold ~italic bold strikethrough ||italic bold strikethrough spoiler||~ __underline italic bold___ bold*
-    // [inline URL](http://www.example.com/)
-    // [inline mention of a user](tg://user?id=123456789)
-    // ![👍](tg://emoji?id=5368324170671202286)
-    // `inline fixed-width code`
-    // ```
-    // pre-formatted fixed-width code block
-    // ```
-    // ```python
-    // pre-formatted fixed-width code block written in the Python programming language
-    // ```
-    // >Block quotation started
-    // >Block quotation continued
-    // >The last line of the block quotation**
-    // >The second block quotation started right after the previous\r
-    // >The third block quotation started right after the previous
-    //         """#;
+    if img_attachment.is_none() {
+        let bot_msg = bot
+            .send_message(msg.chat.id, "No image or sticker provided")
+            .reply_to_message_id(msg.id)
+            .await?;
 
-    //         bot.send_message(msg.chat.id, parse_markdown(message))
-    //             // .parse_mode(teloxide::types::ParseMode::MarkdownV2)
-    //             .parse_mode(teloxide::types::ParseMode::Html)
-    //             .await?;
+        // Wait 5 seconds and delete the users and the bot's message
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-    //         return Ok(());
-    //     }
+        // Deleting the messages
+        bot.delete_message(msg.chat.id, msg.id).await?;
+        bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
+        return Ok(());
+    }
 
-    // Log the request (as JSON)
-    info!(
-        "Sending request to ollama using model {} and length: {} chars",
-        model_type,
-        prompt.len()
-    );
+    info!("Starting vision command");
 
-    // Send a message to the chat to show that the bot is generating a response
+    // Send generating... message
     let generating_message = bot
-        .send_message(msg.chat.id, "Generating response...")
+        .send_message(msg.chat.id, "Responding to image...")
         .reply_to_message_id(msg.id)
         .disable_notification(true)
         .await?;
-
-    let now = std::time::Instant::now();
-
-    let waiting_time = now.elapsed().as_secs_f32();
 
     // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
 
+    // Get the image URL if it exists
+    let img_url = if let Some(img_attachment) = img_attachment {
+        let img_attachment = bot.get_file(&img_attachment).await?;
+        let img_url = format!(
+            "https://api.telegram.org/file/bot{}/{}",
+            std::env::var("TELOXIDE_TOKEN").unwrap(),
+            img_attachment.path
+        );
+        img_url
+    } else {
+        let bot_msg = bot
+            .send_message(msg.chat.id, "No image provided")
+            .reply_to_message_id(msg.id)
+            .await?;
+
+        // Wait 5 seconds and delete the users and the bot's message
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+        // Deleting the messages
+        bot.delete_message(msg.chat.id, msg.id).await?;
+        bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
+
+        return Ok(());
+    };
+
+    // Download the image
+    let img = reqwest::get(&img_url).await.unwrap().bytes().await.unwrap();
+    // Convert to base64
+    let img = BASE64.encode(&img);
+
     // Send the stream request using ollama-rs
     let before_request = std::time::Instant::now();
-    let request = GenerationRequest::new(model_type.to_string(), prompt);
+    let request = GenerationRequest::new(model.to_string(), "What is in this image?".to_string())
+        .add_image(Image::from_base64(&img));
     let stream = ollama_client.generate_stream(request).await;
 
     match stream {
         Ok(_) => info!(
             "Stream request for model {} successful, incoming token responses..",
-            model_type
+            model,
         ),
         Err(e) => {
             error!("Stream request failed: {}", e);
@@ -189,8 +200,8 @@ pub async fn ollama(
     let elapsed = before_request.elapsed().as_secs_f32();
 
     info!(
-        "Generated ollama response.\n - Time elapsed: {:.2}s\n - Waiting time: {:.2}s\n - Model: {}\n - Gen. Length: {}",
-        elapsed, waiting_time, model_type, entire_response.len()
+        "Generated ollama vision response.\n - Time elapsed: {:.2}s\n - Model: {}\n - Gen. Length: {}",
+        elapsed, model, entire_response.len()
     );
 
     Ok(())

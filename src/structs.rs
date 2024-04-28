@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+pub const INTERVAL_SEC: u64 = 5;
+
 #[derive(Debug, Serialize)]
 pub struct PerplexityRequest {
     pub model: String,

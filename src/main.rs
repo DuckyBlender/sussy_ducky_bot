@@ -131,6 +131,8 @@ enum Command {
     SdxlTurbo,
     #[command(description = "Generate text using the 70B LLAMA 3 model from GroqCloud. This should be the best model here by FAR.", aliases = ["llama"])]
     LLAMA3,
+    #[command(description = "Respond to an image using Phi-3 LLAVA model from ollama")]
+    Vision,
 }
 
 // Handler function for bot events
@@ -154,6 +156,14 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Uncensored,
+                    ollama_client,
+                ));
+            }
+            Ok(Command::Vision) => {
+                tokio::spawn(vision(
+                    bot.clone(),
+                    msg.clone(),
+                    ModelType::Vision,
                     ollama_client,
                 ));
             }

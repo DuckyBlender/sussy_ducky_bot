@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use comfyui_rs::ClientError;
 use enum_iterator::Sequence;
 use log::info;
-use ollama_rs::Ollama;
+use ollama_rs::{models::create::CreateModelRequest, Ollama};
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
@@ -17,6 +17,7 @@ pub enum ModelType {
     CodeGemma,  // codegemma
     Bielik,     // bielik
     Phi3,       // phi3:3.8b-mini-instruct-4k-q4_K_M
+    Vision,     // benzie/llava-phi-3
 
     // Comfyui (image generation)
     SDXLTurbo,
@@ -53,6 +54,7 @@ impl ModelType {
             ModelType::Bielik,
             ModelType::Uncensored,
             ModelType::Phi3,
+            ModelType::Vision,
         ]
     }
 
@@ -79,8 +81,9 @@ impl std::fmt::Display for ModelType {
             ModelType::Bielik => {
                 write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q4_K_M.gguf")
             } // for ollama
+            ModelType::Vision => write!(f, "benzie/llava-phi-3"), // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
-            ModelType::GPT4 => write!(f, "gpt-4-turbo"),                       // for perplexity.ai
+            ModelType::GPT4 => write!(f, "gpt-4-turbo"),          // for perplexity.ai
             ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
             // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q4_K_M"),    // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
@@ -124,18 +127,20 @@ pub async fn setup_models() {
     }
 
     // Create the model eg: ollama create caveman-llama3 -f ./custom_models/caveman/Modelfile
-    // Todo: change this to use ollama-rs (i tried, the path is not working for some reason)
     for model in custom_models.iter() {
         let model = model.to_string();
         info!("Creating custom model: {}", model);
-        let _ = std::process::Command::new("ollama")
-            .arg("create")
-            .arg(&model)
-            .arg("-f")
-            .arg(format!("./custom_models/{}/Modelfile", model))
-            .output()
-            .expect("Failed to create custom model");
-        info!("Model {} created!", model);
+        let modelfile = format!("./custom_models/{}/Modelfile", model);
+        let create_model_request = CreateModelRequest::modelfile(model.clone(), modelfile);
+        let res = ollama.create_model(create_model_request).await;
+        match res {
+            Ok(_) => {
+                info!("Model {} created!", model);
+            }
+            Err(e) => {
+                info!("Error creating custom model: {}", e);
+            }
+        }
     }
 }
 
