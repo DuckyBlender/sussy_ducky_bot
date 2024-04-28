@@ -131,6 +131,7 @@ pub async fn setup_models() {
         let model = model.to_string();
         info!("Creating custom model: {}", model);
         let modelfile = format!("./custom_models/{}/Modelfile", model);
+        let modelfile = std::fs::read_to_string(modelfile).unwrap();
         let create_model_request = CreateModelRequest::modelfile(model.clone(), modelfile);
         let res = ollama.create_model(create_model_request).await;
         match res {
