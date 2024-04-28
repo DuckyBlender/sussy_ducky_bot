@@ -1,3 +1,5 @@
+/// UNUSED FILE - WAITING UNTIL OLLAMA MAKES THIS MORE STABLE
+
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
 use log::{error, info, warn};

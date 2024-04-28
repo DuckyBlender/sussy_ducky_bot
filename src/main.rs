@@ -159,14 +159,14 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::Vision) => {
-                tokio::spawn(vision(
-                    bot.clone(),
-                    msg.clone(),
-                    ModelType::Vision,
-                    ollama_client,
-                ));
-            }
+            // Ok(Command::Vision) => {
+            //     tokio::spawn(vision(
+            //         bot.clone(),
+            //         msg.clone(),
+            //         ModelType::Vision,
+            //         ollama_client,
+            //     ));
+            // }
             Ok(Command::Phi3) => {
                 tokio::spawn(ollama(
                     bot.clone(),
