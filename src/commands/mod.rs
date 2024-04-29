@@ -34,5 +34,5 @@ pub use dalle::dalle;
 mod comfyui;
 pub use comfyui::comfyui;
 
-// mod vision;
-// pub use vision::vision;
+mod vision;
+pub use vision::vision;

@@ -17,7 +17,7 @@ pub enum ModelType {
     CodeGemma,  // codegemma
     Bielik,     // bielik
     Phi3,       // phi3:3.8b-mini-instruct-4k-q4_K_M
-    Vision,     // benzie/llava-phi-3
+    Moondream,  // moondream:1.8b-v2-q4_K_M
 
     // Comfyui (image generation)
     SDXLTurbo,
@@ -54,7 +54,7 @@ impl ModelType {
             ModelType::Bielik,
             ModelType::Uncensored,
             ModelType::Phi3,
-            ModelType::Vision,
+            ModelType::Moondream,
         ]
     }
 
@@ -81,9 +81,9 @@ impl std::fmt::Display for ModelType {
             ModelType::Bielik => {
                 write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q4_K_M.gguf")
             } // for ollama
-            ModelType::Vision => write!(f, "benzie/llava-phi-3"), // for ollama
+            ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"), // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
-            ModelType::GPT4 => write!(f, "gpt-4-turbo"),          // for perplexity.ai
+            ModelType::GPT4 => write!(f, "gpt-4-turbo"),                   // for perplexity.ai
             ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
             // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q4_K_M"),    // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
