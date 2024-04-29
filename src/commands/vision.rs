@@ -1,11 +1,12 @@
 /// UNUSED FILE - WAITING UNTIL OLLAMA MAKES THIS MORE STABLE
-
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
+use image::io::Reader as ImageReader;
 use log::{error, info, warn};
 use ollama_rs::generation::completion::request::GenerationRequest;
 use ollama_rs::generation::images::Image;
 use ollama_rs::Ollama;
+use std::io::Cursor;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::{
     requests::Requester,
@@ -103,9 +104,23 @@ pub async fn vision(
     };
 
     // Download the image
-    let img = reqwest::get(&img_url).await.unwrap().bytes().await.unwrap();
+    let img_url = reqwest::Url::parse(&img_url).unwrap();
+    let response = reqwest::get(img_url.as_str()).await.unwrap();
+    let bytes = response.bytes().await.unwrap();
+
+    // Load the image
+    let img = ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()?
+        .decode()
+        .unwrap();
+
+    // Convert the image to PNG
+    let mut bytes: Vec<u8> = Vec::new();
+    img.write_to(&mut Cursor::new(&mut bytes), image::ImageFormat::Png)
+        .unwrap();
+
     // Convert to base64
-    let img = BASE64.encode(&img);
+    let img = BASE64.encode(&bytes);
 
     // Send the stream request using ollama-rs
     let before_request = std::time::Instant::now();

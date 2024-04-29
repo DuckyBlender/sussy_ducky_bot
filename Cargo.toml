@@ -24,4 +24,5 @@ enum-iterator = "2.0.0"
 ollama-rs = { version = "0.1.8", features = ["stream"] }
 tokio-stream = "0.1.15"
 comfyui-rs = { path = "./comfyui-rs" }
+image = "0.25.1"
 # indicatif = "0.17.8"
