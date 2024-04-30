@@ -202,7 +202,9 @@ pub async fn vision(
 
                 if entire_response.is_empty() {
                     warn!("No response received!");
-                    entire_response = "<no response>".to_string();
+                    entire_response =
+                        "<no response. this is a bug with ollama, will probably be fixed soon!>"
+                            .to_string();
                 }
 
                 // Edit the message one last time
@@ -213,7 +215,6 @@ pub async fn vision(
                 )
                 .await?;
 
-                // TODO: Stop the typing indicator somehow
                 return Ok(());
             }
         }
