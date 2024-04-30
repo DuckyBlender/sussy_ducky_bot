@@ -107,7 +107,29 @@ pub async fn vision(
     // Download the image
     let img_url = reqwest::Url::parse(&img_url).unwrap();
     let response = reqwest::get(img_url.as_str()).await.unwrap();
+    // Check if the response is successful
+    if !response.status().is_success() {
+        error!("Failed to download image: {}", response.status());
+        bot.edit_message_text(
+            generating_message.chat.id,
+            generating_message.id,
+            format!("Failed to download image: {}", response.status()),
+        )
+        .await?;
+        return Ok(());
+    }
     let bytes = response.bytes().await.unwrap();
+    // Check if the bytes are empty
+    if bytes.is_empty() {
+        error!("Failed to download image: bytes are empty");
+        bot.edit_message_text(
+            generating_message.chat.id,
+            generating_message.id,
+            "Failed to download image: bytes are empty".to_string(),
+        )
+        .await?;
+        return Ok(());
+    }
 
     // Load the image
     let img = ImageReader::new(Cursor::new(bytes))
