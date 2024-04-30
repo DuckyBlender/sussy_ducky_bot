@@ -25,6 +25,7 @@ use crate::utils::ModelType;
 pub async fn vision(
     bot: Bot,
     msg: Message,
+    prompt: Option<String>,
     model: ModelType,
     ollama_client: Ollama,
 ) -> Result<(), RequestError> {
@@ -124,8 +125,12 @@ pub async fn vision(
 
     // Send the stream request using ollama-rs
     let before_request = std::time::Instant::now();
-    let request = GenerationRequest::new(model.to_string(), "What is in this image?".to_string())
-        .add_image(Image::from_base64(&img));
+    // Prompt is prompt, if it's None then it's "What's in this image?"
+    let request = GenerationRequest::new(
+        model.to_string(),
+        prompt.unwrap_or("What's in this image?".to_string()),
+    )
+    .add_image(Image::from_base64(&img));
     let stream = ollama_client.generate_stream(request).await;
 
     match stream {

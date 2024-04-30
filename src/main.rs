@@ -163,6 +163,7 @@ async fn handler(
                 tokio::spawn(vision(
                     bot.clone(),
                     msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ModelType::Moondream,
                     ollama_client,
                 ));
