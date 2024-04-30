@@ -1,8 +1,9 @@
+use crate::utils::ModelType;
 /// UNUSED FILE - WAITING UNTIL OLLAMA MAKES THIS MORE STABLE
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
 use image::io::Reader as ImageReader;
-use log::{error, info, warn};
+use log::{error, info};
 use ollama_rs::generation::completion::request::GenerationRequest;
 use ollama_rs::generation::images::Image;
 use ollama_rs::Ollama;
@@ -13,10 +14,6 @@ use teloxide::{
     types::{ChatAction, Message},
     Bot, RequestError,
 };
-use tokio_stream::StreamExt;
-
-use crate::structs::INTERVAL_SEC;
-use crate::utils::ModelType;
 
 /// Vision works like this
 /// 1. Downloads the image
@@ -153,101 +150,104 @@ pub async fn vision(
         prompt.unwrap_or("What's in this image?".to_string()),
     )
     .add_image(Image::from_base64(&img));
-    let stream = ollama_client.generate_stream(request).await;
+    let stream = ollama_client.generate(request).await;
 
-    match stream {
-        Ok(_) => info!(
-            "Stream request for model {} successful, incoming token responses..",
-            model,
-        ),
-        Err(e) => {
-            error!("Stream request failed: {}", e);
-            bot.edit_message_text(
-                generating_message.chat.id,
-                generating_message.id,
-                format!("Failed to generate response: {}", e),
-            )
-            .await?;
-            return Ok(());
-        }
-    }
+    // !No streaming because it's currently broken for vision models
+    // match stream {
+    //     Ok(_) => info!(
+    //         "Stream request for model {} successful, incoming token responses..",
+    //         model,
+    //     ),
+    //     Err(e) => {
+    //         error!("Stream request failed: {}", e);
+    //         bot.edit_message_text(
+    //             generating_message.chat.id,
+    //             generating_message.id,
+    //             format!("Failed to generate response: {}", e),
+    //         )
+    //         .await?;
+    //         return Ok(());
+    //     }
+    // }
 
-    let mut stream = stream.unwrap(); // safe unwrap
+    // let mut stream = stream.unwrap(); // safe unwrap
 
-    // Create a repeating interval that yields every 5 seconds
-    let mut now = std::time::Instant::now();
+    // // Create a repeating interval that yields every 5 seconds
+    // let mut now = std::time::Instant::now();
 
-    // Create a string to hold the entire responseAppend [...] when the bot is still recieving
-    let mut entire_response = String::new();
-    let mut current_message_content = String::new();
+    // // Create a string to hold the entire responseAppend [...] when the bot is still recieving
+    // let mut entire_response = String::new();
+    // let mut current_message_content = String::new();
 
-    // TODO: Inline markup for stopping the response or regenerating it if it's done
-    // This requires a global list of messages that are being edited to keep track of everything.
-    // This is quite complicated and I'm not sure how to do it yet
-    // Maybe a global mutex from the main function which is constantly updated? I'm not sure
+    // // Parse the response and edit the message every 5 seconds
+    // while let Some(Ok(res)) = stream.next().await {
+    //     for ele in res {
+    //         // Append the new response to the entire response
+    //         entire_response.push_str(&ele.response);
 
-    // Parse the response and edit the message every 5 seconds
-    while let Some(Ok(res)) = stream.next().await {
-        for ele in res {
-            // Append the new response to the entire response
-            entire_response.push_str(&ele.response);
+    //         // Check if 5 seconds have passed since last edit
+    //         if now.elapsed().as_secs() >= INTERVAL_SEC {
+    //             // Check if the message is identical. Don't know if this is necessary but it's here for now
+    //             if current_message_content == entire_response {
+    //                 continue;
+    //             }
 
-            // Check if 5 seconds have passed since last edit
-            if now.elapsed().as_secs() >= INTERVAL_SEC {
-                // Check if the message is identical. Don't know if this is necessary but it's here for now
-                if current_message_content == entire_response {
-                    continue;
-                }
+    //             // Update the current string
+    //             current_message_content = entire_response.clone();
 
-                // Update the current string
-                current_message_content = entire_response.clone();
+    //             // Edit the message
+    //             bot.edit_message_text(
+    //                 generating_message.chat.id,
+    //                 generating_message.id,
+    //                 current_message_content.clone() + " [...]",
+    //             )
+    //             .await?;
 
-                // Edit the message
-                bot.edit_message_text(
-                    generating_message.chat.id,
-                    generating_message.id,
-                    current_message_content.clone() + " [...]",
-                )
-                .await?;
+    //             // Send the typing indicator
+    //             bot.send_chat_action(msg.chat.id, ChatAction::Typing)
+    //                 .await?;
 
-                // Send the typing indicator
-                bot.send_chat_action(msg.chat.id, ChatAction::Typing)
-                    .await?;
+    //             // Reset the timer
+    //             now = std::time::Instant::now();
+    //         }
 
-                // Reset the timer
-                now = std::time::Instant::now();
-            }
+    //         // If the response is done, break the loop
+    //         if ele.done {
+    //             info!("Final response received");
 
-            // If the response is done, break the loop
-            if ele.done {
-                info!("Final response received");
+    //             if entire_response.is_empty() {
+    //                 warn!("No response received!");
+    //                 entire_response =
+    //                     "<no response. this is a bug with ollama, will probably be fixed soon!>"
+    //                         .to_string();
+    //             }
 
-                if entire_response.is_empty() {
-                    warn!("No response received!");
-                    entire_response =
-                        "<no response. this is a bug with ollama, will probably be fixed soon!>"
-                            .to_string();
-                }
+    //             // Edit the message one last time
+    //             bot.edit_message_text(
+    //                 generating_message.chat.id,
+    //                 generating_message.id,
+    //                 entire_response.clone(),
+    //             )
+    //             .await?;
 
-                // Edit the message one last time
-                bot.edit_message_text(
-                    generating_message.chat.id,
-                    generating_message.id,
-                    entire_response.clone(),
-                )
-                .await?;
-
-                return Ok(());
-            }
-        }
-    }
+    //             return Ok(());
+    //         }
+    //     }
+    // }
 
     let elapsed = before_request.elapsed().as_secs_f32();
 
-    info!(
-        "Generated ollama vision response.\n - Time elapsed: {:.2}s\n - Model: {}\n - Gen. Length: {}",
-        elapsed, model, entire_response.len()
-    );
+    // Return the response
+    let response_text = stream.unwrap().response;
+
+    bot.edit_message_text(
+        generating_message.chat.id,
+        generating_message.id,
+        format!("Response time: {:.2}s\n{}", elapsed, response_text),
+    )
+    .await?;
+
+    info!("Vision command completed in {:.2}s", elapsed);
 
     Ok(())
 }
