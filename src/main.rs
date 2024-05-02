@@ -36,11 +36,14 @@ async fn main() {
     let handler = dptree::entry()
         // .branch(Update::filter_callback_query().endpoint(callback_handler))
         .branch(Update::filter_message().endpoint(handler));
-    // Start the bot's event loop
+    // Get the bot commands
+    bot.set_my_commands(Commands::bot_commands()).await.unwrap();
+
     info!(
         "{} has started!",
         bot.get_me().send().await.unwrap().user.username.unwrap()
     );
+    // Start the bot's event loop
     Dispatcher::builder(bot, handler)
         .dependencies(dptree::deps![ollama])
         .enable_ctrlc_handler()
@@ -54,7 +57,7 @@ async fn main() {
     rename_rule = "lowercase",
     description = "Bot commands. Most of the local models have Q4_K_M quantization. Some joke commands are hidden. Contact: @DuckyBlender"
 )]
-enum Command {
+enum Commands {
     #[command(alias = "u", description = "generate uncensored text")]
     Uncensored,
     #[command(alias = "cv", description = "generate caveman-like text")]
@@ -123,7 +126,7 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
-            Ok(Command::Uncensored) => {
+            Ok(Commands::Uncensored) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
@@ -132,7 +135,7 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::Brainrot) => {
+            Ok(Commands::Brainrot) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
@@ -141,7 +144,7 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::Vision) => {
+            Ok(Commands::Vision) => {
                 tokio::spawn(vision(
                     bot.clone(),
                     msg.clone(),
@@ -150,7 +153,7 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::Phi3) => {
+            Ok(Commands::Phi3) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
@@ -159,7 +162,7 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::GPT4) => {
+            Ok(Commands::GPT4) => {
                 tokio::spawn(openai(
                     bot.clone(),
                     msg.clone(),
@@ -167,7 +170,7 @@ async fn handler(
                     ModelType::GPT4,
                 ));
             }
-            Ok(Command::Dalle3) => {
+            Ok(Commands::Dalle3) => {
                 tokio::spawn(dalle(
                     bot.clone(),
                     msg.clone(),
@@ -175,7 +178,7 @@ async fn handler(
                     ModelType::Dalle3,
                 ));
             }
-            Ok(Command::Furry) => {
+            Ok(Commands::Furry) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
@@ -184,7 +187,7 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::SdxlTurbo) => {
+            Ok(Commands::SdxlTurbo) => {
                 tokio::spawn(comfyui(
                     bot.clone(),
                     msg.clone(),
@@ -192,10 +195,10 @@ async fn handler(
                     ModelType::SDXLTurbo,
                 ));
             }
-            Ok(Command::Clone) => {
+            Ok(Commands::Clone) => {
                 tokio::spawn(clone_img(bot.clone(), msg, ModelType::GPT4));
             }
-            Ok(Command::Caveman) => {
+            Ok(Commands::Caveman) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
@@ -204,7 +207,7 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::TinyLlama) => {
+            Ok(Commands::TinyLlama) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
@@ -213,7 +216,7 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::Lobotomy) => {
+            Ok(Commands::Lobotomy) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
@@ -222,30 +225,30 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::Help) => {
+            Ok(Commands::Help) => {
                 tokio::spawn(help(bot.clone(), msg));
             }
-            Ok(Command::Ping) => {
+            Ok(Commands::Ping) => {
                 tokio::spawn(ping(bot.clone(), msg));
             }
-            Ok(Command::HttpCat) => {
+            Ok(Commands::HttpCat) => {
                 tokio::spawn(httpcat(
                     bot.clone(),
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                 ));
             }
-            Ok(Command::ChatLGBT) => {
+            Ok(Commands::ChatLGBT) => {
                 tokio::spawn(chatlgbt(
                     bot.clone(),
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                 ));
             }
-            Ok(Command::NoViews) => {
+            Ok(Commands::NoViews) => {
                 tokio::spawn(noviews(bot.clone(), msg.clone()));
             }
-            Ok(Command::Mixtral) => {
+            Ok(Commands::Mixtral) => {
                 tokio::spawn(groq(
                     bot.clone(),
                     msg.clone(),
@@ -253,7 +256,7 @@ async fn handler(
                     ModelType::Mixtral,
                 ));
             }
-            Ok(Command::StableLM2) => {
+            Ok(Commands::StableLM2) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
@@ -262,7 +265,7 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Command::LLAMA3) => {
+            Ok(Commands::LLAMA3) => {
                 tokio::spawn(groq(
                     bot.clone(),
                     msg.clone(),
@@ -270,7 +273,7 @@ async fn handler(
                     ModelType::LLAMA3,
                 ));
             }
-            Ok(Command::Bielik) => {
+            Ok(Commands::Bielik) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),
@@ -280,7 +283,7 @@ async fn handler(
                 ));
             }
 
-            Ok(Command::Online) => {
+            Ok(Commands::Online) => {
                 tokio::spawn(perplexity(
                     bot.clone(),
                     msg.clone(),
@@ -288,7 +291,7 @@ async fn handler(
                     ModelType::Online,
                 ));
             }
-            Ok(Command::Racist) => {
+            Ok(Commands::Racist) => {
                 tokio::spawn(ollama(
                     bot.clone(),
                     msg.clone(),

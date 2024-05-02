@@ -6,10 +6,10 @@ use teloxide::types::ParseMode;
 use teloxide::utils::command::BotCommands;
 use teloxide::{types::Message, Bot};
 
-use crate::Command;
+use crate::Commands;
 
 pub async fn help(bot: Bot, msg: Message) -> ResponseResult<Message> {
-    bot.send_message(msg.chat.id, Command::descriptions().to_string())
+    bot.send_message(msg.chat.id, Commands::descriptions().to_string())
         .reply_to_message_id(msg.id)
         .parse_mode(ParseMode::Html)
         .await
