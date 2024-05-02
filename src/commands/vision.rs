@@ -238,12 +238,17 @@ pub async fn vision(
     let elapsed = before_request.elapsed().as_secs_f32();
 
     // Return the response
-    let response_text = stream.unwrap().response;
+    let mut response_text = stream.unwrap().response;
+    // If the text is empty, then return a default message
+    if response_text.is_empty() {
+        response_text =
+            "<no response. this is a bug with ollama, will probably be fixed soon!>".to_string();
+    }
 
     bot.edit_message_text(
         generating_message.chat.id,
         generating_message.id,
-        format!("Response time: {:.2}s\n{}", elapsed, response_text),
+        response_text,
     )
     .await?;
 
