@@ -145,7 +145,7 @@ pub async fn ollama(
                 }
 
                 // Update the current string
-                current_message_content = entire_response.clone();
+                current_message_content.clone_from(&entire_response);
 
                 // Edit the message
                 bot.edit_message_text(

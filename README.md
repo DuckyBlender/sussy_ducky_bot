@@ -9,12 +9,12 @@ If you want to use the bot you can add it to your group by clicking [here](https
 ## Features
 
 Look at the `Commands` struct in `main.rs` to see all of the commands.
-
+This bot also has experimental image generation support in a custom crate (`comfyui-rs`). This is not very stable. In fact it is very unstable.
 
 ## Todo
 
 - [x] Code refactor
-- [ ] Another code refactor 
+- [ ] Another code refactor
 - [x] Streaming support
 - [x] Auto-delete invalid commands after 5 seconds (requires permission)
 - [ ] Queue system (so the user knows the bot isn't stuck)

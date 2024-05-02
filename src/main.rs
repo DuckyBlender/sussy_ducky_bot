@@ -49,90 +49,63 @@ async fn main() {
         .await;
 }
 
-// Struct to hold the bot commands
 #[derive(BotCommands, Clone)]
-#[command(rename_rule = "lowercase")]
+#[command(
+    rename_rule = "lowercase",
+    description = "Bot commands. Most of the local models have Q4_K_M quantization. Some joke commands are hidden. Contact: @DuckyBlender"
+)]
 enum Command {
-    #[command(
-        alias = "u",
-        description = "Generate uncensored text using 8B dolphin-llama3 LLM. This should be the best local model here."
-    )]
+    #[command(alias = "u", description = "generate uncensored text")]
     Uncensored,
-    #[command(
-        alias = "cv",
-        description = "Generate caveman-like text using 8B dolphin-llama3 LLM in caveman language [CUSTOM PROMPT MODEL]"
-    )]
+    #[command(alias = "cv", description = "generate caveman-like text")]
     Caveman,
-    #[command(description = "Generate text using the 3.8B phi3 LLM", alias = "phi")]
+    #[command(description = "generate text using the phi3 LLM")]
     Phi3,
-    #[command(
-        description = "Generate racist responses using 8B dolphin-llama3 LLM [CUSTOM PROMPT MODEL]"
-    )]
+    #[command(description = "generate racist responses")]
     Racist,
-    #[command(
-        description = "Generate uwu furry text using 8B dolphin-llama3 LLM [CUSTOM PROMPT MODEL]"
-    )]
+    #[command(description = "generate uwu furry text")]
     Furry,
-    #[command(description = "Geterate nonsense text using 300MB qwen:0.5b-chat-v1.5-q2_K LLM")]
+    #[command(description = "generate nonsense text")]
     Lobotomy,
-    #[command(description = "Generate text using 1.1B 8Q tinyllama-openorca LLM")]
+    #[command(description = "generate text using the tinyllama LLM")]
     TinyLlama,
-    #[command(description = "Show available commands")]
+    #[command(description = "show available commands")]
     Help,
-    #[command(description = "Check the bot's latency")]
+    #[command(description = "check the bot's latency")]
     Ping,
-    #[command(description = "Get an image of a cat for a given HTTP status code")]
+    #[command(description = "get an image of a cat for a given HTTP status code")]
     HttpCat,
-    #[command(description = "Get a random video with no views (or very few views)")]
+    #[command(description = "get a random youtube video with no views")]
     NoViews,
-    #[command(description = "Generate text using the mixtral-8x7b-instruct model from groq.com")]
+    #[command(description = "generate text using the mixtral model")]
     Mixtral,
-    #[command(description = "Generate text using the gemma-7b-it model from groq.com")]
-    Gemma,
-    #[command(description = "Generate code using the codegemma 7b model")]
-    CodeGemma,
-    #[command(
-        alias = "stablelm",
-        description = "Generate text using the stablelm2 1.6b model"
-    )]
+    #[command(description = "generate text using the stablelm2 model")]
     StableLM2,
     #[command(
-        alias = "lgbt",
-        description = "Goofy ahh bot which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/"
+        description = "nonsense api which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/",
+        hide
     )]
     ChatLGBT,
-    #[command(
-        description = "Generate text using the pplx-7b-online model from PerplexityAI [DEV ONLY]",
-        hide
-    )]
+    #[command(description = "generate text using the pplx-7b-online model", hide)]
     Online,
-    #[command(
-        alias = "gpt",
-        description = "Multimodel GPT-4-vision [DEV ONLY]",
-        hide,
-        hide_aliases
-    )]
+    #[command(description = "multimodel GPT-4-vision", hide)]
     GPT4,
-    #[command(
-        alias = "dalle",
-        description = "DALLE 3 [DEV ONLY]",
-        hide,
-        hide_aliases
-    )]
+    #[command(description = "DALLE 3", hide)]
     Dalle3,
-    #[command(
-        description = "Clone an image using GPT-4-Turbo and DALLE 2 [DEV ONLY]",
-        hide
-    )]
+    #[command(description = "clone an image using GPT-4 and DALLE 3", hide)]
     Clone,
-    #[command(description = "Generate Polish text using the 7B-bielik model")]
+    #[command(description = "generate Polish text using the bielik model")]
     Bielik,
-    #[command(description = "SDXL-Turbo locally on GTX950M [VERY EXPERIMENTAL]", aliases = ["sdxl", "img", "sd"])]
+    #[command(description = "SDXL-Turbo locally on GTX950M [BETA]")]
     SdxlTurbo,
-    #[command(description = "Generate text using the 70B LLAMA 3 model from GroqCloud. This should be the best model here by FAR.", aliases = ["llama"])]
+    #[command(description = "generate text using 70B LLAMA 3 model")]
     LLAMA3,
-    #[command(description = "Respond to an image using the 1.8B Moondream model", aliases = ["moondream"])]
+    #[command(description = "respond to an image using the Moondream model")]
     Vision,
+    #[command(description = "brainrotify text")]
+    Brainrot,
+    #[command(description = "generate code using 3B stablecode")]
+    StableCode,
 }
 
 // Handler function for bot events
@@ -156,6 +129,15 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Uncensored,
+                    ollama_client,
+                ));
+            }
+            Ok(Command::Brainrot) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Brainrot,
                     ollama_client,
                 ));
             }
@@ -269,22 +251,6 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Mixtral,
-                ));
-            }
-            Ok(Command::Gemma) => {
-                tokio::spawn(groq(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Gemma,
-                ));
-            }
-            Ok(Command::CodeGemma) => {
-                tokio::spawn(groq(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::CodeGemma,
                 ));
             }
             Ok(Command::StableLM2) => {

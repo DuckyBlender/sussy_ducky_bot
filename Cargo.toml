@@ -20,8 +20,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "^0.22"
 rand = "^0.8"
-enum-iterator = "2.0.0"
-ollama-rs = { version = "0.1.8", features = ["stream"] }
+enum-iterator = "2.1"
+ollama-rs = { version = "0.1.9", features = ["stream"] }
 tokio-stream = "0.1.15"
 comfyui-rs = { path = "./comfyui-rs" }
 image = "0.25.1"

@@ -14,10 +14,11 @@ pub enum ModelType {
     TinyLlama,  // tinyllama
     Lobotomy,   // qwen:0.5b-chat-v1.5-q2_K
     StableLM2,  // stablelm2
-    CodeGemma,  // codegemma
     Bielik,     // bielik
     Phi3,       // phi3:3.8b-mini-instruct-4k-q4_K_M
     Moondream,  // moondream:1.8b-v2-q4_K_M
+    Brainrot,   // brainrot-llama3
+    StableCode, // nuaimat/stablecode:3b
 
     // Comfyui (image generation)
     SDXLTurbo,
@@ -32,7 +33,6 @@ pub enum ModelType {
 
     // Groq (fast LLMs, free)
     Mixtral, // mixtral-8x7b-32768
-    Gemma,   // gemma-7b-it
     LLAMA3,  // llama3
 
     // OpenAI (best LLMs, paid)
@@ -50,11 +50,11 @@ impl ModelType {
             ModelType::TinyLlama,
             ModelType::Lobotomy,
             ModelType::StableLM2,
-            ModelType::CodeGemma,
             ModelType::Bielik,
             ModelType::Uncensored,
             ModelType::Phi3,
             ModelType::Moondream,
+            ModelType::StableCode,
         ]
     }
 
@@ -67,11 +67,16 @@ impl ModelType {
     // }
 
     pub fn return_groq() -> Vec<ModelType> {
-        vec![ModelType::Mixtral, ModelType::Gemma, ModelType::LLAMA3]
+        vec![ModelType::Mixtral, ModelType::LLAMA3]
     }
 
     pub fn return_custom() -> Vec<ModelType> {
-        vec![ModelType::Caveman, ModelType::Racist, ModelType::Furry]
+        vec![
+            ModelType::Caveman,
+            ModelType::Racist,
+            ModelType::Furry,
+            ModelType::Brainrot,
+        ]
     }
 }
 
@@ -81,9 +86,11 @@ impl std::fmt::Display for ModelType {
             ModelType::Bielik => {
                 write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q4_K_M.gguf")
             } // for ollama
+            ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"), // for ollama
+            ModelType::Brainrot => write!(f, "brainrot-llama3"),         // for ollama
             ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"), // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
-            ModelType::GPT4 => write!(f, "gpt-4-turbo"),                   // for perplexity.ai
+            ModelType::GPT4 => write!(f, "gpt-4-turbo"),                 // for perplexity.ai
             ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
             // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q4_K_M"),    // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
@@ -94,8 +101,6 @@ impl std::fmt::Display for ModelType {
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"), // ollama
             // ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"), // for perplexity.ai
             ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"), // for groq.com
-            ModelType::Gemma => write!(f, "gemma-7b-it"),          // for groq.com
-            ModelType::CodeGemma => write!(f, "codegemma"),        // for ollama
             ModelType::Online => write!(f, "sonar-medium-online"), // for perplexity.ai
             ModelType::StableLM2 => write!(f, "stablelm2"),        // for ollama
             ModelType::Dalle3 => write!(f, "dall-e-3"),            // for openai
