@@ -58,11 +58,11 @@ async fn main() {
     description = "Bot commands. Most of the local models have Q4_K_M quantization. Some joke commands are hidden. Contact: @DuckyBlender"
 )]
 enum Commands {
-    #[command(alias = "u", description = "generate uncensored text")]
+    #[command(description = "generate uncensored text", alias = "u")]
     Uncensored,
-    #[command(alias = "cv", description = "generate caveman-like text")]
+    #[command(description = "generate caveman-like text", alias = "cv")]
     Caveman,
-    #[command(description = "generate text using the phi3 LLM")]
+    #[command(description = "generate text using the phi3 LLM", alias = "phi")]
     Phi3,
     #[command(description = "generate racist responses")]
     Racist,
@@ -89,11 +89,15 @@ enum Commands {
         hide
     )]
     ChatLGBT,
-    #[command(description = "generate text using the pplx-7b-online model", hide)]
+    #[command(
+        description = "generate text using the pplx-7b-online model",
+        alias = "lgbt",
+        hide
+    )]
     Online,
-    #[command(description = "multimodel GPT-4-vision", hide)]
+    #[command(description = "multimodal GPT-4-vision", alias = "gpt", hide)]
     GPT4,
-    #[command(description = "DALLE 3", hide)]
+    #[command(description = "DALLE 3", alias = "dalle", hide)]
     Dalle3,
     #[command(description = "clone an image using GPT-4 and DALLE 3", hide)]
     Clone,
@@ -101,11 +105,14 @@ enum Commands {
     Bielik,
     #[command(description = "SDXL-Turbo locally on GTX950M [BETA]")]
     SdxlTurbo,
-    #[command(description = "generate text using 70B LLAMA 3 model")]
+    #[command(description = "generate text using 70B LLAMA 3 model", aliases = ["llama", "l"])]
     LLAMA3,
-    #[command(description = "respond to an image using the Moondream model")]
+    #[command(
+        description = "respond to an image using the Moondream model",
+        alias = "v"
+    )]
     Vision,
-    #[command(description = "brainrotify text")]
+    #[command(description = "brainrotify text [EXPERIMENTAL]", hide)]
     Brainrot,
     #[command(description = "generate code using 3B stablecode")]
     StableCode,
