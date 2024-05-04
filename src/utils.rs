@@ -19,7 +19,7 @@ pub enum ModelType {
     Moondream,  // moondream:1.8b-v2-q4_K_M
     Brainrot,   // brainrot-llama3
     StableCode, // nuaimat/stablecode:3b
-    Json,       // adrienbrault/nous-hermes2pro-llama3-8b:q4_K_M
+    Json,       // phi3:3.8b-mini-instruct-4k-q4_K_M
 
     // Comfyui (image generation)
     SDXLTurbo,
@@ -89,12 +89,12 @@ impl std::fmt::Display for ModelType {
             ModelType::Bielik => {
                 write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q4_K_M.gguf")
             } // for ollama
-            ModelType::Json => write!(f, "adrienbrault/nous-hermes2pro-llama3-8b:q4_K_M"), // for ollama. we use this model because it supports JSON output
-            ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"), // for ollama
-            ModelType::Brainrot => write!(f, "brainrot-llama3"),         // for ollama
-            ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"), // for ollama
+            ModelType::Json => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
+            ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"),       // for ollama
+            ModelType::Brainrot => write!(f, "brainrot-llama3"),               // for ollama
+            ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"),     // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
-            ModelType::GPT4 => write!(f, "gpt-4-turbo"),                 // for perplexity.ai
+            ModelType::GPT4 => write!(f, "gpt-4-turbo"),                       // for perplexity.ai
             ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
             // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q4_K_M"),    // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
