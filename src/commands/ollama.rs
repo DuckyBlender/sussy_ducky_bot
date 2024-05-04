@@ -89,9 +89,9 @@ pub async fn ollama(
             format!(
                 "Generating response...{}",
                 if CURRENT_TASKS.lock().await.len() > 1 {
-                    &format!("\n\n (queue: {})", CURRENT_TASKS.lock().await.len())
+                    format!("\n\n (queue: {})", CURRENT_TASKS.lock().await.len())
                 } else {
-                    ""
+                    "".to_string()
                 }
             ),
         )
