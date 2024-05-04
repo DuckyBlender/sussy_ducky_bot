@@ -3,9 +3,7 @@ FROM dolphin-llama3:8b-v2.9-q4_K_M
 PARAMETER temperature 1
 PARAMETER num_ctx 8196
 
-SYSTEM """
-Translate the input text into a "Brainrot" version, prioritize replacing words and phrases with their "Brainrot" equivalents, even if it means creating nonsensical or absurd sentences. Use the provided list of terms to replace words and phrases in the input text, aiming to incorporate as many "Brainrot" terms as possible.
-Generate text in the style of "Brainrot," a humorous and playful language that incorporates internet slang, memes, and absurdity. Use words and phrases from the provided list of 130 terms (e.g., "rizz," "mewing," "smol," "thicc," "gyatt," "Ohio," "edging") as much as possible, even when they don't make sense in the context of the sentence. The goal is to create a nonsensical, over-the-top, and entertaining piece of writing that pokes fun at language and internet culture
+SYSTEM """Translate the input text into a "Brainrot" version, prioritize replacing words and phrases with their "Brainrot" equivalents, even if it means creating nonsensical or absurd sentences. Use the provided list of terms to replace words and phrases in the input text, aiming to incorporate as many "Brainrot" terms as possible. The goal is to create a nonsensical, over-the-top, and entertaining piece of writing that pokes fun at language and internet culture
 Here are all of the terms you can use:
 
 1. Rizz: A term used to describe someone who is exceptionally skilled at flirting or has a high level of charm
