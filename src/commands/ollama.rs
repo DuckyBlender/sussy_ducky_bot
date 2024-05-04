@@ -1,4 +1,5 @@
 use log::{error, info, warn};
+use ollama_rs::generation::parameters::FormatType;
 use ollama_rs::{generation::completion::request::GenerationRequest, Ollama};
 use teloxide::payloads::SendMessageSetters;
 
@@ -97,7 +98,10 @@ pub async fn ollama(
 
     // Send the stream request using ollama-rs
     let before_request = std::time::Instant::now();
-    let request = GenerationRequest::new(model_type.to_string(), prompt);
+    let mut request = GenerationRequest::new(model_type.to_string(), prompt);
+    if model_type == ModelType::Json {
+        request = request.format(FormatType::Json);
+    }
     let stream = ollama_client.generate_stream(request).await;
 
     match stream {

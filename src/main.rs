@@ -116,6 +116,8 @@ enum Commands {
     Brainrot,
     #[command(description = "generate code using 3B stablecode")]
     StableCode,
+    #[command(description = "jsonify text", alias = "json")]
+    Jsonify,
 }
 
 // Handler function for bot events
@@ -133,6 +135,15 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Commands::Jsonify) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Json,
+                    ollama_client,
+                ));
+            }
             Ok(Commands::Uncensored) => {
                 tokio::spawn(ollama(
                     bot.clone(),
