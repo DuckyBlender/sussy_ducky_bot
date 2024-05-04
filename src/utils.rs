@@ -9,7 +9,7 @@ pub enum ModelType {
     // Ollama (text)
     Uncensored, // dolphin-llama3
     Caveman,    // caveman-llama3 (custom model)
-    Racist,     // racist-llama3 (custom model)
+    Racist,     // duckyblender/racist-phi3
     Furry,      // furry-llama3 (custom model)
     TinyLlama,  // tinyllama
     Lobotomy,   // qwen:0.5b-chat-v1.5-q2_K
@@ -55,6 +55,7 @@ impl ModelType {
             ModelType::Phi3,
             ModelType::Moondream,
             ModelType::StableCode,
+            ModelType::Racist,
         ]
     }
 
@@ -95,7 +96,7 @@ impl std::fmt::Display for ModelType {
             // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q4_K_M"),    // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
             ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama
-            ModelType::Racist => write!(f, "racist-llama3"),   // for ollama
+            ModelType::Racist => write!(f, "duckyblender/racist-phi3"), // for ollama
             ModelType::Furry => write!(f, "furry-llama3"),     // for ollama
             ModelType::TinyLlama => write!(f, "tinyllama:1.1b-chat-v0.6-q8_0"), // for ollama
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"), // ollama
