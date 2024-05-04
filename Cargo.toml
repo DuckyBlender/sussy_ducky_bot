@@ -25,4 +25,5 @@ ollama-rs = { version = "0.1.9", features = ["stream"] }
 tokio-stream = "0.1.15"
 comfyui-rs = { path = "./comfyui-rs" }
 image = "0.25.1"
+lazy_static = "1.4.0"
 # indicatif = "0.17.8"

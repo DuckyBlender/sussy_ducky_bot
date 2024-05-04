@@ -1,18 +1,28 @@
 use log::info;
 
 use ollama_rs::Ollama;
-use teloxide::{prelude::*, types::Me, utils::command::BotCommands, RequestError};
+use teloxide::{
+    prelude::*,
+    types::{Me, MessageId},
+    utils::command::BotCommands,
+    RequestError,
+};
 
 mod structs;
 
 mod utils;
 
+use tokio::sync::Mutex;
 use utils::ModelType;
 
 mod commands;
 use commands::*;
 
 use crate::utils::setup_models;
+
+lazy_static::lazy_static! {
+    pub static ref CURRENT_TASKS: Mutex<Vec<MessageId>> = Mutex::new(vec![]);
+}
 
 #[tokio::main]
 async fn main() {

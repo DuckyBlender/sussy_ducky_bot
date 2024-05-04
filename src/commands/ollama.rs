@@ -13,6 +13,7 @@ use tokio_stream::StreamExt;
 
 use crate::structs::INTERVAL_SEC;
 use crate::utils::ModelType;
+use crate::CURRENT_TASKS;
 
 pub async fn ollama(
     bot: Bot,
@@ -83,10 +84,24 @@ pub async fn ollama(
 
     // Send a message to the chat to show that the bot is generating a response
     let generating_message = bot
-        .send_message(msg.chat.id, "Generating response...")
+        .send_message(
+            msg.chat.id,
+            format!(
+                "Generating response...{}",
+                if CURRENT_TASKS.lock().await.len() > 1 {
+                    &format!("\n\n (queue: {})", CURRENT_TASKS.lock().await.len())
+                } else {
+                    ""
+                }
+            ),
+        )
         .reply_to_message_id(msg.id)
         .disable_notification(true)
         .await?;
+
+    let mut tasks = CURRENT_TASKS.lock().await;
+    tasks.push(generating_message.id);
+    drop(tasks);
 
     let now = std::time::Instant::now();
 
@@ -108,10 +123,14 @@ pub async fn ollama(
     let stream = ollama_client.generate_stream(request).await;
 
     match stream {
-        Ok(_) => info!(
-            "Stream request for model {} successful, incoming token responses..",
-            model_type
-        ),
+        Ok(_) => {
+            info!(
+                "Stream request for model {} successful, incoming token responses..",
+                model_type
+            );
+            // Stop the update queue task
+            update_queue_task.abort();
+        }
         Err(e) => {
             error!("Stream request failed: {}", e);
             bot.edit_message_text(
@@ -173,6 +192,10 @@ pub async fn ollama(
             // If the response is done, break the loop
             if ele.done {
                 info!("Final response received");
+                let mut tasks = CURRENT_TASKS.lock().await;
+                if let Some(index) = tasks.iter().position(|x| *x == generating_message.id) {
+                    tasks.remove(index);
+                }
 
                 if entire_response.is_empty() {
                     warn!("No response received!");
