@@ -183,11 +183,10 @@ pub async fn ollama(
                 bot.edit_message_text(
                     generating_message.chat.id,
                     generating_message.id,
-                    entire_response.clone(),
+                    entire_response.clone().trim_end(),
                 )
                 .await?;
 
-                // TODO: Stop the typing indicator somehow
                 return Ok(());
             }
         }

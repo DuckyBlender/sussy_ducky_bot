@@ -64,7 +64,7 @@ enum Commands {
     Caveman,
     #[command(description = "generate text using the phi3 LLM", alias = "phi")]
     Phi3,
-    #[command(description = "generate racist responses")]
+    #[command(description = "generate racist responses using custom fine-tuned LLM")]
     Racist,
     #[command(description = "generate uwu furry text")]
     Furry,
