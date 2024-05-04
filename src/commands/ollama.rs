@@ -128,8 +128,6 @@ pub async fn ollama(
                 "Stream request for model {} successful, incoming token responses..",
                 model_type
             );
-            // Stop the update queue task
-            update_queue_task.abort();
         }
         Err(e) => {
             error!("Stream request failed: {}", e);
