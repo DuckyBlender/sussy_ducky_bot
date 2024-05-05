@@ -1,3 +1,6 @@
+/// THIS IS TEMPORARILY DISABLED BECAUES OF https://github.com/ollama/ollama/issues/4163
+
+
 use crate::structs::INTERVAL_SEC;
 use crate::utils::ModelType;
 use base64::engine::general_purpose::STANDARD as BASE64;

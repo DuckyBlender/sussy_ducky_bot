@@ -89,7 +89,7 @@ pub async fn ollama(
             format!(
                 "Generating response...{}",
                 if CURRENT_TASKS.lock().await.len() > 1 {
-                    format!("\n\n (queue: {})", CURRENT_TASKS.lock().await.len())
+                    format!(" (queue: {})", CURRENT_TASKS.lock().await.len())
                 } else {
                     "".to_string()
                 }
@@ -156,7 +156,7 @@ pub async fn ollama(
     // Maybe a global mutex from the main function which is constantly updated? I'm not sure
 
     // Parse the response and edit the message every 5 seconds
-    while let Some(Ok(res)) = stream.next().await {
+    'response_loop: while let Some(Ok(res)) = stream.next().await {
         for ele in res {
             // Append the new response to the entire response
             entire_response.push_str(&ele.response);
@@ -170,6 +170,21 @@ pub async fn ollama(
 
                 // Update the current string
                 current_message_content.clone_from(&entire_response);
+
+                // There is currently a bug with ollama where infinite newline spaces generate after generating the JSON
+                // See https://github.com/ollama/ollama/pull/3784
+
+                if model_type == ModelType::Json {
+                    // Check if the response is valid JSON
+                    if let Ok(json) =
+                        serde_json::from_str::<serde_json::Value>(&current_message_content)
+                    {
+                        info!("Valid JSON recieved, breaking loop.");
+                        // set entire_response to be pretty printed JSON
+                        entire_response = serde_json::to_string_pretty(&json).unwrap();
+                        break 'response_loop;
+                    }
+                }
 
                 // Edit the message
                 bot.edit_message_text(
@@ -189,29 +204,29 @@ pub async fn ollama(
 
             // If the response is done, break the loop
             if ele.done {
-                info!("Final response received");
-                let mut tasks = CURRENT_TASKS.lock().await;
-                if let Some(index) = tasks.iter().position(|x| *x == generating_message.id) {
-                    tasks.remove(index);
-                }
-
-                if entire_response.is_empty() {
-                    warn!("No response received!");
-                    entire_response = "<no response>".to_string();
-                }
-
-                // Edit the message one last time
-                bot.edit_message_text(
-                    generating_message.chat.id,
-                    generating_message.id,
-                    entire_response.clone().trim_end(),
-                )
-                .await?;
-
-                return Ok(());
+                break 'response_loop;
             }
         }
     }
+
+    info!("Final response received");
+    let mut tasks = CURRENT_TASKS.lock().await;
+    if let Some(index) = tasks.iter().position(|x| *x == generating_message.id) {
+        tasks.remove(index);
+    }
+
+    if entire_response.is_empty() {
+        warn!("No response received!");
+        entire_response = "<no response>".to_string();
+    }
+
+    // Edit the message one last time
+    bot.edit_message_text(
+        generating_message.chat.id,
+        generating_message.id,
+        entire_response.clone().trim_end(),
+    )
+    .await?;
 
     let elapsed = before_request.elapsed().as_secs_f32();
 

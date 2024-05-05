@@ -122,8 +122,6 @@ enum Commands {
         alias = "v"
     )]
     Vision,
-    #[command(description = "brainrotify text [EXPERIMENTAL]", hide)]
-    Brainrot,
     #[command(description = "generate code using 3B stablecode")]
     StableCode,
     #[command(description = "jsonify text", alias = "json")]
@@ -163,24 +161,15 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Commands::Brainrot) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Brainrot,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::Vision) => {
-                tokio::spawn(vision(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Moondream,
-                    ollama_client,
-                ));
-            }
+            // Ok(Commands::Vision) => {
+            //     tokio::spawn(vision(
+            //         bot.clone(),
+            //         msg.clone(),
+            //         get_prompt(trimmed_text, &msg),
+            //         ModelType::Moondream,
+            //         ollama_client,
+            //     ));
+            // }
             Ok(Commands::Phi3) => {
                 tokio::spawn(ollama(
                     bot.clone(),

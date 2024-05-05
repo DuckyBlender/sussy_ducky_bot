@@ -17,7 +17,6 @@ pub enum ModelType {
     Bielik,     // bielik
     Phi3,       // phi3:3.8b-mini-instruct-4k-q4_K_M
     Moondream,  // moondream:1.8b-v2-q4_K_M
-    Brainrot,   // brainrot-llama3
     StableCode, // nuaimat/stablecode:3b
     Json,       // phi3:3.8b-mini-instruct-4k-q4_K_M
 
@@ -78,7 +77,6 @@ impl ModelType {
             ModelType::Caveman,
             ModelType::Racist,
             ModelType::Furry,
-            ModelType::Brainrot,
         ]
     }
 }
@@ -91,7 +89,6 @@ impl std::fmt::Display for ModelType {
             } // for ollama
             ModelType::Json => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
             ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"),       // for ollama
-            ModelType::Brainrot => write!(f, "brainrot-llama3"),               // for ollama
             ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"),     // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"),                       // for perplexity.ai
@@ -105,7 +102,7 @@ impl std::fmt::Display for ModelType {
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"), // ollama
             // ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"), // for perplexity.ai
             ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"), // for groq.com
-            ModelType::Online => write!(f, "sonar-medium-online"), // for perplexity.ai
+            ModelType::Online => write!(f, "llama-3-sonar-large-32k-online"), // for perplexity.ai
             ModelType::StableLM2 => write!(f, "stablelm2"),        // for ollama
             ModelType::Dalle3 => write!(f, "dall-e-3"),            // for openai
             ModelType::SDXLTurbo => write!(f, "sdxl-turbo"),       // for comfyui
