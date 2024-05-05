@@ -88,8 +88,8 @@ pub async fn ollama(
             msg.chat.id,
             format!(
                 "Generating response...{}",
-                if CURRENT_TASKS.lock().await.len() > 1 {
-                    format!(" (queue: {})", CURRENT_TASKS.lock().await.len() - 1)
+                if CURRENT_TASKS.lock().await.len() >= 1 {
+                    format!(" (queue: {})", CURRENT_TASKS.lock().await.len())
                 } else {
                     "".to_string()
                 }
