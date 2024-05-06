@@ -157,7 +157,7 @@ pub async fn bedrock(
                 "taskType": "TEXT_IMAGE",
                 "textToImageParams": {
                     "text": prompt,
-                    "negativeText": ""
+                    // "negativeText": ""
                 },
                 "imageGenerationConfig": {
                     "numberOfImages": 1,
@@ -174,7 +174,7 @@ pub async fn bedrock(
                  "taskType": "IMAGE_VARIATION",
                  "imageVariationParams": {
                      "text": prompt,
-                     "negativeText": "", 
+                    //  "negativeText": "", 
                      "images": [img],
                      "similarityStrength": 0.7, // default
                  },
