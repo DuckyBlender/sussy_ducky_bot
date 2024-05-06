@@ -1,8 +1,10 @@
-use comfyui_rs::ClientError;
 use enum_iterator::Sequence;
 use log::info;
 use ollama_rs::{models::create::CreateModelRequest, Ollama};
+use teloxide::RequestError;
 use std::collections::HashMap;
+use teloxide::prelude::Requester;
+use teloxide::{types::Message, utils::command::BotCommands, Bot};
 
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
@@ -46,6 +48,7 @@ pub enum ModelType {
     AmazonTitanImageVariation,
     CommandR,
     CommandRPlus,
+    Claude3,
 }
 
 impl ModelType {
@@ -125,6 +128,7 @@ impl std::fmt::Display for ModelType {
             ModelType::CommandRPlus => write!(f, "cohere.command-r-plus-v1:0"), // for bedrock
             ModelType::AmazonTitanImage => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
             ModelType::AmazonTitanImageVariation => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
+            ModelType::Claude3 => write!(f, "anthropic.claude-3-sonnet-20240229-v1:0"), // for bedrock
         }
     }
 }
@@ -170,26 +174,39 @@ pub async fn setup_models() {
     }
 }
 
-pub async fn process_image_generation(
-    prompt: &str,
-    model: &ModelType,
-) -> Result<HashMap<String, Vec<u8>>, ClientError> {
-    let client = comfyui_rs::Client::new("127.0.0.1:8188");
-    match model {
-        &ModelType::SDXLTurbo => {
-            let json_prompt =
-                serde_json::from_str(include_str!("../comfyui-rs/jsons/sdxl_turbo_api.json"))
-                    .unwrap();
-            let mut json_prompt: serde_json::Value = json_prompt;
-            json_prompt["6"]["inputs"]["text"] = serde_json::Value::String(prompt.to_string());
-            json_prompt["13"]["inputs"]["noise_seed"] =
-                serde_json::Value::Number(serde_json::Number::from(rand::random::<u64>()));
-            let images = client.get_images(json_prompt).await;
-            if images.is_err() {
-                return Err(images.err().unwrap());
-            }
-            Ok(images.unwrap())
-        }
-        _ => Err(ClientError::CustomError("Model not found".to_string())),
+pub async fn get_prompt(msg: Message) -> Option<String> {
+    // get_prompt only returns the prompt (stripping out the command and bot mention)
+    // if no prompt was found, look at the reply
+    let prompt = if let Some(reply) = msg.reply_to_message() {
+        reply.text().clone()
+    } else {
+        msg.text().clone()
+    };
+
+    if prompt.is_none() {
+        return None;
     }
+
+    // Parse the prompt
+    let prompt = prompt.unwrap();
+    let trimmed_prompt = prompt.trim_start();
+    // If there's a / in the first word of the prompt, remove it
+    let trimmed_prompt = if trimmed_prompt.starts_with('/') {
+        trimmed_prompt.splitn(2, ' ').nth(1).unwrap()
+    } else {
+        trimmed_prompt
+    };
+    
+    Some(trimmed_prompt.to_string())
+}
+
+pub async fn delete_both_delay(bot: Bot, msg1: Message, msg2: Message) -> Result<(), RequestError> {
+    // Wait x seconds
+    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+
+    // Deleting the messages
+    bot.delete_message(msg1.chat.id, msg1.id).await?;
+    bot.delete_message(msg2.chat.id, msg2.id).await?;
+
+    Ok(())
 }

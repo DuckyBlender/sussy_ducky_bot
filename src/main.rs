@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic, clippy::nursery)]
+
 use aws_config::BehaviorVersion;
 use log::info;
 
@@ -14,7 +16,7 @@ use tokio::sync::Mutex;
 use utils::ModelType;
 
 mod commands;
-use commands::*;
+mod apis;
 
 use crate::utils::setup_models;
 
@@ -66,7 +68,7 @@ async fn main() {
         .await;
 }
 
-#[derive(BotCommands, Clone)]
+#[derive(BotCommands, Clone, Debug)]
 #[command(
     rename_rule = "lowercase",
     description = "Bot commands. Most of the local models have Q4_K_M quantization. Some joke commands are hidden. Contact: @DuckyBlender"
@@ -144,14 +146,18 @@ enum Commands {
         hide
     )]
     AmazonTitanText,
-    #[command(description = "generate image using amazon titan", alias="img", hide)]
+    #[command(description = "generate image using amazon titan", alias = "img", hide)]
     AmazonTitanImage,
     // outpaint needs to be in a different file (or function in the same file) because it needs much more logic. 1. download image 2. add white borders around the image 3. continuation is obv
     // #[command(description = "outpaint an image using amazon titan", alias="outpaint", hide)]
     // AmazonTitanOutpaint,
     #[command(description = "generate a variation of an image using amazon titan")]
     Clone,
+    #[command(description = "claude 3 sonnet multimodal", hide)]
+    Claude3,
 }
+
+use crate::commands::chatlgbt::chatlgbt;
 
 // Handler function for bot events
 async fn handler(
@@ -161,260 +167,25 @@ async fn handler(
     ollama_client: Ollama,
     aws_client: aws_sdk_bedrockruntime::Client,
 ) -> Result<(), RequestError> {
-    if let Some(text) = msg.text() {
-        let trimmed_text = text
-            .split_once(' ')
-            .map(|x| x.1)
-            .unwrap_or_default()
-            .trim()
-            .to_string();
-        match BotCommands::parse(text, me.username()) {
-            Ok(Commands::AmazonTitanImage) => {
-                tokio::spawn(bedrock(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::AmazonTitanImage,
-                    aws_client,
-                ));
-            }
-            Ok(Commands::AmazonTitanText) => {
-                tokio::spawn(bedrock(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::AmazonTitanText,
-                    aws_client,
-                ));
-            }
-            Ok(Commands::AmazonTitanTextLite) => {
-                tokio::spawn(bedrock(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::AmazonTitanTextLite,
-                    aws_client,
-                ));
-            }
-            Ok(Commands::CommandR) => {
-                tokio::spawn(bedrock(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::CommandR,
-                    aws_client,
-                ));
-            }
-            Ok(Commands::CommandRPlus) => {
-                tokio::spawn(bedrock(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::CommandRPlus,
-                    aws_client,
-                ));
-            }
-            Ok(Commands::StableCode) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::StableCode,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::Jsonify) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Json,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::Uncensored) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Uncensored,
-                    ollama_client,
-                ));
-            }
-            // Ok(Commands::Vision) => {
-            //     tokio::spawn(vision(
-            //         bot.clone(),
-            //         msg.clone(),
-            //         get_prompt(trimmed_text, &msg),
-            //         ModelType::Moondream,
-            //         ollama_client,
-            //     ));
-            // }
-            Ok(Commands::Phi3) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Phi3,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::GPT4) => {
-                tokio::spawn(openai(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::GPT4,
-                ));
-            }
-            Ok(Commands::Dalle3) => {
-                tokio::spawn(dalle(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Dalle3,
-                ));
-            }
-            Ok(Commands::Furry) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Furry,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::SdxlTurbo) => {
-                tokio::spawn(comfyui(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::SDXLTurbo,
-                ));
-            }
-            Ok(Commands::Clone) => {
-                tokio::spawn(bedrock(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::AmazonTitanImageVariation,
-                    aws_client,
-                ));
-            }
-            Ok(Commands::Caveman) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Caveman,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::TinyLlama) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::TinyLlama,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::Lobotomy) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Lobotomy,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::Help) => {
-                tokio::spawn(help(bot.clone(), msg));
-            }
-            Ok(Commands::Ping) => {
-                tokio::spawn(ping(bot.clone(), msg));
-            }
-            Ok(Commands::HttpCat) => {
-                tokio::spawn(httpcat(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                ));
-            }
-            Ok(Commands::ChatLGBT) => {
-                tokio::spawn(chatlgbt(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                ));
-            }
-            Ok(Commands::NoViews) => {
-                tokio::spawn(noviews(bot.clone(), msg.clone()));
-            }
-            Ok(Commands::Mixtral) => {
-                tokio::spawn(groq(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Mixtral,
-                ));
-            }
-            Ok(Commands::StableLM2) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::StableLM2,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::LLAMA3) => {
-                tokio::spawn(groq(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::LLAMA3,
-                ));
-            }
-            Ok(Commands::Bielik) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Bielik,
-                    ollama_client,
-                ));
-            }
+    // Check if the message is a command
+    let bot_name = me.user.username.unwrap();
+    if let Ok(command) = <Commands as BotCommands>::parse(msg.text().unwrap_or_default(), &bot_name) {
 
-            Ok(Commands::Online) => {
-                tokio::spawn(perplexity(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Online,
-                ));
+        info!("Received command: {:?}", command);
+        match command {
+            Commands::ChatLGBT => {
+                chatlgbt(bot, msg).await?;
             }
-            Ok(Commands::Racist) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Racist,
-                    ollama_client,
-                ));
+            Commands::NoViews => {
+                commands::noviews::noviews(bot, msg).await?;
             }
-            _ => {}
+            Commands::Help => {
+                commands::help::help(bot, msg).await?;
+            }
+            _ => {
+                bot.send_message(msg.chat.id, "Command not implemented").await?;
+            }
         }
     }
     Ok(())
-}
-
-/// If the prompt is empty, check the reply
-fn get_prompt(prompt: String, msg: &Message) -> Option<String> {
-    if prompt.is_empty() {
-        msg.reply_to_message()
-            .map(|reply| reply.text().unwrap_or_default().to_string())
-    } else {
-        Some(prompt)
-    }
 }

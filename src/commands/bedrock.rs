@@ -48,19 +48,18 @@ pub async fn bedrock(
         None => {
             // Image Variation has an optional prompt
             if model != ModelType::AmazonTitanImageVariation {
-                
-            let bot_msg = bot
-                .send_message(msg.chat.id, "No prompt provided")
-                .reply_to_message_id(msg.id)
-                .await?;
+                let bot_msg = bot
+                    .send_message(msg.chat.id, "No prompt provided")
+                    .reply_to_message_id(msg.id)
+                    .await?;
 
-            // Wait 5 seconds
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                // Wait 5 seconds
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-            // Deleting the messages
-            bot.delete_message(msg.chat.id, msg.id).await?;
-            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
-            return Ok(());
+                // Deleting the messages
+                bot.delete_message(msg.chat.id, msg.id).await?;
+                bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
+                return Ok(());
             } else {
                 None
             }
@@ -68,14 +67,14 @@ pub async fn bedrock(
     };
 
     let mut img = String::new();
-    if model == ModelType::AmazonTitanImageVariation {
+    if model == ModelType::AmazonTitanImageVariation || model == ModelType::Claude3 {
         // Check if there is an image or sticker attached in the reply
         let img_attachment = if let Some(reply) = msg.reply_to_message() {
             reply
                 .photo()
                 .map(|photo| photo.last().unwrap().file.id.clone())
                 .or_else(|| reply.sticker().map(|sticker| &sticker.file.id).cloned())
-        } else {
+        } else if model == ModelType::AmazonTitanImageVariation {
             let bot_msg = bot
                 .send_message(msg.chat.id, "No image or sticker provided")
                 .reply_to_message_id(msg.id)
@@ -89,6 +88,8 @@ pub async fn bedrock(
             bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
 
             return Ok(());
+        } else {
+            None
         };
 
         if img_attachment.is_none() {
@@ -113,7 +114,6 @@ pub async fn bedrock(
         let mut buf: Vec<u8> = Vec::new();
         bot.download_file(&img_url, &mut buf).await.unwrap();
         img = BASE64.encode(&buf);
-
     }
 
     // Send a message to the chat to show that the bot is generating a response
@@ -169,8 +169,15 @@ pub async fn bedrock(
             });
 
             // if the "text" field is empty, remove it
-            if json["textToImageParams"]["text"].as_str().unwrap().is_empty() {
-                json["textToImageParams"].as_object_mut().unwrap().remove("text");
+            if json["textToImageParams"]["text"]
+                .as_str()
+                .unwrap()
+                .is_empty()
+            {
+                json["textToImageParams"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("text");
             }
 
             json
@@ -182,15 +189,22 @@ pub async fn bedrock(
                  "taskType": "IMAGE_VARIATION",
                  "imageVariationParams": {
                      "text": prompt,
-                    //  "negativeText": "", 
+                    //  "negativeText": "",
                      "images": [img],
                      "similarityStrength": 0.7, // default
                  },
-                 
+
             });
             // if the "text" field is empty, remove it
-            if json["imageVariationParams"]["text"].as_str().unwrap().is_empty() {
-                json["imageVariationParams"].as_object_mut().unwrap().remove("text");
+            if json["imageVariationParams"]["text"]
+                .as_str()
+                .unwrap()
+                .is_empty()
+            {
+                json["imageVariationParams"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("text");
             }
             json
         }

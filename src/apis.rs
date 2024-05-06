@@ -1,0 +1,9 @@
+pub mod bedrock;
+pub mod chatlgbt;
+pub mod groq;
+pub mod httpcat;
+pub mod ollama;
+pub mod openai;
+pub mod petittube;
+pub mod perplexity;
+pub mod vision;

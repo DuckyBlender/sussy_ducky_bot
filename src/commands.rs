@@ -1,0 +1,11 @@
+pub mod bedrock;
+pub mod chatlgbt;
+pub mod groq;
+pub mod help;
+pub mod httpcat;
+pub mod noviews;
+pub mod ollama;
+pub mod openai;
+pub mod perplexity;
+pub mod ping;
+// pub mod vision;
