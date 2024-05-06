@@ -36,3 +36,6 @@ pub use comfyui::comfyui;
 
 // mod vision;
 // pub use vision::vision;
+
+mod bedrock;
+pub use bedrock::bedrock;

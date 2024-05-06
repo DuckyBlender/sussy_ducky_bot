@@ -1,3 +1,4 @@
+use aws_config::BehaviorVersion;
 use log::info;
 
 use ollama_rs::Ollama;
@@ -7,9 +8,6 @@ use teloxide::{
     utils::command::BotCommands,
     RequestError,
 };
-
-mod structs;
-
 mod utils;
 
 use tokio::sync::Mutex;
@@ -42,6 +40,12 @@ async fn main() {
 
     let bot = Bot::from_env();
     let ollama = Ollama::default();
+    let config = aws_config::defaults(BehaviorVersion::latest())
+        .region("us-west-2")
+        .load()
+        .await;
+
+    let client = aws_sdk_bedrockruntime::Client::new(&config);
 
     let handler = dptree::entry()
         // .branch(Update::filter_callback_query().endpoint(callback_handler))
@@ -55,7 +59,7 @@ async fn main() {
     );
     // Start the bot's event loop
     Dispatcher::builder(bot, handler)
-        .dependencies(dptree::deps![ollama])
+        .dependencies(dptree::deps![ollama, client])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
@@ -126,6 +130,22 @@ enum Commands {
     StableCode,
     #[command(description = "jsonify text", alias = "json")]
     Jsonify,
+    #[command(description = "generate text using Command R", hide)]
+    CommandR,
+    #[command(description = "generate text using Command R+", hide)]
+    CommandRPlus,
+    #[command(
+        description = "generate text using Amazon Titan Lite",
+        alias = "titanlite",
+        hide
+    )]
+    AmazonTitanTextLite,
+    #[command(
+        description = "generate text using Amazon Titan Express",
+        alias = "titan",
+        hide
+    )]
+    AmazonTitanText,
 }
 
 // Handler function for bot events
@@ -134,6 +154,7 @@ async fn handler(
     msg: Message,
     me: Me,
     ollama_client: Ollama,
+    aws_client: aws_sdk_bedrockruntime::Client,
 ) -> Result<(), RequestError> {
     if let Some(text) = msg.text() {
         let trimmed_text = text
@@ -143,6 +164,51 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Commands::AmazonTitanText) => {
+                tokio::spawn(bedrock(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::AmazonTitanText,
+                    aws_client,
+                ));
+            }
+            Ok(Commands::AmazonTitanTextLite) => {
+                tokio::spawn(bedrock(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::AmazonTitanTextLite,
+                    aws_client,
+                ));
+            }
+            Ok(Commands::CommandR) => {
+                tokio::spawn(bedrock(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::CommandR,
+                    aws_client,
+                ));
+            }
+            Ok(Commands::CommandRPlus) => {
+                tokio::spawn(bedrock(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::CommandRPlus,
+                    aws_client,
+                ));
+            }
+            Ok(Commands::StableCode) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::StableCode,
+                    ollama_client,
+                ));
+            }
             Ok(Commands::Jsonify) => {
                 tokio::spawn(ollama(
                     bot.clone(),

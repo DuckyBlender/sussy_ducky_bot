@@ -17,6 +17,8 @@ This bot also has experimental image generation support in a custom crate (`comf
 - [ ] Another code refactor
 - [x] Streaming support
 - [x] Auto-delete invalid commands after 5 seconds (requires permission)
+- [x] AWS Bedrock Models
+- [ ] Rate limiting to finally make some paid (but cheap) models public
 - [ ] Queue system (so the user knows the bot isn't stuck)
 - [ ] MarkdownV2 support
 - [ ] Maybe even make it serverless?
@@ -26,6 +28,7 @@ This bot also has experimental image generation support in a custom crate (`comf
 - At least $1 on perplexity.ai
 - Ollama (at least 8GB of ram because of the high parameter count models)
 - groq.com API key
+- AWS CLI with credentials set and Amazon text & Cohere text model access in the `us-west-2` region
 - AMD or NVIDIA GPU is recommended
 - ComfyUI in the background with the SDXLTurbo model
 - Rust

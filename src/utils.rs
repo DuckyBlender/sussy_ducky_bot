@@ -38,6 +38,12 @@ pub enum ModelType {
     // OpenAI (best LLMs, paid)
     GPT4,
     Dalle3,
+
+    // Bedrock
+    AmazonTitanText,
+    AmazonTitanTextLite,
+    CommandR,
+    CommandRPlus,
 }
 
 impl ModelType {
@@ -68,16 +74,21 @@ impl ModelType {
     //     vec![ModelType::Online]
     // }
 
+    pub fn return_bedrock() -> Vec<ModelType> {
+        vec![
+            ModelType::AmazonTitanText,
+            ModelType::AmazonTitanTextLite,
+            ModelType::CommandR,
+            ModelType::CommandRPlus,
+        ]
+    }
+
     pub fn return_groq() -> Vec<ModelType> {
         vec![ModelType::Mixtral, ModelType::LLAMA3]
     }
 
     pub fn return_custom() -> Vec<ModelType> {
-        vec![
-            ModelType::Caveman,
-            ModelType::Racist,
-            ModelType::Furry,
-        ]
+        vec![ModelType::Caveman, ModelType::Racist, ModelType::Furry]
     }
 }
 
@@ -93,19 +104,21 @@ impl std::fmt::Display for ModelType {
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"),                       // for perplexity.ai
             ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
-            // ModelType::LLAMA3 => write!(f, "llama3:8b-instruct-q4_K_M"),    // for ollama
-            ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
-            ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama
-            ModelType::Racist => write!(f, "duckyblender/racist-phi3"), // for ollama
-            ModelType::Furry => write!(f, "furry-llama3"),     // for ollama
+            ModelType::LLAMA3 => write!(f, "llama3-70b-8192"),                 // for groq
+            ModelType::Caveman => write!(f, "caveman-llama3"),                 // for ollama
+            ModelType::Racist => write!(f, "duckyblender/racist-phi3"),        // for ollama
+            ModelType::Furry => write!(f, "furry-llama3"),                     // for ollama
             ModelType::TinyLlama => write!(f, "tinyllama:1.1b-chat-v0.6-q8_0"), // for ollama
-            ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"), // ollama
-            // ModelType::Mixtral => write!(f, "mixtral-8x7b-instruct"), // for perplexity.ai
-            ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"), // for groq.com
-            ModelType::Online => write!(f, "llama-3-sonar-large-32k-online"), // for perplexity.ai
-            ModelType::StableLM2 => write!(f, "stablelm2"),        // for ollama
-            ModelType::Dalle3 => write!(f, "dall-e-3"),            // for openai
-            ModelType::SDXLTurbo => write!(f, "sdxl-turbo"),       // for comfyui
+            ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),      // ollama
+            ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"),             // for groq.com
+            ModelType::Online => write!(f, "llama-3-sonar-large-32k-online"),  // for perplexity.ai
+            ModelType::StableLM2 => write!(f, "stablelm2"),                    // for ollama
+            ModelType::Dalle3 => write!(f, "dall-e-3"),                        // for openai
+            ModelType::SDXLTurbo => write!(f, "sdxl-turbo"),                   // for comfyui
+            ModelType::AmazonTitanText => write!(f, "amazon.titan-text-express-v1"), // for bedrock
+            ModelType::AmazonTitanTextLite => write!(f, "amazon.titan-text-lite-v1"), // for bedrock
+            ModelType::CommandR => write!(f, "cohere.command-r-v1:0"),         // for bedrock
+            ModelType::CommandRPlus => write!(f, "cohere.command-r-plus-v1:0"), // for bedrock
         }
     }
 }

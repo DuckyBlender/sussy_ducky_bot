@@ -11,9 +11,10 @@ use teloxide::{
 
 use tokio_stream::StreamExt;
 
-use crate::structs::INTERVAL_SEC;
 use crate::utils::ModelType;
 use crate::CURRENT_TASKS;
+
+pub const INTERVAL_SEC: u64 = 5;
 
 pub async fn ollama(
     bot: Bot,
@@ -102,10 +103,6 @@ pub async fn ollama(
     let mut tasks = CURRENT_TASKS.lock().await;
     tasks.push(generating_message.id);
     drop(tasks);
-
-    let now = std::time::Instant::now();
-
-    let waiting_time = now.elapsed().as_secs_f32();
 
     // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
@@ -231,8 +228,10 @@ pub async fn ollama(
     let elapsed = before_request.elapsed().as_secs_f32();
 
     info!(
-        "Generated ollama response.\n - Time elapsed: {:.2}s\n - Waiting time: {:.2}s\n - Model: {}\n - Gen. Length: {}",
-        elapsed, waiting_time, model_type, entire_response.len()
+        "Generated ollama response.\n - Time elapsed: {:.2}s\n - Model: {}\n - Gen. Length: {}",
+        elapsed,
+        model_type,
+        entire_response.len()
     );
 
     Ok(())

@@ -1,4 +1,5 @@
 use log::{error, info};
+use serde::Serialize;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
 use teloxide::{
@@ -7,8 +8,22 @@ use teloxide::{
     Bot, RequestError,
 };
 
-use crate::structs::{PerplexityRequest, PerplexityRequestMessage};
 use crate::utils::ModelType;
+
+
+#[derive(Debug, Serialize)]
+pub struct PerplexityRequest {
+    pub model: String,
+    pub messages: Vec<PerplexityRequestMessage>,
+    pub temperature: f32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PerplexityRequestMessage {
+    pub role: String,
+    pub content: String,
+}
+
 
 pub async fn perplexity(
     bot: Bot,

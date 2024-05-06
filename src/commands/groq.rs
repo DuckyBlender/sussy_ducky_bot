@@ -2,7 +2,7 @@ use log::{error, info};
 use teloxide::payloads::SendMessageSetters;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
-use crate::structs::{PerplexityRequest, PerplexityRequestMessage};
+use crate::commands::perplexity::{PerplexityRequest, PerplexityRequestMessage};
 use crate::utils::ModelType;
 
 pub async fn groq(
@@ -16,7 +16,7 @@ pub async fn groq(
     // Check if the model is one of groq's models
     let groq_models = ModelType::return_groq();
     if !groq_models.contains(&model) {
-        bot.send_message(msg.chat.id, "Invalid model")
+        bot.send_message(msg.chat.id, "Error: Invalid model")
             .reply_to_message_id(msg.id)
             .await?;
         return Ok(());
@@ -53,7 +53,7 @@ pub async fn groq(
         .header("content-type", "application/json")
         .bearer_auth(std::env::var("GROQ_KEY").unwrap_or_default())
         .json(&PerplexityRequest {
-            // groq uses the same struct as perplexity
+            // this should be openai but perplexity works too
             model: model.to_string(),
             messages: vec![
                 PerplexityRequestMessage {
