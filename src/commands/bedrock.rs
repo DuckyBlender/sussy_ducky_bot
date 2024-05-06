@@ -208,9 +208,9 @@ pub async fn bedrock(
         .unwrap();
 
     // Convert the blob to a JSON
-    let output = str::from_utf8(result.body().as_ref()).unwrap();
-    let output_json: serde_json::Value = serde_json::from_str(output).unwrap();
-    let output_txt = match model {
+    let output_str = str::from_utf8(result.body().as_ref()).unwrap();
+    let output_json: serde_json::Value = serde_json::from_str(output_str).unwrap();
+    let output = match model {
         ModelType::AmazonTitanText | ModelType::AmazonTitanTextLite => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-text.html
             output_json["results"][0]["outputText"].as_str().unwrap()
@@ -238,18 +238,18 @@ pub async fn bedrock(
 
     // Send the message
     match model {
-        ModelType::AmazonTitanImage => {
-            // Convert the output_txt (which is base64) into an InputFile
-            let output_txt = BASE64.decode(output_txt).unwrap();
-            let output_txt = teloxide::types::InputFile::memory(output_txt);
-            bot.send_photo(msg.chat.id, output_txt)
+        ModelType::AmazonTitanImage | ModelType::AmazonTitanImageVariation => {
+            // Convert to bytes and send as a photo
+            let output_bytes = BASE64.decode(output).unwrap();
+            let output_file = teloxide::types::InputFile::memory(output_bytes);
+            bot.send_photo(msg.chat.id, output_file)
                 .caption(prompt.unwrap_or_default()) // blank prompt if it doesn't exist
                 .await?;
             bot.delete_message(generating_message.chat.id, generating_message.id)
                 .await?;
         }
         _ => {
-            bot.edit_message_text(msg.chat.id, generating_message.id, output_txt)
+            bot.edit_message_text(msg.chat.id, generating_message.id, output)
                 .await?;
         }
     };
