@@ -3,6 +3,7 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
 use log::info;
 use serde_json::json;
+use teloxide::net::Download;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::payloads::SendPhotoSetters;
 use teloxide::types::UserId;
@@ -108,8 +109,9 @@ pub async fn bedrock(
         let img_attachment = img_attachment.unwrap();
         let img_file = bot.get_file(&img_attachment).await.unwrap();
         let img_url = img_file.path;
-        let img_bytes = reqwest::get(&img_url).await.unwrap().bytes().await.unwrap();
-        img = BASE64.encode(&img_bytes);
+        let mut buf: Vec<u8> = Vec::new();
+        bot.download_file(&img_url, &mut buf).await.unwrap();
+        img = BASE64.encode(&buf);
 
     }
 
