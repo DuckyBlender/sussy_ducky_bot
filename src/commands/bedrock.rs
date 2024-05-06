@@ -1,8 +1,8 @@
 // File for AWS Bedrock commands
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::engine::Engine as _;
 use log::info;
 use serde_json::json;
-use base64::engine::Engine as _;
-use base64::engine::general_purpose::STANDARD as BASE64;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::payloads::SendPhotoSetters;
 use teloxide::types::UserId;
@@ -42,8 +42,11 @@ pub async fn bedrock(
     }
 
     let prompt = match prompt {
-        Some(prompt) => prompt,
+        Some(prompt) => Some(prompt),
         None => {
+            // Image Variation has an optional prompt
+            if model != ModelType::AmazonTitanImageVariation {
+                
             let bot_msg = bot
                 .send_message(msg.chat.id, "No prompt provided")
                 .reply_to_message_id(msg.id)
@@ -56,8 +59,59 @@ pub async fn bedrock(
             bot.delete_message(msg.chat.id, msg.id).await?;
             bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
             return Ok(());
+            } else {
+                None
+            }
         }
     };
+
+    let mut img = String::new();
+    if model == ModelType::AmazonTitanImageVariation {
+        // Check if there is an image or sticker attached in the reply
+        let img_attachment = if let Some(reply) = msg.reply_to_message() {
+            reply
+                .photo()
+                .map(|photo| photo.last().unwrap().file.id.clone())
+                .or_else(|| reply.sticker().map(|sticker| &sticker.file.id).cloned())
+        } else {
+            let bot_msg = bot
+                .send_message(msg.chat.id, "No image or sticker provided")
+                .reply_to_message_id(msg.id)
+                .await?;
+
+            // Wait 5 seconds and delete the users and the bot's message
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+            // Deleting the messages
+            bot.delete_message(msg.chat.id, msg.id).await?;
+            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
+
+            return Ok(());
+        };
+
+        if img_attachment.is_none() {
+            let bot_msg = bot
+                .send_message(msg.chat.id, "No image or sticker provided")
+                .reply_to_message_id(msg.id)
+                .await?;
+
+            // Wait 5 seconds and delete the users and the bot's message
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+            // Deleting the messages
+            bot.delete_message(msg.chat.id, msg.id).await?;
+            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
+            return Ok(());
+        }
+
+        // Download the image
+        let img_attachment = img_attachment.unwrap();
+        let img_file = bot.get_file(&img_attachment).await.unwrap();
+        let img_url = img_file.path;
+        let img_bytes = reqwest::get(&img_url).await.unwrap().bytes().await.unwrap();
+        img = BASE64.encode(&img_bytes);
+
+    }
 
     // Send a message to the chat to show that the bot is generating a response
     let generating_message = bot
@@ -111,6 +165,20 @@ pub async fn bedrock(
                 }
             })
         }
+
+        ModelType::AmazonTitanImageVariation => {
+            // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
+            json!({
+                 "taskType": "IMAGE_VARIATION",
+                 "imageVariationParams": {
+                     "text": prompt,
+                     "negativeText": "", 
+                     "images": [img],
+                     "similarityStrength": 0.7, // default
+                 },
+                 
+            })
+        }
         _ => {
             unreachable!();
         }
@@ -137,7 +205,7 @@ pub async fn bedrock(
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-cohere-command-r-plus.html
             output_json["text"].as_str().unwrap()
         }
-        ModelType::AmazonTitanImage => {
+        ModelType::AmazonTitanImage | ModelType::AmazonTitanImageVariation => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
             output_json["images"][0].as_str().unwrap()
         }
@@ -161,21 +229,16 @@ pub async fn bedrock(
             let output_txt = BASE64.decode(output_txt).unwrap();
             let output_txt = teloxide::types::InputFile::memory(output_txt);
             bot.send_photo(msg.chat.id, output_txt)
-                .caption(prompt)
+                .caption(prompt.unwrap_or_default()) // blank prompt if it doesn't exist
                 .await?;
-            bot.delete_message(
-                generating_message.chat.id,
-                generating_message.id,
-            )
-            .await?;
-
+            bot.delete_message(generating_message.chat.id, generating_message.id)
+                .await?;
         }
         _ => {
             bot.edit_message_text(msg.chat.id, generating_message.id, output_txt)
-            .await?;
+                .await?;
         }
     };
-
 
     Ok(())
 }

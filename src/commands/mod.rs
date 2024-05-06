@@ -25,9 +25,6 @@ pub use groq::groq;
 mod openai;
 pub use openai::openai;
 
-mod clone_img;
-pub use clone_img::clone_img;
-
 mod dalle;
 pub use dalle::dalle;
 

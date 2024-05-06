@@ -18,6 +18,8 @@ This bot also has experimental image generation support in a custom crate (`comf
 - [x] Streaming support
 - [x] Auto-delete invalid commands after 5 seconds (requires permission)
 - [x] AWS Bedrock Models
+- [ ] AWS Bedrock Outpainting
+- [x] /clone using AWS Bedrock
 - [ ] Rate limiting to finally make some paid (but cheap) models public
 - [ ] Queue system (so the user knows the bot isn't stuck)
 - [ ] MarkdownV2 support

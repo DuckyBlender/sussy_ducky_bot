@@ -113,8 +113,6 @@ enum Commands {
     GPT4,
     #[command(description = "DALLE 3", alias = "dalle", hide)]
     Dalle3,
-    #[command(description = "clone an image using GPT-4 and DALLE 3", hide)]
-    Clone,
     #[command(description = "generate Polish text using the bielik model")]
     Bielik,
     #[command(description = "SDXL-Turbo locally on GTX950M [BETA]", alias = "img")]
@@ -148,6 +146,11 @@ enum Commands {
     AmazonTitanText,
     #[command(description = "generate image using amazon titan", alias="img", hide)]
     AmazonTitanImage,
+    // outpaint needs to be in a different file (or function in the same file) because it needs much more logic. 1. download image 2. add white borders around the image 3. continuation is obv
+    // #[command(description = "outpaint an image using amazon titan", alias="outpaint", hide)]
+    // AmazonTitanOutpaint,
+    #[command(description = "generate a variation of an image using amazon titan")]
+    Clone,
 }
 
 // Handler function for bot events
@@ -290,7 +293,13 @@ async fn handler(
                 ));
             }
             Ok(Commands::Clone) => {
-                tokio::spawn(clone_img(bot.clone(), msg, ModelType::GPT4));
+                tokio::spawn(bedrock(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::AmazonTitanImageVariation,
+                    aws_client,
+                ));
             }
             Ok(Commands::Caveman) => {
                 tokio::spawn(ollama(
