@@ -146,6 +146,8 @@ enum Commands {
         hide
     )]
     AmazonTitanText,
+    #[command(description = "generate image using amazon titan", alias="img", hide)]
+    AmazonTitanImage,
 }
 
 // Handler function for bot events
@@ -164,6 +166,15 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Commands::AmazonTitanImage) => {
+                tokio::spawn(bedrock(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::AmazonTitanImage,
+                    aws_client,
+                ));
+            }
             Ok(Commands::AmazonTitanText) => {
                 tokio::spawn(bedrock(
                     bot.clone(),

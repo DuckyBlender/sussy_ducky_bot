@@ -20,16 +20,12 @@ use crate::utils::ModelType;
 pub async fn clone_img(bot: Bot, msg: Message, model: ModelType) -> Result<(), RequestError> {
     // Check if the user is from the owner
     if msg.from().unwrap().id != UserId(std::env::var("OWNER_ID").unwrap().parse().unwrap()) {
-        let bot_msg = bot.send_message(msg.chat.id, "You are not the owner. Please mention @DuckyBlender if you want to use this command!")
-            .reply_to_message_id(msg.id)
-            .await?;
-
-        // Wait 5 seconds and delete the users and the bot's message
-        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-
-        // Deleting the messages
-        bot.delete_message(msg.chat.id, msg.id).await?;
-        bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
+        bot.send_message(
+            msg.chat.id,
+            "You are not the owner. Please mention @DuckyBlender if you want to use this command!",
+        )
+        .reply_to_message_id(msg.id)
+        .await?;
         return Ok(());
     }
 

@@ -42,6 +42,7 @@ pub enum ModelType {
     // Bedrock
     AmazonTitanText,
     AmazonTitanTextLite,
+    AmazonTitanImage,
     CommandR,
     CommandRPlus,
 }
@@ -80,6 +81,7 @@ impl ModelType {
             ModelType::AmazonTitanTextLite,
             ModelType::CommandR,
             ModelType::CommandRPlus,
+            ModelType::AmazonTitanImage
         ]
     }
 
@@ -119,6 +121,7 @@ impl std::fmt::Display for ModelType {
             ModelType::AmazonTitanTextLite => write!(f, "amazon.titan-text-lite-v1"), // for bedrock
             ModelType::CommandR => write!(f, "cohere.command-r-v1:0"),         // for bedrock
             ModelType::CommandRPlus => write!(f, "cohere.command-r-plus-v1:0"), // for bedrock
+            ModelType::AmazonTitanImage => write!(f, "amazon.titan-image-generator-v1:0"), // for bedrock
         }
     }
 }

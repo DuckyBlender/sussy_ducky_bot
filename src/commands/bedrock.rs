@@ -1,13 +1,15 @@
 // File for AWS Bedrock commands
 use log::info;
 use serde_json::json;
+use base64::engine::Engine as _;
+use base64::engine::general_purpose::STANDARD as BASE64;
 use teloxide::payloads::SendMessageSetters;
+use teloxide::payloads::SendPhotoSetters;
 use teloxide::types::UserId;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
 use crate::utils::ModelType;
-use aws_sdk_bedrockruntime as bedrock;
-use bedrock::primitives::Blob;
+use aws_sdk_bedrockruntime::primitives::Blob;
 use std::str;
 
 pub async fn bedrock(
@@ -21,16 +23,12 @@ pub async fn bedrock(
 
     // Check if the user is from the owner
     if msg.from().unwrap().id != UserId(std::env::var("OWNER_ID").unwrap().parse().unwrap()) {
-        let bot_msg = bot.send_message(msg.chat.id, "You are not the owner. Please mention @DuckyBlender if you want to use this command!")
+        bot.send_message(
+            msg.chat.id,
+            "You are not the owner. Please mention @DuckyBlender if you want to use this command!",
+        )
         .reply_to_message_id(msg.id)
         .await?;
-
-        // Wait 5 seconds and delete the users and the bot's message
-        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-
-        // Deleting the messages
-        bot.delete_message(msg.chat.id, msg.id).await?;
-        bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
         return Ok(());
     }
 
@@ -96,6 +94,23 @@ pub async fn bedrock(
 
             })
         }
+
+        ModelType::AmazonTitanImage => {
+            // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
+            json!({
+                "taskType": "TEXT_IMAGE",
+                "textToImageParams": {
+                    "text": prompt,
+                    "negativeText": ""
+                },
+                "imageGenerationConfig": {
+                    "numberOfImages": 1,
+                    "height": 512,
+                    "width": 512,
+                    // rest of the default parameters in the URL above
+                }
+            })
+        }
         _ => {
             unreachable!();
         }
@@ -122,6 +137,10 @@ pub async fn bedrock(
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-cohere-command-r-plus.html
             output_json["text"].as_str().unwrap()
         }
+        ModelType::AmazonTitanImage => {
+            // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
+            output_json["images"][0].as_str().unwrap()
+        }
         _ => {
             unreachable!();
         }
@@ -136,8 +155,27 @@ pub async fn bedrock(
     );
 
     // Send the message
-    bot.edit_message_text(msg.chat.id, generating_message.id, output_txt)
-        .await?;
+    match model {
+        ModelType::AmazonTitanImage => {
+            // Convert the output_txt (which is base64) into an InputFile
+            let output_txt = BASE64.decode(output_txt).unwrap();
+            let output_txt = teloxide::types::InputFile::memory(output_txt);
+            bot.send_photo(msg.chat.id, output_txt)
+                .caption(prompt)
+                .await?;
+            bot.delete_message(
+                generating_message.chat.id,
+                generating_message.id,
+            )
+            .await?;
+
+        }
+        _ => {
+            bot.edit_message_text(msg.chat.id, generating_message.id, output_txt)
+            .await?;
+        }
+    };
+
 
     Ok(())
 }
