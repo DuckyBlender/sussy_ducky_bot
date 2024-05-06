@@ -205,7 +205,24 @@ pub async fn bedrock(
         .body(Blob::new(serde_json::to_string(&json_body).unwrap()))
         .send()
         .await
-        .unwrap();
+        ;
+
+    // Check for what reason the result is blocked
+    if result.is_err() {
+        let error = result.unwrap_err();
+        // Check if it's a service error
+        if error.as_service_error().is_some() {
+            bot.send_message(msg.chat.id, "Request blocked by AWS")
+                .reply_to_message_id(msg.id)
+                .await?;
+        } else {
+            bot.send_message(msg.chat.id, "Unknown error")
+                .reply_to_message_id(msg.id)
+                .await?;
+        }
+        return Ok(());
+    }
+    let result = result.unwrap();
 
     // Convert the blob to a JSON
     let output_str = str::from_utf8(result.body().as_ref()).unwrap();
