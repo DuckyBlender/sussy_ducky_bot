@@ -153,7 +153,7 @@ pub async fn bedrock(
 
         ModelType::AmazonTitanImage => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
-            json!({
+            let mut json = json!({
                 "taskType": "TEXT_IMAGE",
                 "textToImageParams": {
                     "text": prompt,
@@ -165,12 +165,19 @@ pub async fn bedrock(
                     "width": 512,
                     // rest of the default parameters in the URL above
                 }
-            })
+            });
+
+            // if the "text" field is empty, remove it
+            if json["textToImageParams"]["text"].as_str().unwrap().is_empty() {
+                json["textToImageParams"].as_object_mut().unwrap().remove("text");
+            }
+
+            json
         }
 
         ModelType::AmazonTitanImageVariation => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
-            json!({
+            let mut json = json!({
                  "taskType": "IMAGE_VARIATION",
                  "imageVariationParams": {
                      "text": prompt,
@@ -179,7 +186,12 @@ pub async fn bedrock(
                      "similarityStrength": 0.7, // default
                  },
                  
-            })
+            });
+            // if the "text" field is empty, remove it
+            if json["imageVariationParams"]["text"].as_str().unwrap().is_empty() {
+                json["imageVariationParams"].as_object_mut().unwrap().remove("text");
+            }
+            json
         }
         _ => {
             unreachable!();
