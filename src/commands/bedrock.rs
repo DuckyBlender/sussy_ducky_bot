@@ -2,6 +2,7 @@
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
 use log::info;
+use log::warn;
 use serde_json::json;
 use teloxide::net::Download;
 use teloxide::payloads::SendMessageSetters;
@@ -204,22 +205,20 @@ pub async fn bedrock(
         .content_type("application/json")
         .body(Blob::new(serde_json::to_string(&json_body).unwrap()))
         .send()
-        .await
-        ;
+        .await;
 
     // Check for what reason the result is blocked
-    if result.is_err() {
-        let error = result.unwrap_err();
-        // Check if it's a service error
-        if error.as_service_error().is_some() {
-            bot.send_message(msg.chat.id, "Request blocked by AWS")
-                .reply_to_message_id(msg.id)
-                .await?;
-        } else {
-            bot.send_message(msg.chat.id, "Unknown error")
-                .reply_to_message_id(msg.id)
-                .await?;
-        }
+    if let Err(e) = result {
+        // Return the response
+        let err = e.into_service_error();
+        warn!("Error: {}", err);
+        bot.edit_message_text(
+            msg.chat.id,
+            generating_message.id,
+            format!("Error: {}", err),
+        )
+        .await?;
+
         return Ok(());
     }
     let result = result.unwrap();
