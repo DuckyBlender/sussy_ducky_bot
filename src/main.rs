@@ -151,7 +151,7 @@ enum Commands {
     // AmazonTitanOutpaint,
     #[command(description = "generate a variation of an image using amazon titan")]
     Clone,
-    #[command(description = "claude 3 sonnet multimodal model", hide)]
+    #[command(description = "claude 3 sonnet multimodal model", alias = "claude", hide)]
     Claude3,
 }
 

@@ -296,6 +296,10 @@ pub async fn bedrock(
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
             output_json["images"][0].as_str().unwrap()
         }
+        ModelType::Claude3 => {
+            // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages.html
+            output_json["completions"].as_str().unwrap()
+        }
         _ => {
             unreachable!();
         }
