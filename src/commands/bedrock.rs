@@ -67,29 +67,21 @@ pub async fn bedrock(
     };
 
     let mut img = String::new();
-    if model == ModelType::AmazonTitanImageVariation || model == ModelType::AmazonTitanImage {
+    // These models CAN have an image attached
+    if model == ModelType::AmazonTitanImageVariation || model == ModelType::Claude3 {
         // Check if there is an image or sticker attached in the reply
         let img_attachment = if let Some(reply) = msg.reply_to_message() {
+            info!("There is a reply to the message");
             reply
                 .photo()
                 .map(|photo| photo.last().unwrap().file.id.clone())
                 .or_else(|| reply.sticker().map(|sticker| &sticker.file.id).cloned())
         } else {
-            let bot_msg = bot
-                .send_message(msg.chat.id, "No image or sticker provided")
-                .reply_to_message_id(msg.id)
-                .await?;
-
-            // Wait 5 seconds and delete the users and the bot's message
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-
-            // Deleting the messages
-            bot.delete_message(msg.chat.id, msg.id).await?;
-            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
-
-            return Ok(());
+            info!("There is no reply to the message");
+            None
         };
 
+        // This NEEDS an image attached
         if img_attachment.is_none() && model == ModelType::AmazonTitanImageVariation {
             let bot_msg = bot
                 .send_message(msg.chat.id, "No image or sticker provided")
@@ -106,12 +98,14 @@ pub async fn bedrock(
         }
 
         // Download the image
-        let img_attachment = img_attachment.unwrap();
-        let img_file = bot.get_file(&img_attachment).await.unwrap();
-        let img_url = img_file.path;
-        let mut buf: Vec<u8> = Vec::new();
-        bot.download_file(&img_url, &mut buf).await.unwrap();
-        img = BASE64.encode(&buf);
+        if img_attachment.is_some() {
+            let img_attachment = img_attachment.unwrap();
+            let img_file = bot.get_file(&img_attachment).await.unwrap();
+            let img_url = img_file.path;
+            let mut buf: Vec<u8> = Vec::new();
+            bot.download_file(&img_url, &mut buf).await.unwrap();
+            img = BASE64.encode(&buf);
+        }
     }
 
     // Send a message to the chat to show that the bot is generating a response
@@ -131,9 +125,10 @@ pub async fn bedrock(
     let json_body = match model {
         // amazon text models
         ModelType::AmazonTitanText | ModelType::AmazonTitanTextLite => {
+            info!("Creating JSON for AmazonTitanText");
             json!(
                 {
-                    "inputText": prompt,
+                    "inputText": prompt.clone().unwrap(),
                     // Other default parameters:
                     // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-text.html
                 }
@@ -142,8 +137,9 @@ pub async fn bedrock(
 
         // cohere commandR and commandR+ models
         ModelType::CommandR | ModelType::CommandRPlus => {
+            info!("Creating JSON for CommandR");
             json!({
-                "message": prompt,
+                "message": prompt.clone().unwrap()
                 // Other default parameters:
                 // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-cohere-command-r-plus.html
 
@@ -152,10 +148,11 @@ pub async fn bedrock(
 
         ModelType::AmazonTitanImage => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
+            info!("Creating JSON for AmazonTitanImage");
             let mut json = json!({
                 "taskType": "TEXT_IMAGE",
                 "textToImageParams": {
-                    "text": prompt,
+                    "text": prompt.clone().unwrap(),
                     // "negativeText": ""
                 },
                 "imageGenerationConfig": {
@@ -183,14 +180,21 @@ pub async fn bedrock(
 
         ModelType::AmazonTitanImageVariation => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
+            info!("Creating JSON for AmazonTitanImageVariation");
             let mut json = json!({
                  "taskType": "IMAGE_VARIATION",
                  "imageVariationParams": {
-                     "text": prompt,
+                     "text": prompt.clone().unwrap_or_default(),
                     //  "negativeText": "",
                      "images": [img],
                      "similarityStrength": 0.7, // default
                  },
+                 "imageGenerationConfig": {
+                    "numberOfImages": 1,
+                    "height": 512,
+                    "width": 512,
+                    "cfgScale": 8.0
+                }
 
             });
             // if the "text" field is empty, remove it
@@ -209,7 +213,7 @@ pub async fn bedrock(
 
         ModelType::Claude3 => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages.html (multimodal section)
-
+            info!("Creating JSON for Claude3");
             let mut json = json!({
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": 1024,
@@ -236,6 +240,7 @@ pub async fn bedrock(
 
             // If there is an image, add it to the JSON
             if !img.is_empty() {
+                info!("Adding image to the JSON");
                 json["messages"][0]["content"]
                     .as_array_mut()
                     .unwrap()
@@ -256,6 +261,11 @@ pub async fn bedrock(
         }
     };
 
+    info!(
+        "Sending request to bedrock with prompt: \"{}\" and model: \"{:?}\"",
+        prompt.clone().unwrap_or_default(),
+        model
+    );
     let result = aws_client
         .invoke_model()
         .model_id(model.to_string())
@@ -298,7 +308,7 @@ pub async fn bedrock(
         }
         ModelType::Claude3 => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-anthropic-claude-messages.html
-            output_json["completions"].as_str().unwrap()
+            output_json["content"][0]["text"].as_str().unwrap()
         }
         _ => {
             unreachable!();

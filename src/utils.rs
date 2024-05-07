@@ -1,8 +1,6 @@
-use comfyui_rs::ClientError;
 use enum_iterator::Sequence;
 use log::info;
 use ollama_rs::{models::create::CreateModelRequest, Ollama};
-use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
@@ -19,9 +17,6 @@ pub enum ModelType {
     Moondream,  // moondream:1.8b-v2-q4_K_M
     StableCode, // nuaimat/stablecode:3b
     Json,       // phi3:3.8b-mini-instruct-4k-q4_K_M
-
-    // Comfyui (image generation)
-    SDXLTurbo,
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -67,10 +62,6 @@ impl ModelType {
             ModelType::Racist,
             ModelType::Json,
         ]
-    }
-
-    pub fn return_comfyui() -> Vec<ModelType> {
-        vec![ModelType::SDXLTurbo]
     }
 
     // pub fn return_perplexity() -> Vec<ModelType> {
@@ -120,7 +111,6 @@ impl std::fmt::Display for ModelType {
             ModelType::Online => write!(f, "llama-3-sonar-large-32k-online"),  // for perplexity.ai
             ModelType::StableLM2 => write!(f, "stablelm2"),                    // for ollama
             ModelType::Dalle3 => write!(f, "dall-e-3"),                        // for openai
-            ModelType::SDXLTurbo => write!(f, "sdxl-turbo"),                   // for comfyui
             ModelType::AmazonTitanText => write!(f, "amazon.titan-text-express-v1"), // for bedrock
             ModelType::AmazonTitanTextLite => write!(f, "amazon.titan-text-lite-v1"), // for bedrock
             ModelType::CommandR => write!(f, "cohere.command-r-v1:0"),         // for bedrock
@@ -170,29 +160,5 @@ pub async fn setup_models() {
                 info!("Error creating custom model: {}", e);
             }
         }
-    }
-}
-
-pub async fn process_image_generation(
-    prompt: &str,
-    model: &ModelType,
-) -> Result<HashMap<String, Vec<u8>>, ClientError> {
-    let client = comfyui_rs::Client::new("127.0.0.1:8188");
-    match model {
-        &ModelType::SDXLTurbo => {
-            let json_prompt =
-                serde_json::from_str(include_str!("../comfyui-rs/jsons/sdxl_turbo_api.json"))
-                    .unwrap();
-            let mut json_prompt: serde_json::Value = json_prompt;
-            json_prompt["6"]["inputs"]["text"] = serde_json::Value::String(prompt.to_string());
-            json_prompt["13"]["inputs"]["noise_seed"] =
-                serde_json::Value::Number(serde_json::Number::from(rand::random::<u64>()));
-            let images = client.get_images(json_prompt).await;
-            if images.is_err() {
-                return Err(images.err().unwrap());
-            }
-            Ok(images.unwrap())
-        }
-        _ => Err(ClientError::CustomError("Model not found".to_string())),
     }
 }

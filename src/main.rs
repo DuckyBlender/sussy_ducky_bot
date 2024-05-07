@@ -25,7 +25,7 @@ lazy_static::lazy_static! {
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    std::env::set_var("RUST_LOG", "info");
+    std::env::set_var("RUST_LOG", "info,aws_config=warn,tracing=warn");
     pretty_env_logger::init();
     info!("Starting command bot...");
 
@@ -115,8 +115,6 @@ enum Commands {
     Dalle3,
     #[command(description = "generate Polish text using the bielik model")]
     Bielik,
-    #[command(description = "SDXL-Turbo locally on GTX950M [BETA]", alias = "img")]
-    SdxlTurbo,
     #[command(description = "generate text using 70B LLAMA 3 model", aliases = ["llama", "l"])]
     LLAMA3,
     #[command(
@@ -293,14 +291,6 @@ async fn handler(
                     get_prompt(trimmed_text, &msg),
                     ModelType::Furry,
                     ollama_client,
-                ));
-            }
-            Ok(Commands::SdxlTurbo) => {
-                tokio::spawn(comfyui(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::SDXLTurbo,
                 ));
             }
             Ok(Commands::Clone) => {

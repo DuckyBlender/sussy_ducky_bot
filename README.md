@@ -21,6 +21,7 @@ This bot also has experimental image generation support in a custom crate (`comf
 - [ ] AWS Bedrock Outpainting (more info in `bedrock.rs`)
 - [x] /clone using AWS Bedrock
     - [ ] Generate closest aspect ratio with /clone
+- [ ] /emojify
 - [ ] Rate limiting to finally make some paid (but cheap) models public
 - [ ] Queue system (so the user knows the bot isn't stuck)
 - [ ] MarkdownV2 support
