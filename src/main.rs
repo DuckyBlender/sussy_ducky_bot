@@ -151,6 +151,8 @@ enum Commands {
     // AmazonTitanOutpaint,
     #[command(description = "generate a variation of an image using amazon titan")]
     Clone,
+    #[command(description = "claude 3 sonnet multimodal model", hide)]
+    Claude3,
 }
 
 // Handler function for bot events
@@ -169,6 +171,15 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Commands::Claude3) => {
+                tokio::spawn(bedrock(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Claude3,
+                    aws_client,
+                ));
+            }
             Ok(Commands::AmazonTitanImage) => {
                 tokio::spawn(bedrock(
                     bot.clone(),

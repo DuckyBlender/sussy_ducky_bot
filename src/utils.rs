@@ -46,6 +46,7 @@ pub enum ModelType {
     AmazonTitanImageVariation,
     CommandR,
     CommandRPlus,
+    Claude3,
 }
 
 impl ModelType {
@@ -84,6 +85,7 @@ impl ModelType {
             ModelType::CommandRPlus,
             ModelType::AmazonTitanImage,
             ModelType::AmazonTitanImageVariation,
+            ModelType::Claude3,
         ]
     }
 
@@ -125,6 +127,7 @@ impl std::fmt::Display for ModelType {
             ModelType::CommandRPlus => write!(f, "cohere.command-r-plus-v1:0"), // for bedrock
             ModelType::AmazonTitanImage => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
             ModelType::AmazonTitanImageVariation => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
+            ModelType::Claude3 => write!(f, "anthropic.claude-3-sonnet-20240229-v1:0"),                       // for bedrock
         }
     }
 }
