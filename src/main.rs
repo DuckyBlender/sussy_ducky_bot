@@ -8,15 +8,15 @@ use teloxide::{
     utils::command::BotCommands,
     RequestError,
 };
-mod utils;
+mod models;
 
+use models::ModelType;
 use tokio::sync::Mutex;
-use utils::ModelType;
 
 mod commands;
 use commands::*;
 
-use crate::utils::setup_models;
+use crate::models::setup_models;
 
 lazy_static::lazy_static! {
     pub static ref CURRENT_TASKS: Mutex<Vec<MessageId>> = Mutex::new(vec![]);
@@ -57,7 +57,7 @@ async fn main() {
         "{} has started!",
         bot.get_me().send().await.unwrap().user.username.unwrap()
     );
-    // Start the bot's event loop
+    // Start the bots event loop
     Dispatcher::builder(bot, handler)
         .dependencies(dptree::deps![ollama, client])
         .enable_ctrlc_handler()
@@ -88,7 +88,7 @@ enum Commands {
     TinyLlama,
     #[command(description = "show available commands")]
     Help,
-    #[command(description = "check the bot's latency")]
+    #[command(description = "check the bots latency")]
     Ping,
     #[command(description = "get an image of a cat for a given HTTP status code")]
     HttpCat,
@@ -121,7 +121,7 @@ enum Commands {
         description = "respond to an image using the Moondream model",
         alias = "v"
     )]
-    Vision,
+    Moondream,
     #[command(description = "generate code using 3B stablecode")]
     StableCode,
     #[command(description = "jsonify text", alias = "json")]
@@ -142,15 +142,21 @@ enum Commands {
         hide
     )]
     AmazonTitanText,
-    #[command(description = "generate image using amazon titan", alias="img", hide)]
+    #[command(description = "generate image using amazon titan", alias = "img", hide)]
     AmazonTitanImage,
     // outpaint needs to be in a different file (or function in the same file) because it needs much more logic. 1. download image 2. add white borders around the image 3. continuation is obv
     // #[command(description = "outpaint an image using amazon titan", alias="outpaint", hide)]
     // AmazonTitanOutpaint,
     #[command(description = "generate a variation of an image using amazon titan")]
     Clone,
-    #[command(description = "claude 3 sonnet multimodal model", alias = "claude", hide)]
+    #[command(
+        description = "claude 3 sonnet multimodal model",
+        alias = "claude",
+        hide
+    )]
     Claude3,
+    #[command(description = "respond to an image using llava phi3", alias = "llava")]
+    Vision,
 }
 
 // Handler function for bot events
@@ -176,6 +182,24 @@ async fn handler(
                     get_prompt(trimmed_text, &msg),
                     ModelType::Claude3,
                     aws_client,
+                ));
+            }
+            Ok(Commands::Moondream) => {
+                tokio::spawn(vision(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Moondream,
+                    ollama_client,
+                ));
+            }
+            Ok(Commands::Vision) => {
+                tokio::spawn(vision(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Phi3Llava,
+                    ollama_client,
                 ));
             }
             Ok(Commands::AmazonTitanImage) => {
@@ -250,15 +274,6 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            // Ok(Commands::Vision) => {
-            //     tokio::spawn(vision(
-            //         bot.clone(),
-            //         msg.clone(),
-            //         get_prompt(trimmed_text, &msg),
-            //         ModelType::Moondream,
-            //         ollama_client,
-            //     ));
-            // }
             Ok(Commands::Phi3) => {
                 tokio::spawn(ollama(
                     bot.clone(),

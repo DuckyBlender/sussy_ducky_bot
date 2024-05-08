@@ -1,3 +1,4 @@
+use crate::ModelType;
 use log::{error, info};
 use serde_json::json;
 use teloxide::payloads::SendMessageSetters;
@@ -7,8 +8,6 @@ use teloxide::{
     types::{ChatAction, Message},
     Bot, RequestError,
 };
-
-use crate::utils::ModelType;
 
 pub async fn openai(
     bot: Bot,
@@ -69,7 +68,7 @@ pub async fn openai(
             .reply_to_message_id(msg.id)
             .await?;
 
-        // Wait 5 seconds and delete the users and the bot's message
+        // Wait 5 seconds and delete the users and the bots message
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
         // Deleting the messages

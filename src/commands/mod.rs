@@ -28,8 +28,8 @@ pub use openai::openai;
 mod dalle;
 pub use dalle::dalle;
 
-// mod vision;
-// pub use vision::vision;
+mod vision;
+pub use vision::vision;
 
 mod bedrock;
 pub use bedrock::bedrock;

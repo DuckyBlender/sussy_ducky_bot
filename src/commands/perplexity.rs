@@ -8,7 +8,7 @@ use teloxide::{
     Bot, RequestError,
 };
 
-use crate::utils::ModelType;
+use crate::ModelType;
 
 #[derive(Debug, Serialize)]
 pub struct PerplexityRequest {

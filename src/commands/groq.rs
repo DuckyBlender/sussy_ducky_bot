@@ -3,7 +3,7 @@ use teloxide::payloads::SendMessageSetters;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
 use crate::commands::perplexity::{PerplexityRequest, PerplexityRequestMessage};
-use crate::utils::ModelType;
+use crate::ModelType;
 
 pub async fn groq(
     bot: Bot,
@@ -13,12 +13,13 @@ pub async fn groq(
 ) -> Result<(), RequestError> {
     info!("Starting perplexity request function");
 
-    // Check if the model is one of groq's models
+    // Check if the model is one of groqs models
     let groq_models = ModelType::return_groq();
     if !groq_models.contains(&model) {
         bot.send_message(msg.chat.id, "Error: Invalid model")
             .reply_to_message_id(msg.id)
             .await?;
+        error!("Invalid model: {model}. This should not happen!");
         return Ok(());
     }
 

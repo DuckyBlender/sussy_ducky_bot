@@ -11,7 +11,7 @@ use teloxide::{
 
 use tokio_stream::StreamExt;
 
-use crate::utils::ModelType;
+use crate::models::ModelType;
 use crate::CURRENT_TASKS;
 
 pub const INTERVAL_SEC: u64 = 5;
@@ -20,9 +20,19 @@ pub async fn ollama(
     bot: Bot,
     msg: Message,
     prompt: Option<String>,
-    model_type: ModelType,
+    model: ModelType,
     ollama_client: Ollama,
 ) -> Result<(), RequestError> {
+    // Check if the model is one of ollamas models
+    let ollama_models = ModelType::return_ollama();
+    if !ollama_models.contains(&model) {
+        bot.send_message(msg.chat.id, "Error: Invalid model")
+            .reply_to_message_id(msg.id)
+            .await?;
+        error!("Invalid model: {model}. This should not happen!");
+        return Ok(());
+    }
+
     // Check if prompt is empty
     let prompt = match prompt {
         Some(prompt) => prompt,
@@ -79,7 +89,7 @@ pub async fn ollama(
     // Log the request (as JSON)
     info!(
         "Sending request to ollama using model {} and length: {} chars",
-        model_type,
+        model,
         prompt.len()
     );
 
@@ -110,8 +120,8 @@ pub async fn ollama(
 
     // Send the stream request using ollama-rs
     let before_request = std::time::Instant::now();
-    let mut request = GenerationRequest::new(model_type.to_string(), prompt);
-    if model_type == ModelType::Json {
+    let mut request = GenerationRequest::new(model.to_string(), prompt);
+    if model == ModelType::Json {
         request = request.format(FormatType::Json).system(
             "You are a JSONify bot. Convert some text to JSON. Structure it however you like."
                 .to_string(),
@@ -123,7 +133,7 @@ pub async fn ollama(
         Ok(_) => {
             info!(
                 "Stream request for model {} successful, incoming token responses..",
-                model_type
+                model
             );
         }
         Err(e) => {
@@ -171,7 +181,7 @@ pub async fn ollama(
                 // There is currently a bug with ollama where infinite newline spaces generate after generating the JSON
                 // See https://github.com/ollama/ollama/pull/3784
 
-                if model_type == ModelType::Json {
+                if model == ModelType::Json {
                     // Check if the response is valid JSON
                     if let Ok(json) =
                         serde_json::from_str::<serde_json::Value>(&current_message_content)
@@ -230,7 +240,7 @@ pub async fn ollama(
     info!(
         "Generated ollama response.\n - Time elapsed: {:.2}s\n - Model: {}\n - Gen. Length: {}",
         elapsed,
-        model_type,
+        model,
         entire_response.len()
     );
 

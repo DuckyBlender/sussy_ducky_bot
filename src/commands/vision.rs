@@ -1,8 +1,5 @@
-/// THIS IS TEMPORARILY DISABLED BECAUES OF https://github.com/ollama/ollama/issues/4163
-
-
-use crate::structs::INTERVAL_SEC;
-use crate::utils::ModelType;
+use crate::commands::ollama::INTERVAL_SEC;
+use crate::models::ModelType;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
 use image::io::Reader as ImageReader;
@@ -30,6 +27,16 @@ pub async fn vision(
     model: ModelType,
     ollama_client: Ollama,
 ) -> Result<(), RequestError> {
+    // Check if the model is one of ollama visions models
+    let vision_models = ModelType::return_vision();
+    if !vision_models.contains(&model) {
+        bot.send_message(msg.chat.id, "Error: Invalid model")
+            .reply_to_message_id(msg.id)
+            .await?;
+        error!("Invalid model: {model}. This should not happen!");
+        return Ok(());
+    }
+
     // Check if there is an image or sticker attached in the reply
     let img_attachment = if let Some(reply) = msg.reply_to_message() {
         reply
@@ -42,7 +49,7 @@ pub async fn vision(
             .reply_to_message_id(msg.id)
             .await?;
 
-        // Wait 5 seconds and delete the users and the bot's message
+        // Wait 5 seconds and delete the users and the bots message
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
         // Deleting the messages
@@ -58,7 +65,7 @@ pub async fn vision(
             .reply_to_message_id(msg.id)
             .await?;
 
-        // Wait 5 seconds and delete the users and the bot's message
+        // Wait 5 seconds and delete the users and the bots message
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
         // Deleting the messages
@@ -95,7 +102,7 @@ pub async fn vision(
             .reply_to_message_id(msg.id)
             .await?;
 
-        // Wait 5 seconds and delete the users and the bot's message
+        // Wait 5 seconds and delete the users and the bots message
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
         // Deleting the messages

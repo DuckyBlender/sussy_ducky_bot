@@ -10,7 +10,7 @@ use teloxide::{
     Bot, RequestError,
 };
 
-use crate::utils::ModelType;
+use crate::models::ModelType;
 
 pub async fn dalle(
     bot: Bot,

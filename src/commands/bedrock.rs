@@ -1,6 +1,7 @@
 // File for AWS Bedrock commands
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
+use log::error;
 use log::info;
 use log::warn;
 use serde_json::json;
@@ -10,7 +11,7 @@ use teloxide::payloads::SendPhotoSetters;
 use teloxide::types::UserId;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
-use crate::utils::ModelType;
+use crate::ModelType;
 use aws_sdk_bedrockruntime::primitives::Blob;
 use std::str;
 
@@ -40,6 +41,7 @@ pub async fn bedrock(
         bot.send_message(msg.chat.id, "Error: Invalid model")
             .reply_to_message_id(msg.id)
             .await?;
+        error!("Invalid model: {model}. This should not happen!");
         return Ok(());
     }
 
@@ -88,7 +90,7 @@ pub async fn bedrock(
                 .reply_to_message_id(msg.id)
                 .await?;
 
-            // Wait 5 seconds and delete the users and the bot's message
+            // Wait 5 seconds and delete the users and the bots message
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
             // Deleting the messages
