@@ -256,6 +256,12 @@ pub async fn bedrock(
                     }));
             }
 
+            // If there is an image and the prompt is empty, replace it with "What is in this image?"
+            if !img.is_empty() && prompt.clone().unwrap().is_empty() {
+                info!("Replacing prompt with 'What is in this image?'");
+                json["messages"][0]["content"][0]["text"] = "What is in this image?".into();
+            }
+
             json
         }
         _ => {

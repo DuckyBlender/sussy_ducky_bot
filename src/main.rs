@@ -100,12 +100,12 @@ enum Commands {
     StableLM2,
     #[command(
         description = "nonsense api which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/",
+        alias = "lgbt",
         hide
     )]
     ChatLGBT,
     #[command(
         description = "generate text using the pplx-7b-online model",
-        alias = "lgbt",
         hide
     )]
     Online,
