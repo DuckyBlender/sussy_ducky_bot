@@ -45,7 +45,7 @@ pub async fn bedrock(
         return Ok(());
     }
 
-    let prompt = match prompt {
+    let mut prompt = match prompt {
         Some(prompt) => Some(prompt),
         None => {
             // Image Variation has an optional prompt
@@ -260,6 +260,7 @@ pub async fn bedrock(
             if !img.is_empty() && prompt.clone().unwrap().is_empty() {
                 info!("Replacing prompt with 'What is in this image?'");
                 json["messages"][0]["content"][0]["text"] = "What is in this image?".into();
+                prompt = Some("What is in this image?".to_string());
             }
 
             json
