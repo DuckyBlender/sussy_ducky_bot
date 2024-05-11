@@ -1,9 +1,9 @@
 use enum_iterator::Sequence;
 use log::info;
 use ollama_rs::{models::create::CreateModelRequest, Ollama};
-use teloxide::RequestError;
 use std::collections::HashMap;
 use teloxide::prelude::Requester;
+use teloxide::RequestError;
 use teloxide::{types::Message, utils::command::BotCommands, Bot};
 
 #[derive(Debug, PartialEq, Sequence)]
@@ -118,7 +118,7 @@ impl std::fmt::Display for ModelType {
             ModelType::TinyLlama => write!(f, "tinyllama:1.1b-chat-v0.6-q8_0"), // for ollama
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),      // ollama
             ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"),             // for groq.com
-            ModelType::Online => write!(f, "llama-3-sonar-large-32k-online"),  // for perplexity.ai
+            ModelType::Online => write!(f, "llama-3-sonar-small-32k-online"),  // for perplexity.ai
             ModelType::StableLM2 => write!(f, "stablelm2"),                    // for ollama
             ModelType::Dalle3 => write!(f, "dall-e-3"),                        // for openai
             ModelType::SDXLTurbo => write!(f, "sdxl-turbo"),                   // for comfyui
@@ -196,7 +196,7 @@ pub async fn get_prompt(msg: Message) -> Option<String> {
     } else {
         trimmed_prompt
     };
-    
+
     Some(trimmed_prompt.to_string())
 }
 

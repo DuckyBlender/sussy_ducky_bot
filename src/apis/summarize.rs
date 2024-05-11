@@ -5,8 +5,11 @@ use crate::{
     structs::{GenerationError, GenerationResponse},
 };
 
-pub async fn perplexity(prompt: &str) -> Result<GenerationResponse, GenerationError> {
-    info!("Starting perplexity response");
+// prompt: youtube URL or text
+pub async fn summarize(prompt: &str) -> Result<GenerationResponse, GenerationError> {
+    info!("Starting summarization response");
+
+    // Check if
 
     let now = std::time::Instant::now();
     // Send the request to the Perplexity API

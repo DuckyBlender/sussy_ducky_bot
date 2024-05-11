@@ -1,3 +1,5 @@
+// web scraping for petittube.com to get a random video with (almost) no views
+
 pub async fn get_noviews() -> Result<String, reqwest::Error> {
     // Fetch the HTML content from the specified URL
     let url = "https://petittube.com/";
