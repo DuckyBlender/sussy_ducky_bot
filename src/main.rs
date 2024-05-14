@@ -2,25 +2,15 @@ use aws_config::BehaviorVersion;
 use log::info;
 
 use ollama_rs::Ollama;
-use teloxide::{
-    prelude::*,
-    types::{Me, MessageId},
-    utils::command::BotCommands,
-    RequestError,
-};
+use teloxide::{prelude::*, types::Me, utils::command::BotCommands, RequestError};
 mod models;
 
 use models::ModelType;
-use tokio::sync::Mutex;
 
 mod commands;
 use commands::*;
 
 use crate::models::setup_models;
-
-lazy_static::lazy_static! {
-    pub static ref CURRENT_TASKS: Mutex<Vec<MessageId>> = Mutex::new(vec![]);
-}
 
 #[tokio::main]
 async fn main() {
@@ -104,17 +94,12 @@ enum Commands {
         hide
     )]
     ChatLGBT,
-    #[command(
-        description = "generate text using the pplx-7b-online model",
-        hide
-    )]
+    #[command(description = "generate text using the pplx-7b-online model", hide)]
     Online,
     #[command(description = "multimodal GPT-4-vision", alias = "gpt", hide)]
     GPT4,
     #[command(description = "DALLE 3", alias = "dalle", hide)]
     Dalle3,
-    #[command(description = "generate Polish text using the bielik model")]
-    Bielik,
     #[command(description = "generate text using 70B LLAMA 3 model", aliases = ["llama", "l"])]
     LLAMA3,
     #[command(
@@ -157,6 +142,11 @@ enum Commands {
     Claude3,
     #[command(description = "respond to an image using llava phi3", alias = "llava")]
     Vision,
+    #[command(
+        description = "custom bawialniaGPT model (nonsense model)",
+        alias = "bawialnia"
+    )]
+    BawialniaGPT,
 }
 
 // Handler function for bot events
@@ -175,6 +165,15 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Commands::BawialniaGPT) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::BawialniaGPT,
+                    ollama_client,
+                ));
+            }
             Ok(Commands::Claude3) => {
                 tokio::spawn(bedrock(
                     bot.clone(),
@@ -390,15 +389,6 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::LLAMA3,
-                ));
-            }
-            Ok(Commands::Bielik) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Bielik,
-                    ollama_client,
                 ));
             }
 

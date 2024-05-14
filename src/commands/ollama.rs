@@ -12,7 +12,6 @@ use teloxide::{
 use tokio_stream::StreamExt;
 
 use crate::models::ModelType;
-use crate::CURRENT_TASKS;
 
 pub const INTERVAL_SEC: u64 = 5;
 
@@ -95,24 +94,10 @@ pub async fn ollama(
 
     // Send a message to the chat to show that the bot is generating a response
     let generating_message = bot
-        .send_message(
-            msg.chat.id,
-            format!(
-                "Generating response...{}",
-                if CURRENT_TASKS.lock().await.len() >= 1 {
-                    format!(" (queue: {})", CURRENT_TASKS.lock().await.len())
-                } else {
-                    "".to_string()
-                }
-            ),
-        )
+        .send_message(msg.chat.id, "Generating response...".to_string())
         .reply_to_message_id(msg.id)
         .disable_notification(true)
         .await?;
-
-    let mut tasks = CURRENT_TASKS.lock().await;
-    tasks.push(generating_message.id);
-    drop(tasks);
 
     // Send typing indicator
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
@@ -217,10 +202,6 @@ pub async fn ollama(
     }
 
     info!("Final response received");
-    let mut tasks = CURRENT_TASKS.lock().await;
-    if let Some(index) = tasks.iter().position(|x| *x == generating_message.id) {
-        tasks.remove(index);
-    }
 
     if entire_response.is_empty() {
         warn!("No response received!");

@@ -5,19 +5,19 @@ use ollama_rs::{models::create::CreateModelRequest, Ollama};
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
     // Ollama (text)
-    Uncensored, // dolphin-llama3
-    Caveman,    // caveman-llama3 (custom model)
-    Racist,     // duckyblender/racist-phi3
-    Furry,      // furry-llama3 (custom model)
-    TinyLlama,  // tinyllama
-    Lobotomy,   // qwen:0.5b-chat-v1.5-q2_K
-    StableLM2,  // stablelm2
-    Bielik,     // bielik
-    Phi3,       // phi3:3.8b-mini-instruct-4k-q4_K_M
-    Moondream,  // moondream:1.8b-v2-q4_K_M
-    StableCode, // nuaimat/stablecode:3b
-    Json,       // phi3:3.8b-mini-instruct-4k-q4_K_M
-    Phi3Llava,  // llava-phi3
+    Uncensored,   // dolphin-llama3
+    Caveman,      // caveman-llama3 (custom model)
+    Racist,       // duckyblender/racist-phi3
+    Furry,        // furry-llama3 (custom model)
+    TinyLlama,    // tinyllama
+    Lobotomy,     // qwen:0.5b-chat-v1.5-q2_K
+    StableLM2,    // stablelm2
+    Phi3,         // phi3:3.8b-mini-instruct-4k-q4_K_M
+    Moondream,    // moondream:1.8b-v2-q4_K_M
+    StableCode,   // nuaimat/stablecode:3b
+    Json,         // phi3:3.8b-mini-instruct-4k-q4_K_M
+    Phi3Llava,    // llava-phi3
+    BawialniaGPT, // duckyblender/bawialniagpt:q4_K_M
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -55,13 +55,13 @@ impl ModelType {
             ModelType::TinyLlama,
             ModelType::Lobotomy,
             ModelType::StableLM2,
-            ModelType::Bielik,
             ModelType::Uncensored,
             ModelType::Phi3,
             ModelType::Moondream,
             ModelType::StableCode,
             ModelType::Racist,
             ModelType::Json,
+            ModelType::BawialniaGPT,
         ]
     }
 
@@ -97,26 +97,24 @@ impl ModelType {
 impl std::fmt::Display for ModelType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            ModelType::Bielik => {
-                write!(f, "mwiewior/bielik:7b-instruct-v0.1.Q4_K_M.gguf")
-            } // for ollama
-            ModelType::Phi3Llava => write!(f, "llava-phi3"), // for ollama
-            ModelType::Json => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
-            ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"), // for ollama
-            ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"), // for ollama
-            ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
-            ModelType::GPT4 => write!(f, "gpt-4-turbo"),     // for perplexity.ai
+            ModelType::BawialniaGPT => write!(f, "duckyblender/bawialniagpt:q4_K_M"), // for ollama
+            ModelType::Phi3Llava => write!(f, "llava-phi3"),                          // for ollama
+            ModelType::Json => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"),        // for ollama
+            ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"),              // for ollama
+            ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"),            // for ollama
+            ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"),        // for ollama
+            ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
             ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
             ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama
             ModelType::Racist => write!(f, "duckyblender/racist-phi3"), // for ollama
-            ModelType::Furry => write!(f, "furry-llama3"),   // for ollama
+            ModelType::Furry => write!(f, "furry-llama3"), // for ollama
             ModelType::TinyLlama => write!(f, "tinyllama:1.1b-chat-v0.6-q8_0"), // for ollama
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"), // ollama
             ModelType::Mixtral => write!(f, "mixtral-8x7b-32768"), // for groq.com
             ModelType::Online => write!(f, "llama-3-sonar-large-32k-online"), // for perplexity.ai
-            ModelType::StableLM2 => write!(f, "stablelm2"),  // for ollama
-            ModelType::Dalle3 => write!(f, "dall-e-3"),      // for openai
+            ModelType::StableLM2 => write!(f, "stablelm2"), // for ollama
+            ModelType::Dalle3 => write!(f, "dall-e-3"),  // for openai
             ModelType::AmazonTitanText => write!(f, "amazon.titan-text-express-v1"), // for bedrock
             ModelType::AmazonTitanTextLite => write!(f, "amazon.titan-text-lite-v1"), // for bedrock
             ModelType::CommandR => write!(f, "cohere.command-r-v1:0"), // for bedrock
