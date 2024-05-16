@@ -147,6 +147,8 @@ enum Commands {
         alias = "bawialnia"
     )]
     BawialniaGPT,
+    #[command(description = "fine-tuned polish lobotomy", alias = "lobotomypl")]
+    Lobotomia,
 }
 
 // Handler function for bot events
@@ -165,6 +167,15 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Commands::Lobotomia) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::PolishLobotomy,
+                    ollama_client,
+                ));
+            }
             Ok(Commands::BawialniaGPT) => {
                 tokio::spawn(ollama(
                     bot.clone(),

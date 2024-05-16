@@ -5,19 +5,20 @@ use ollama_rs::{models::create::CreateModelRequest, Ollama};
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
     // Ollama (text)
-    Uncensored,   // dolphin-llama3
-    Caveman,      // caveman-llama3 (custom model)
-    Racist,       // duckyblender/racist-phi3
-    Furry,        // furry-llama3 (custom model)
-    TinyLlama,    // tinyllama
-    Lobotomy,     // qwen:0.5b-chat-v1.5-q2_K
-    StableLM2,    // stablelm2
-    Phi3,         // phi3:3.8b-mini-instruct-4k-q4_K_M
-    Moondream,    // moondream:1.8b-v2-q4_K_M
-    StableCode,   // nuaimat/stablecode:3b
-    Json,         // phi3:3.8b-mini-instruct-4k-q4_K_M
-    Phi3Llava,    // llava-phi3
-    BawialniaGPT, // duckyblender/bawialniagpt:q4_K_M
+    Uncensored,     // dolphin-llama3
+    Caveman,        // caveman-llama3 (custom model)
+    Racist,         // duckyblender/racist-phi3
+    Furry,          // furry-llama3 (custom model)
+    TinyLlama,      // tinyllama
+    Lobotomy,       // qwen:0.5b-chat-v1.5-q2_K
+    StableLM2,      // stablelm2
+    Phi3,           // phi3:3.8b-mini-instruct-4k-q4_K_M
+    Moondream,      // moondream:1.8b-v2-q4_K_M
+    StableCode,     // nuaimat/stablecode:3b
+    Json,           // phi3:3.8b-mini-instruct-4k-q4_K_M
+    Phi3Llava,      // llava-phi3
+    BawialniaGPT,   // duckyblender/bawialniagpt:q4_K_M
+    PolishLobotomy, // duckyblender/polish-lobotomy
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -62,6 +63,7 @@ impl ModelType {
             ModelType::Racist,
             ModelType::Json,
             ModelType::BawialniaGPT,
+            ModelType::PolishLobotomy,
         ]
     }
 
@@ -97,12 +99,13 @@ impl ModelType {
 impl std::fmt::Display for ModelType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            ModelType::BawialniaGPT => write!(f, "duckyblender/bawialniagpt:q4_K_M"), // for ollama
-            ModelType::Phi3Llava => write!(f, "llava-phi3"),                          // for ollama
-            ModelType::Json => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"),        // for ollama
-            ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"),              // for ollama
-            ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"),            // for ollama
-            ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"),        // for ollama
+            ModelType::PolishLobotomy => write!(f, "duckyblender/polish-lobotomy"), // for ollama
+            ModelType::BawialniaGPT => write!(f, "duckyblender/bawialniagpt"),      // for ollama
+            ModelType::Phi3Llava => write!(f, "llava-phi3"),                        // for ollama
+            ModelType::Json => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"),      // for ollama
+            ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"),            // for ollama
+            ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"),          // for ollama
+            ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"),      // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
             ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
