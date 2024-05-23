@@ -62,7 +62,7 @@ async fn main() {
     description = "Bot commands. Most of the local models have Q4_K_M quantization. Some joke commands are hidden. Contact: @DuckyBlender"
 )]
 enum Commands {
-    #[command(description = "generate uncensored text", alias = "u")]
+    #[command(description = "generate uncensored text using dolphin-llama3", alias = "u")]
     Uncensored,
     #[command(description = "generate caveman-like text", alias = "cv")]
     Caveman,
@@ -72,7 +72,7 @@ enum Commands {
     Racist,
     #[command(description = "generate uwu furry text")]
     Furry,
-    #[command(description = "generate nonsense text")]
+    #[command(description = "generate nonsense text using a highly quantized 300MB LLM", hide)]
     Lobotomy,
     #[command(description = "generate text using the tinyllama LLM")]
     TinyLlama,
@@ -111,6 +111,8 @@ enum Commands {
     StableCode,
     #[command(description = "jsonify text", alias = "json")]
     Jsonify,
+    #[command(description = "emojify text", hide)]
+    Emojify,
     #[command(description = "generate text using Command R", hide)]
     CommandR,
     #[command(description = "generate text using Command R+", hide)]
@@ -147,8 +149,10 @@ enum Commands {
         alias = "bawialnia"
     )]
     BawialniaGPT,
-    #[command(description = "fine-tuned polish lobotomy", alias = "lobotomypl")]
+    #[command(description = "fine-tuned polish lobotomy", alias = "lobotomypl", hide)]
     Lobotomia,
+    #[command(description = "generate multilingual text using 8B aya model")]
+    Aya,
 }
 
 // Handler function for bot events
@@ -176,6 +180,16 @@ async fn handler(
                     ollama_client,
                 ));
             }
+            Ok(Commands::Aya) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Aya,
+                    ollama_client,
+                ));
+            }
+            
             Ok(Commands::BawialniaGPT) => {
                 tokio::spawn(ollama(
                     bot.clone(),
@@ -272,6 +286,15 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Json,
+                    ollama_client,
+                ));
+            }
+            Ok(Commands::Emojify) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Emojify,
                     ollama_client,
                 ));
             }

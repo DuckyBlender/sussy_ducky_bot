@@ -108,7 +108,13 @@ pub async fn ollama(
     let mut request = GenerationRequest::new(model.to_string(), prompt);
     if model == ModelType::Json {
         request = request.format(FormatType::Json).system(
-            "You are a JSONify bot. Convert some text to JSON. Structure it however you like."
+            "You are a JSONify bot. Convert the text to JSON. Structure it however you like."
+                .to_string(),
+        );
+    }
+    if model == ModelType::Emojify {
+        request = request.format(FormatType::Json).system(
+            "You are an Emojify bot. Convert the text to emojis. Don't add any text."
                 .to_string(),
         );
     }

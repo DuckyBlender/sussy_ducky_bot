@@ -16,9 +16,11 @@ pub enum ModelType {
     Moondream,      // moondream:1.8b-v2-q4_K_M
     StableCode,     // nuaimat/stablecode:3b
     Json,           // phi3:3.8b-mini-instruct-4k-q4_K_M
+    Emojify,        // phi3:3.8b-mini-instruct-4k-q4_K_M
     Phi3Llava,      // llava-phi3
     BawialniaGPT,   // duckyblender/bawialniagpt:q4_K_M
     PolishLobotomy, // duckyblender/polish-lobotomy
+    Aya, // aya:8b-23-q4_K_M
 
     // Ollama (image recognition)
     // LLaVa7B,  // llava
@@ -64,6 +66,8 @@ impl ModelType {
             ModelType::Json,
             ModelType::BawialniaGPT,
             ModelType::PolishLobotomy,
+            ModelType::Aya,
+            ModelType::Emojify
         ]
     }
 
@@ -125,6 +129,8 @@ impl std::fmt::Display for ModelType {
             ModelType::AmazonTitanImage => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
             ModelType::AmazonTitanImageVariation => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
             ModelType::Claude3 => write!(f, "anthropic.claude-3-sonnet-20240229-v1:0"), // for bedrock
+            ModelType::Aya => write!(f, "aya:8b-23-q4_K_M"), // for ollama
+            ModelType::Emojify => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
         }
     }
 }
