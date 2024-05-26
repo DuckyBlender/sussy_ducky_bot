@@ -114,7 +114,7 @@ impl std::fmt::Display for ModelType {
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"),      // for ollama
             ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
             // ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
-            ModelType::Uncensored => write!(f, "gurubot/llama3-alpha-centauri-uncensored") // for ollama
+            ModelType::Uncensored => write!(f, "gurubot/llama3-alpha-centauri-uncensored"), // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
             ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama
             ModelType::Racist => write!(f, "duckyblender/racist-phi3"), // for ollama
