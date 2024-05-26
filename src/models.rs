@@ -67,7 +67,9 @@ impl ModelType {
             ModelType::BawialniaGPT,
             ModelType::PolishLobotomy,
             ModelType::Aya,
-            ModelType::Emojify
+            ModelType::Emojify,
+            ModelType::Phi3Llava,
+            ModelType::Moondream,
         ]
     }
 

@@ -114,7 +114,7 @@ pub async fn ollama(
     }
     if model == ModelType::Emojify {
         request = request.system(
-            "You are an Emojify bot. Convert the text entirely to emojis. Don't add any text."
+            "You are an Emojify bot. Convert the text entirely to emojis. Don't add any text. Don't add any disclaimers. Just emoji representation of the text."
                 .to_string(),
         );
     }
