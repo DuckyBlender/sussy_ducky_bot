@@ -1,5 +1,5 @@
 use enum_iterator::Sequence;
-use log::info;
+use log::{error, info};
 use ollama_rs::{models::create::CreateModelRequest, Ollama};
 
 #[derive(Debug, PartialEq, Sequence)]
@@ -16,7 +16,7 @@ pub enum ModelType {
     Moondream,      // moondream:1.8b-v2-q4_K_M
     StableCode,     // nuaimat/stablecode:3b
     Json,           // phi3:3.8b-mini-instruct-4k-q4_K_M
-    Emojify,        // phi3:3.8b-mini-instruct-4k-q4_K_M
+    Emojify,        // stablelm2
     Phi3Llava,      // llava-phi3
     BawialniaGPT,   // duckyblender/bawialniagpt:q4_K_M
     PolishLobotomy, // duckyblender/polish-lobotomy
@@ -155,7 +155,7 @@ pub async fn setup_models() {
                 info!("Model {} downloaded/verified!", model);
             }
             Err(e) => {
-                info!("Error downloading/verifying model: {}", e);
+                error!("Error downloading/verifying model: {}", e);
             }
         }
     }
@@ -173,7 +173,7 @@ pub async fn setup_models() {
                 info!("Model {} created!", model);
             }
             Err(e) => {
-                info!("Error creating custom model: {}", e);
+                error!("Error creating custom model: {}", e);
             }
         }
     }
