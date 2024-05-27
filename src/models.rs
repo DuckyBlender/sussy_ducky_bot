@@ -5,7 +5,7 @@ use ollama_rs::{models::create::CreateModelRequest, Ollama};
 #[derive(Debug, PartialEq, Sequence)]
 pub enum ModelType {
     // Ollama (text)
-    Uncensored,     // dolphin-llama3
+    Uncensored,     // gurubot/llama3-alpha-centauri-uncensored
     Caveman,        // caveman-llama3 (custom model)
     Racist,         // duckyblender/racist-phi3
     Furry,          // furry-llama3 (custom model)

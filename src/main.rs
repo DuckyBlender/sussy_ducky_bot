@@ -62,7 +62,7 @@ async fn main() {
     description = "Bot commands. Most of the local models have Q4_K_M quantization. Some joke commands are hidden. Contact: @DuckyBlender"
 )]
 enum Commands {
-    #[command(description = "generate uncensored text using dolphin-llama3", alias = "u")]
+    #[command(description = "generate uncensored text using llama3-alpha-centauri-uncensored", alias = "u")]
     Uncensored,
     #[command(description = "generate caveman-like text", alias = "cv")]
     Caveman,
