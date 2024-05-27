@@ -133,7 +133,7 @@ impl std::fmt::Display for ModelType {
             ModelType::AmazonTitanImageVariation => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
             ModelType::Claude3 => write!(f, "anthropic.claude-3-sonnet-20240229-v1:0"), // for bedrock
             ModelType::Aya => write!(f, "aya:8b-23-q4_K_M"), // for ollama
-            ModelType::Emojify => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"), // for ollama
+            ModelType::Emojify => write!(f, "stablelm2"), // for ollama
         }
     }
 }
