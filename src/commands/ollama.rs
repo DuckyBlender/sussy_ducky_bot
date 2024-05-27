@@ -112,12 +112,6 @@ pub async fn ollama(
                 .to_string(),
         );
     }
-    if model == ModelType::Emojify {
-        request = request.system(
-            "You are an Emojify bot. Convert the text entirely to emojis. Don't add any text. Don't add any disclaimers. Just emoji representation of the text."
-                .to_string(),
-        );
-    }
     let stream = ollama_client.generate_stream(request).await;
 
     match stream {

@@ -111,8 +111,6 @@ enum Commands {
     StableCode,
     #[command(description = "jsonify text", alias = "json")]
     Jsonify,
-    #[command(description = "emojify text", hide)]
-    Emojify,
     #[command(description = "generate text using Command R", hide)]
     CommandR,
     #[command(description = "generate text using Command R+", hide)]
@@ -286,15 +284,6 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Json,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::Emojify) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Emojify,
                     ollama_client,
                 ));
             }

@@ -16,7 +16,6 @@ pub enum ModelType {
     Moondream,      // moondream:1.8b-v2-q4_K_M
     StableCode,     // nuaimat/stablecode:3b
     Json,           // phi3:3.8b-mini-instruct-4k-q4_K_M
-    Emojify,        // stablelm2
     Phi3Llava,      // llava-phi3
     BawialniaGPT,   // duckyblender/bawialniagpt:q4_K_M
     PolishLobotomy, // duckyblender/polish-lobotomy
@@ -67,7 +66,6 @@ impl ModelType {
             ModelType::BawialniaGPT,
             ModelType::PolishLobotomy,
             ModelType::Aya,
-            ModelType::Emojify,
             ModelType::Phi3Llava,
             ModelType::Moondream,
         ]
@@ -112,8 +110,7 @@ impl std::fmt::Display for ModelType {
             ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"),            // for ollama
             ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"),          // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"),      // for ollama
-            ModelType::GPT4 => write!(f, "gpt-4-turbo"), // for perplexity.ai
-            // ModelType::Uncensored => write!(f, "dolphin-llama3:8b-v2.9-q4_K_M"), // for ollama
+            ModelType::GPT4 => write!(f, "gpt-4o"), // for openai
             ModelType::Uncensored => write!(f, "gurubot/llama3-alpha-centauri-uncensored"), // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
             ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama
@@ -133,7 +130,6 @@ impl std::fmt::Display for ModelType {
             ModelType::AmazonTitanImageVariation => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
             ModelType::Claude3 => write!(f, "anthropic.claude-3-sonnet-20240229-v1:0"), // for bedrock
             ModelType::Aya => write!(f, "aya:8b-23-q4_K_M"), // for ollama
-            ModelType::Emojify => write!(f, "stablelm2"), // for ollama
         }
     }
 }
