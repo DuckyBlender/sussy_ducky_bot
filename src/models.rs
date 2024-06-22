@@ -65,6 +65,7 @@ impl ModelType {
             ModelType::Aya,
             ModelType::Phi3Llava,
             ModelType::Moondream,
+            ModelType::TinyStories,
         ]
     }
 
@@ -101,7 +102,7 @@ impl std::fmt::Display for ModelType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             ModelType::PolishLobotomy => write!(f, "duckyblender/polish-lobotomy"), // for ollama
-            ModelType::TinyStories => write!(f, "tinystories"),     // for ollama
+            ModelType::TinyStories => write!(f, "tinystories"),                     // for ollama
             ModelType::BawialniaGPT => write!(f, "duckyblender/bawialniagpt"),      // for ollama
             ModelType::Phi3Llava => write!(f, "llava-phi3"),                        // for ollama
             ModelType::Json => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
