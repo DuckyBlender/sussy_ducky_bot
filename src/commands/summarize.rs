@@ -3,7 +3,6 @@
 use log::{error, info, warn};
 use ollama_rs::generation::completion::request::GenerationRequest;
 use ollama_rs::Ollama;
-use serde::Serialize;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::{
     requests::Requester,
@@ -11,7 +10,6 @@ use teloxide::{
     Bot, RequestError,
 };
 use tokio_stream::StreamExt;
-use youtube_transcript::{Transcript, Youtube, YoutubeBuilder};
 
 use crate::commands::ollama::INTERVAL_SEC;
 use crate::ModelType;
@@ -61,22 +59,10 @@ pub async fn summarize(
         }
     };
 
-    // check if the prompt is a youtube video or text. it can also be a shortened youtube link
-    // https://www.youtube.com/watch?v=w0VMkE1toYg OR https://youtu.be/w0VMkE1toYg
-    let youtube_regex = regex::Regex::new(r"https://www.youtube.com/watch\?v=(?P<id>[a-zA-Z0-9_-]{11})|https://youtu.be/(?P<id2>[a-zA-Z0-9_-]{11})").unwrap();
-
-    let is_youtube = youtube_regex.is_match(&prompt);
-    let generating_message = if is_youtube {
-        // If it's a youtube video, use the youtube-transcript library and the summarization model
-        bot.send_message(msg.chat.id, "Summarizing youtube video...")
-            .reply_to_message_id(msg.id)
-            .await?
-    } else {
-        // If it's text, use the summarization model
+    let generating_message = 
         bot.send_message(msg.chat.id, "Summarizing text...")
             .reply_to_message_id(msg.id)
-            .await?
-    };
+            .await?;
 
     info!("Starting summarization command");
 
@@ -84,38 +70,7 @@ pub async fn summarize(
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
         .await?;
 
-    // Download the youtube video and get the transcript
-
-    let text = if is_youtube {
-        // Get the youtube video id
-        let link: &str = prompt.as_str();
-        let youtube_loader = YoutubeBuilder::default();
-        let youtube_loader = youtube_loader.build();
-        let transcript = youtube_loader.transcript(link).await;
-        if let Ok(transcript) = transcript {
-            let mut text = String::new();
-            for t in transcript.transcripts {
-                text.push_str(&t.text);
-            }
-
-            text
-        } else {
-            let bot_msg = bot
-                .send_message(msg.chat.id, "Error: Could not get the transcript")
-                .reply_to_message_id(msg.id)
-                .await?;
-
-            // Wait 5 seconds
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-
-            // Deleting the messages
-            bot.delete_message(msg.chat.id, msg.id).await?;
-            bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
-            return Ok(());
-        }
-    } else {
-        prompt.clone()
-    };
+    let text = prompt;
 
     // Summarize the text using phi-3
     let model = ModelType::Phi3;

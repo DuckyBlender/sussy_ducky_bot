@@ -151,6 +151,10 @@ enum Commands {
     Lobotomia,
     #[command(description = "generate multilingual text using 8B aya model")]
     Aya,
+    #[command(description = "summarize text")]
+    Summarize,
+    #[command(description = "finish a story using the 656k tinystories model", alias = "story")]
+    TinyStories,
 }
 
 // Handler function for bot events
@@ -175,6 +179,23 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::PolishLobotomy,
+                    ollama_client,
+                ));
+            }
+            Ok(Commands::TinyStories) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::TinyStories,
+                    ollama_client,
+                ));
+            }
+            Ok(Commands::Summarize) => {
+                tokio::spawn(summarize(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                     ollama_client,
                 ));
             }

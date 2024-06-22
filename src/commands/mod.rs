@@ -33,3 +33,6 @@ pub use vision::vision;
 
 mod bedrock;
 pub use bedrock::bedrock;
+
+mod summarize;
+pub use summarize::summarize;
