@@ -17,7 +17,7 @@ pub enum ModelType {
     BawialniaGPT,   // duckyblender/bawialniagpt:q4_K_M
     PolishLobotomy, // duckyblender/polish-lobotomy
     Aya,            // aya:8b-23-q4_K_M
-    TinyStories,    // gurubot/tinystories-656k-q8
+    TinyStories,    // tinystories
 
     // Ollama (image recognition)
     Moondream, // moondream:1.8b-v2-q4_K_M
@@ -65,7 +65,6 @@ impl ModelType {
             ModelType::Aya,
             ModelType::Phi3Llava,
             ModelType::Moondream,
-            ModelType::TinyStories,
         ]
     }
 
@@ -74,10 +73,7 @@ impl ModelType {
     // }
 
     pub fn return_vision() -> Vec<ModelType> {
-        vec![
-            ModelType::Moondream,
-            ModelType::Phi3Llava,
-        ]
+        vec![ModelType::Moondream, ModelType::Phi3Llava]
     }
 
     pub fn return_bedrock() -> Vec<ModelType> {
@@ -97,7 +93,7 @@ impl ModelType {
     }
 
     pub fn return_custom() -> Vec<ModelType> {
-        vec![ModelType::Caveman, ModelType::Furry]
+        vec![ModelType::Caveman, ModelType::Furry, ModelType::TinyStories]
     }
 }
 
@@ -105,7 +101,7 @@ impl std::fmt::Display for ModelType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             ModelType::PolishLobotomy => write!(f, "duckyblender/polish-lobotomy"), // for ollama
-            ModelType::TinyStories => write!(f, "gurubot/tinystories-656k-q8"),      // for ollama
+            ModelType::TinyStories => write!(f, "tinystories"),     // for ollama
             ModelType::BawialniaGPT => write!(f, "duckyblender/bawialniagpt"),      // for ollama
             ModelType::Phi3Llava => write!(f, "llava-phi3"),                        // for ollama
             ModelType::Json => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
