@@ -8,4 +8,4 @@ SYSTEM """
 <|start_story|>Once upon a time, 
 """
 
-PARAMETER STOP "<|end_story|>"
+PARAMETER stop "<|end_story|>"
