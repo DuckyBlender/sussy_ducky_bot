@@ -3,7 +3,7 @@ use crate::models::ModelType;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
 use image::io::Reader as ImageReader;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use ollama_rs::generation::completion::request::GenerationRequest;
 use ollama_rs::generation::images::Image;
 use ollama_rs::Ollama;
@@ -139,6 +139,8 @@ pub async fn vision(
         return Ok(());
     }
 
+    info!("Image size: {} bytes", bytes.len());
+
     // Load the image
     let img = ImageReader::new(Cursor::new(bytes))
         .with_guessed_format()?
@@ -153,14 +155,12 @@ pub async fn vision(
     // Convert to base64
     let img = BASE64.encode(&bytes);
 
+    debug!("Image downloaded and converted to base64.");
+
     // Send the stream request using ollama-rs
     let before_request = std::time::Instant::now();
-    // Prompt is prompt, if it's None then it's "What's in this image?"
-    let request = GenerationRequest::new(
-        model.to_string(),
-        prompt.unwrap_or("What's in this image?".to_string()),
-    )
-    .add_image(Image::from_base64(&img));
+    let request = GenerationRequest::new(model.to_string(), prompt.unwrap_or("What is in this image?".to_string()))
+        .add_image(Image::from_base64(&img));
     let stream = ollama_client.generate_stream(request).await;
 
     match stream {

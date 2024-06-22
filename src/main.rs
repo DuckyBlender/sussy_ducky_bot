@@ -290,15 +290,6 @@ async fn handler(
                     aws_client,
                 ));
             }
-            Ok(Commands::StableCode) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::StableCode,
-                    ollama_client,
-                ));
-            }
             Ok(Commands::Jsonify) => {
                 tokio::spawn(ollama(
                     bot.clone(),

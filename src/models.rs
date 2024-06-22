@@ -13,7 +13,6 @@ pub enum ModelType {
     Lobotomy,       // qwen:0.5b-chat-v1.5-q2_K
     StableLM2,      // stablelm2
     Phi3,           // phi3:3.8b-mini-4k-instruct-q4_K_M
-    StableCode,     // nuaimat/stablecode:3b
     Json,           // phi3:3.8b-mini-4k-instruct-q4_K_M
     BawialniaGPT,   // duckyblender/bawialniagpt:q4_K_M
     PolishLobotomy, // duckyblender/polish-lobotomy
@@ -59,7 +58,6 @@ impl ModelType {
             ModelType::Uncensored,
             ModelType::Phi3,
             ModelType::Moondream,
-            ModelType::StableCode,
             ModelType::Racist,
             ModelType::Json,
             ModelType::BawialniaGPT,
@@ -111,7 +109,6 @@ impl std::fmt::Display for ModelType {
             ModelType::BawialniaGPT => write!(f, "duckyblender/bawialniagpt"),      // for ollama
             ModelType::Phi3Llava => write!(f, "llava-phi3"),                        // for ollama
             ModelType::Json => write!(f, "phi3:3.8b-mini-instruct-4k-q4_K_M"),      // for ollama
-            ModelType::StableCode => write!(f, "nuaimat/stablecode:3b"),            // for ollama
             ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"),          // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
             ModelType::GPT4 => write!(f, "gpt-4o"),                                 // for openai
