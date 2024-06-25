@@ -37,7 +37,7 @@ async fn main() {
     let bot = Bot::from_env();
     let ollama = Ollama::default();
     let config = aws_config::defaults(BehaviorVersion::latest())
-        .region("us-west-2")
+        .region("us-east-1")
         .load()
         .await;
 
