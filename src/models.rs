@@ -66,6 +66,7 @@ impl ModelType {
             ModelType::Phi3Llava,
             ModelType::Moondream,
             ModelType::TinyStories,
+            ModelType::Caveman
         ]
     }
 
@@ -126,7 +127,7 @@ impl std::fmt::Display for ModelType {
             ModelType::CommandRPlus => write!(f, "cohere.command-r-plus-v1:0"), // for bedrock
             ModelType::AmazonTitanImage => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
             ModelType::AmazonTitanImageVariation => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
-            ModelType::Claude3 => write!(f, "anthropic.claude-3-sonnet-20240229-v1:0"), // for bedrock
+            ModelType::Claude3 => write!(f, "anthropic.claude-3-5-sonnet-20240620-v1:0"), // for bedrock
             ModelType::Aya => write!(f, "aya:8b-23-q4_K_M"), // for ollama
         }
     }

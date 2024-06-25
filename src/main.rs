@@ -1,3 +1,9 @@
+// #![warn(
+//     clippy::all,
+//     clippy::pedantic,
+//     clippy::nursery,
+// )]
+
 use aws_config::BehaviorVersion;
 use log::info;
 
@@ -35,7 +41,7 @@ async fn main() {
         .load()
         .await;
 
-    let client = aws_sdk_bedrockruntime::Client::new(&config);
+    let bedrock = aws_sdk_bedrockruntime::Client::new(&config);
 
     let handler = dptree::entry()
         // .branch(Update::filter_callback_query().endpoint(callback_handler))
@@ -49,7 +55,7 @@ async fn main() {
     );
     // Start the bots event loop
     Dispatcher::builder(bot, handler)
-        .dependencies(dptree::deps![ollama, client])
+        .dependencies(dptree::deps![ollama, bedrock])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
@@ -62,7 +68,10 @@ async fn main() {
     description = "Bot commands. Most of the local models have Q4_K_M quantization. Some joke commands are hidden. Contact: @DuckyBlender"
 )]
 enum Commands {
-    #[command(description = "generate uncensored text using llama3-alpha-centauri-uncensored", alias = "u")]
+    #[command(
+        description = "generate uncensored text using llama3-alpha-centauri-uncensored",
+        alias = "u"
+    )]
     Uncensored,
     #[command(description = "generate caveman-like text", alias = "cv")]
     Caveman,
@@ -72,7 +81,10 @@ enum Commands {
     Racist,
     #[command(description = "generate uwu furry text")]
     Furry,
-    #[command(description = "generate nonsense text using a highly quantized 300MB LLM", hide)]
+    #[command(
+        description = "generate nonsense text using a highly quantized 300MB LLM",
+        hide
+    )]
     Lobotomy,
     #[command(description = "generate text using the tinyllama LLM")]
     TinyLlama,
@@ -134,11 +146,7 @@ enum Commands {
     // AmazonTitanOutpaint,
     #[command(description = "generate a variation of an image using amazon titan")]
     Clone,
-    #[command(
-        description = "claude 3 sonnet multimodal model",
-        alias = "claude",
-        hide
-    )]
+    #[command(description = "claude 3.5 multimodal model", alias = "claude", hide)]
     Claude3,
     #[command(description = "respond to an image using llava phi3", alias = "llava")]
     Vision,
@@ -153,7 +161,10 @@ enum Commands {
     Aya,
     #[command(description = "summarize text")]
     Summarize,
-    #[command(description = "finish a story using the 656k tinystories model", alias = "story")]
+    #[command(
+        description = "finish a story using the 656k tinystories model",
+        alias = "story"
+    )]
     TinyStories,
 }
 
@@ -163,7 +174,7 @@ async fn handler(
     msg: Message,
     me: Me,
     ollama_client: Ollama,
-    aws_client: aws_sdk_bedrockruntime::Client,
+    bedrock_client: aws_sdk_bedrockruntime::Client,
 ) -> Result<(), RequestError> {
     if let Some(text) = msg.text() {
         let trimmed_text = text
@@ -208,7 +219,7 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            
+
             Ok(Commands::BawialniaGPT) => {
                 tokio::spawn(ollama(
                     bot.clone(),
@@ -224,7 +235,7 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Claude3,
-                    aws_client,
+                    bedrock_client,
                 ));
             }
             Ok(Commands::Moondream) => {
@@ -251,7 +262,7 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::AmazonTitanImage,
-                    aws_client,
+                    bedrock_client,
                 ));
             }
             Ok(Commands::AmazonTitanText) => {
@@ -260,7 +271,7 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::AmazonTitanText,
-                    aws_client,
+                    bedrock_client,
                 ));
             }
             Ok(Commands::AmazonTitanTextLite) => {
@@ -269,7 +280,7 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::AmazonTitanTextLite,
-                    aws_client,
+                    bedrock_client,
                 ));
             }
             Ok(Commands::CommandR) => {
@@ -278,7 +289,7 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::CommandR,
-                    aws_client,
+                    bedrock_client,
                 ));
             }
             Ok(Commands::CommandRPlus) => {
@@ -287,7 +298,7 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::CommandRPlus,
-                    aws_client,
+                    bedrock_client,
                 ));
             }
             Ok(Commands::Jsonify) => {
@@ -348,7 +359,7 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::AmazonTitanImageVariation,
-                    aws_client,
+                    bedrock_client,
                 ));
             }
             Ok(Commands::Caveman) => {
