@@ -1,7 +1,7 @@
 use log::{error, info, warn};
 use ollama_rs::generation::parameters::FormatType;
 use ollama_rs::{generation::completion::request::GenerationRequest, Ollama};
-use teloxide::payloads::SendMessageSetters;
+use teloxide::payloads::{EditMessageTextSetters, SendMessageSetters};
 
 use teloxide::{
     requests::Requester,
@@ -174,6 +174,8 @@ pub async fn ollama(
                         info!("Valid JSON recieved, breaking loop.");
                         // set entire_response to be pretty printed JSON
                         entire_response = serde_json::to_string_pretty(&json).unwrap();
+                        // add ``` to the end of the response
+                        entire_response.push_str("\n```");
                         break 'response_loop;
                     }
                 }
@@ -208,13 +210,27 @@ pub async fn ollama(
         entire_response = "<no response>".to_string();
     }
 
-    // Edit the message one last time
-    bot.edit_message_text(
-        generating_message.chat.id,
-        generating_message.id,
-        entire_response.clone().trim_end(),
-    )
-    .await?;
+    let mut final_final_response = entire_response.clone().trim_end().to_string();
+
+    if ModelType::Json == model {
+        final_final_response = format!("```json\n{}\n```", final_final_response);
+        // Edit the message one last time
+        bot.edit_message_text(
+            generating_message.chat.id,
+            generating_message.id,
+            final_final_response,
+        )
+        .parse_mode(teloxide::types::ParseMode::MarkdownV2)
+        .await?;
+    } else {
+        // Edit the message one last time
+        bot.edit_message_text(
+            generating_message.chat.id,
+            generating_message.id,
+            final_final_response,
+        )
+        .await?;
+    }
 
     let elapsed = before_request.elapsed().as_secs_f32();
 
