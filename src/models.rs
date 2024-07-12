@@ -20,6 +20,8 @@ pub enum ModelType {
     TinyStories,    // tinystories
     Gemma2,         // gemma2:9b-instruct-q4_K_M
     Smegmma,        // duckyblender/smegmma:q4_K_M
+    InternLM2,      // internlm2:7b-chat-v2.5-q4_K_M
+    GLM4,           // glm4:9b-chat-q4_K_M
 
     // Ollama (image recognition)
     Moondream, // moondream:1.8b-v2-q4_K_M
@@ -69,6 +71,8 @@ impl ModelType {
             ModelType::Caveman,
             ModelType::Gemma2,
             ModelType::Smegmma,
+            ModelType::InternLM2,
+            ModelType::GLM4,
         ]
     }
 
@@ -129,6 +133,8 @@ impl std::fmt::Display for ModelType {
             ModelType::Aya => write!(f, "aya:8b-23-q4_K_M"), // for ollama
             ModelType::Gemma2 => write!(f, "gemma2:9b-instruct-q4_K_M"), // for ollama
             ModelType::Smegmma => write!(f, "duckyblender/smegmma:q4_K_M"), // for ollama
+            ModelType::InternLM2 => write!(f, "internlm2:7b-chat-v2.5-q4_K_M"), // for ollama
+            ModelType::GLM4 => write!(f, "glm4:9b-chat-q4_K_M"), // for ollama
         }
     }
 }

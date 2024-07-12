@@ -165,8 +165,12 @@ enum Commands {
         alias = "gemma",
     )]
     Gemma2,
-    #[command(description = "[🖥️] generate text using the uncensored Smegmma LLM (GEMMA2 RP FINETUNE)")]
+    #[command(description = "[🖥️] generate RP text using the uncensored Smegmma LLM (GEMMA2 RP FINETUNE)")]
     Smegmma,
+    #[command(description = "[🖥️] generate text with outstanding reasoning using the 7B InternLM2 LLM", aliases = ["intern", "internlm"])]
+    InternLM2,
+    #[command(description = "[🖥️] generate multilingual text using the 9B GLM4 LLM", alias = "glm")]
+    GLM4,
 }
 
 // Handler function for bot events
@@ -185,6 +189,25 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Commands::InternLM2) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::InternLM2,
+                    ollama_client,
+                ));
+            }
+            Ok(Commands::GLM4) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::GLM4,
+                    ollama_client,
+                ));
+            }
+            
             Ok(Commands::Lobotomia) => {
                 tokio::spawn(ollama(
                     bot.clone(),
