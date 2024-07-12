@@ -25,4 +25,5 @@ image = "0.25.1"
 aws-config = { version = "1.5", features = ["behavior-version-latest"] }
 aws-sdk-bedrockruntime = "^1.36"
 regex = "1.10.5"
+comfyui-api = { git = "https://github.com/capslock/stable-diffusion-bot", version = "0.2.1" }
 # indicatif = "0.17.8"

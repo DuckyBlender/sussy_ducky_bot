@@ -36,3 +36,6 @@ pub use bedrock::bedrock;
 
 mod summarize;
 pub use summarize::summarize;
+
+mod stable_audio;
+pub use stable_audio::stable_audio;

@@ -166,6 +166,8 @@ enum Commands {
         alias = "story"
     )]
     TinyStories,
+    #[command(description = "15s of stable audio", alias = "audio")]
+    StableAudio,
 }
 
 // Handler function for bot events
@@ -191,6 +193,13 @@ async fn handler(
                     get_prompt(trimmed_text, &msg),
                     ModelType::PolishLobotomy,
                     ollama_client,
+                ));
+            }
+            Ok(Commands::StableAudio) => {
+                tokio::spawn(stable_audio(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
                 ));
             }
             Ok(Commands::TinyStories) => {
