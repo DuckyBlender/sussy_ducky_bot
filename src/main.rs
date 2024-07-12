@@ -65,28 +65,28 @@ async fn main() {
 #[derive(BotCommands, Clone)]
 #[command(
     rename_rule = "lowercase",
-    description = "Bot commands. Most of the local models have Q4_K_M quantization. Some joke commands are hidden. Contact: @DuckyBlender"
+    description = "Bot commands. Local models use q4_K_M quantization unless specified otherwise. Some joke commands are hidden. [🖥️] = local (GTX 1660S), [☁️] = cloud model"
 )]
 enum Commands {
     #[command(
-        description = "generate uncensored text using llama3-alpha-centauri-uncensored",
+        description = "[🖥️] generate uncensored text using llama3-alpha-centauri-uncensored",
         alias = "u"
     )]
     Uncensored,
-    #[command(description = "generate caveman-like text", alias = "cv")]
+    #[command(description = "[🖥️] generate caveman-like text", alias = "cv")]
     Caveman,
-    #[command(description = "generate text using the phi3 LLM", alias = "phi")]
+    #[command(description = "[🖥️] generate text using the phi3 LLM", alias = "phi")]
     Phi3,
-    #[command(description = "generate racist responses using custom fine-tuned LLM")]
+    #[command(description = "[🖥️] generate racist responses using custom fine-tuned LLM")]
     Racist,
-    #[command(description = "generate uwu furry text")]
+    #[command(description = "[🖥️] generate uwu furry text")]
     Furry,
     #[command(
-        description = "generate nonsense text using a highly quantized 300MB LLM",
+        description = "[🖥️] generate nonsense text using a highly quantized 300MB LLM",
         hide
     )]
     Lobotomy,
-    #[command(description = "generate text using the tinyllama LLM")]
+    #[command(description = "[🖥️] generate text using the tinyllama LLM")]
     TinyLlama,
     #[command(description = "show available commands")]
     Help,
@@ -96,76 +96,77 @@ enum Commands {
     HttpCat,
     #[command(description = "get a random youtube video with no views")]
     NoViews,
-    #[command(description = "generate text using the mixtral model")]
+    #[command(description = "[☁️] generate text using the mixtral model")]
     Mixtral,
-    #[command(description = "generate text using the stablelm2 model")]
+    #[command(description = "[🖥️] generate text using the stablelm2 model")]
     StableLM2,
     #[command(
-        description = "nonsense api which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/",
+        description = "[☁️] nonsense api which responds with earlier user inputs: https://chatlgbtchatbot.neocities.org/",
         alias = "lgbt",
         hide
     )]
     ChatLGBT,
-    #[command(description = "generate text using the pplx-7b-online model", hide)]
+    #[command(description = "[☁️] generate text using the pplx-7b-online model", hide)]
     Online,
-    #[command(description = "multimodal GPT-4-vision", alias = "gpt", hide)]
+    #[command(description = "[☁️] multimodal GPT-4-vision", alias = "gpt", hide)]
     GPT4,
-    #[command(description = "DALLE 3", alias = "dalle", hide)]
+    #[command(description = "[☁️] DALLE 3", alias = "dalle", hide)]
     Dalle3,
-    #[command(description = "generate text using 70B LLAMA 3 model", aliases = ["llama", "l"])]
+    #[command(description = "[☁️] generate text using 70B LLAMA 3 model", aliases = ["llama", "l"])]
     LLAMA3,
     #[command(
-        description = "respond to an image using the Moondream model",
+        description = "[🖥️] respond to an image using the Moondream model",
         alias = "v"
     )]
     Moondream,
-    #[command(description = "generate code using 3B stablecode")]
-    StableCode,
-    #[command(description = "jsonify text", alias = "json")]
+    #[command(description = "[🖥️] jsonify text", alias = "json")]
     Jsonify,
-    #[command(description = "generate text using Command R", hide)]
-    CommandR,
-    #[command(description = "generate text using Command R+", hide)]
-    CommandRPlus,
     #[command(
-        description = "generate text using Amazon Titan Lite",
+        description = "[☁️] generate text using Amazon Titan Lite",
         alias = "titanlite",
         hide
     )]
     AmazonTitanTextLite,
     #[command(
-        description = "generate text using Amazon Titan Express",
+        description = "[☁️] generate text using Amazon Titan Express",
         alias = "titan",
         hide
     )]
     AmazonTitanText,
-    #[command(description = "generate image using amazon titan", alias = "img", hide)]
+    #[command(description = "[☁️] generate image using amazon titan", alias = "img", hide)]
     AmazonTitanImage,
     // outpaint needs to be in a different file (or function in the same file) because it needs much more logic. 1. download image 2. add white borders around the image 3. continuation is obv
     // #[command(description = "outpaint an image using amazon titan", alias="outpaint", hide)]
     // AmazonTitanOutpaint,
-    #[command(description = "generate a variation of an image using amazon titan")]
+    #[command(description = "[☁️] generate a variation of an image using amazon titan")]
     Clone,
-    #[command(description = "claude 3.5 multimodal model", alias = "claude", hide)]
+    #[command(description = "[☁️] claude 3.5 multimodal model", alias = "claude", hide)]
     Claude3,
-    #[command(description = "respond to an image using llava phi3", alias = "llava")]
+    #[command(description = "[🖥️] respond to an image using llava phi3", alias = "llava")]
     Vision,
     #[command(
-        description = "custom bawialniaGPT model (nonsense model)",
+        description = "[🖥️] custom bawialniaGPT model (nonsense model)",
         alias = "bawialnia"
     )]
     BawialniaGPT,
-    #[command(description = "fine-tuned polish lobotomy", alias = "lobotomypl", hide)]
+    #[command(description = "[🖥️] fine-tuned polish lobotomy", alias = "lobotomypl", hide)]
     Lobotomia,
-    #[command(description = "generate multilingual text using 8B aya model")]
+    #[command(description = "[🖥️] generate multilingual text using 8B aya model")]
     Aya,
-    #[command(description = "summarize text")]
+    #[command(description = "[🖥️] summarize text")]
     Summarize,
     #[command(
-        description = "finish a story using the 656k tinystories model",
+        description = "[🖥️] finish a story using the 656k tinystories model",
         alias = "story"
     )]
     TinyStories,
+    #[command(
+        description = "[🖥️] generate text using Gemma2 9B model",
+        alias = "gemma",
+    )]
+    Gemma2,
+    #[command(description = "[🖥️] generate text using the uncensored Smegmma LLM (GEMMA2 RP FINETUNE)")]
+    Smegmma,
 }
 
 // Handler function for bot events
@@ -190,6 +191,24 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::PolishLobotomy,
+                    ollama_client,
+                ));
+            }
+            Ok(Commands::Gemma2) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Gemma2,
+                    ollama_client,
+                ));
+            }
+            Ok(Commands::Smegmma) => {
+                tokio::spawn(ollama(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Smegmma,
                     ollama_client,
                 ));
             }
@@ -280,24 +299,6 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::AmazonTitanTextLite,
-                    bedrock_client,
-                ));
-            }
-            Ok(Commands::CommandR) => {
-                tokio::spawn(bedrock(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::CommandR,
-                    bedrock_client,
-                ));
-            }
-            Ok(Commands::CommandRPlus) => {
-                tokio::spawn(bedrock(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::CommandRPlus,
                     bedrock_client,
                 ));
             }

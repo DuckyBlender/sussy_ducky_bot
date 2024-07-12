@@ -138,15 +138,15 @@ pub async fn bedrock(
         }
 
         // cohere commandR and commandR+ models
-        ModelType::CommandR | ModelType::CommandRPlus => {
-            info!("Creating JSON for CommandR");
-            json!({
-                "message": prompt.clone().unwrap()
-                // Other default parameters:
-                // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-cohere-command-r-plus.html
+        // ModelType::CommandR | ModelType::CommandRPlus => {
+        //     info!("Creating JSON for CommandR");
+        //     json!({
+        //         "message": prompt.clone().unwrap()
+        //         // Other default parameters:
+        //         // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-cohere-command-r-plus.html
 
-            })
-        }
+        //     })
+        // }
 
         ModelType::AmazonTitanImage => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
@@ -307,10 +307,10 @@ pub async fn bedrock(
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-text.html
             output_json["results"][0]["outputText"].as_str().unwrap()
         }
-        ModelType::CommandR | ModelType::CommandRPlus => {
-            // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-cohere-command-r-plus.html
-            output_json["text"].as_str().unwrap()
-        }
+        // ModelType::CommandR | ModelType::CommandRPlus => {
+        //     // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-cohere-command-r-plus.html
+        //     output_json["text"].as_str().unwrap()
+        // }
         ModelType::AmazonTitanImage | ModelType::AmazonTitanImageVariation => {
             // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-titan-image.html
             output_json["images"][0].as_str().unwrap()

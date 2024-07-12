@@ -18,6 +18,8 @@ pub enum ModelType {
     PolishLobotomy, // duckyblender/polish-lobotomy
     Aya,            // aya:8b-23-q4_K_M
     TinyStories,    // tinystories
+    Gemma2,         // gemma2:9b-instruct-q4_K_M
+    Smegmma,        // duckyblender/smegmma:q4_K_M
 
     // Ollama (image recognition)
     Moondream, // moondream:1.8b-v2-q4_K_M
@@ -40,8 +42,6 @@ pub enum ModelType {
     AmazonTitanTextLite,
     AmazonTitanImage,
     AmazonTitanImageVariation,
-    CommandR,
-    CommandRPlus,
     Claude3,
 }
 
@@ -82,8 +82,6 @@ impl ModelType {
         vec![
             ModelType::AmazonTitanText,
             ModelType::AmazonTitanTextLite,
-            ModelType::CommandR,
-            ModelType::CommandRPlus,
             ModelType::AmazonTitanImage,
             ModelType::AmazonTitanImageVariation,
             ModelType::Claude3,
@@ -123,12 +121,12 @@ impl std::fmt::Display for ModelType {
             ModelType::Dalle3 => write!(f, "dall-e-3"),        // for openai
             ModelType::AmazonTitanText => write!(f, "amazon.titan-text-express-v1"), // for bedrock
             ModelType::AmazonTitanTextLite => write!(f, "amazon.titan-text-lite-v1"), // for bedrock
-            ModelType::CommandR => write!(f, "cohere.command-r-v1:0"), // for bedrock
-            ModelType::CommandRPlus => write!(f, "cohere.command-r-plus-v1:0"), // for bedrock
             ModelType::AmazonTitanImage => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
             ModelType::AmazonTitanImageVariation => write!(f, "amazon.titan-image-generator-v1"), // for bedrock
             ModelType::Claude3 => write!(f, "anthropic.claude-3-5-sonnet-20240620-v1:0"), // for bedrock
             ModelType::Aya => write!(f, "aya:8b-23-q4_K_M"), // for ollama
+            ModelType::Gemma2 => write!(f, "gemma2:9b-instruct-q4_K_M"), // for ollama
+            ModelType::Smegmma => write!(f, "duckyblender/smegmma:q4_K_M"), // for ollama
         }
     }
 }
