@@ -17,9 +17,8 @@ pub enum ModelType {
     BawialniaGPT,   // duckyblender/bawialniagpt:q4_K_M
     PolishLobotomy, // duckyblender/polish-lobotomy
     Aya,            // aya:8b-23-q4_K_M
-    TinyStories,    // tinystories
+    TinyStories,    // duckyblender/tinystories-656k
     Gemma2,         // gemma2:9b-instruct-q4_K_M
-    Smegmma,        // duckyblender/smegmma:q4_K_M
     InternLM2,      // internlm2:7b-chat-v2.5-q4_K_M
     GLM4,           // glm4:9b-chat-q4_K_M
 
@@ -29,7 +28,7 @@ pub enum ModelType {
 
     // Perplexity (online)
     // Mixtral, // mixtral-8x7b-instruct
-    Online, // pplx-7b-online
+    Online, // llama-3-sonar-large-32k-online
 
     // Groq (fast LLMs, free)
     Mixtral, // mixtral-8x7b-32768
@@ -70,9 +69,10 @@ impl ModelType {
             ModelType::TinyStories,
             ModelType::Caveman,
             ModelType::Gemma2,
-            ModelType::Smegmma,
             ModelType::InternLM2,
             ModelType::GLM4,
+            ModelType::TinyStories,
+            ModelType::Caveman,
         ]
     }
 
@@ -99,7 +99,7 @@ impl ModelType {
     }
 
     pub fn return_custom() -> Vec<ModelType> {
-        vec![ModelType::Caveman, ModelType::Furry, ModelType::TinyStories]
+        vec![ModelType::Furry]
     }
 }
 
@@ -107,7 +107,7 @@ impl std::fmt::Display for ModelType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             ModelType::PolishLobotomy => write!(f, "duckyblender/polish-lobotomy"), // for ollama
-            ModelType::TinyStories => write!(f, "tinystories"),                     // for ollama
+            ModelType::TinyStories => write!(f, "duckyblender/tinystories-656k"),                     // for ollama
             ModelType::BawialniaGPT => write!(f, "duckyblender/bawialniagpt"),      // for ollama
             ModelType::Phi3Llava => write!(f, "llava-phi3"),                        // for ollama
             ModelType::Json => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
@@ -132,7 +132,6 @@ impl std::fmt::Display for ModelType {
             ModelType::Claude3 => write!(f, "anthropic.claude-3-5-sonnet-20240620-v1:0"), // for bedrock
             ModelType::Aya => write!(f, "aya:8b-23-q4_K_M"), // for ollama
             ModelType::Gemma2 => write!(f, "gemma2:9b-instruct-q4_K_M"), // for ollama
-            ModelType::Smegmma => write!(f, "duckyblender/smegmma:q4_K_M"), // for ollama
             ModelType::InternLM2 => write!(f, "internlm2:7b-chat-v2.5-q4_K_M"), // for ollama
             ModelType::GLM4 => write!(f, "glm4:9b-chat-q4_K_M"), // for ollama
         }

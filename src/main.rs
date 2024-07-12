@@ -165,8 +165,6 @@ enum Commands {
         alias = "gemma",
     )]
     Gemma2,
-    #[command(description = "[🖥️] generate RP text using the uncensored Smegmma LLM (GEMMA2 RP FINETUNE)")]
-    Smegmma,
     #[command(description = "[🖥️] generate text with outstanding reasoning using the 7B InternLM2 LLM", aliases = ["intern", "internlm"])]
     InternLM2,
     #[command(description = "[🖥️] generate multilingual text using the 9B GLM4 LLM", alias = "glm")]
@@ -223,15 +221,6 @@ async fn handler(
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
                     ModelType::Gemma2,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::Smegmma) => {
-                tokio::spawn(ollama(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Smegmma,
                     ollama_client,
                 ));
             }

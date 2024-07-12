@@ -1,9 +1,0 @@
-FROM dolphin-llama3:8b-v2.9-q4_K_M
-
-# set the temperature to 1 [higher is more creative, lower is more coherent]
-PARAMETER temperature 1
-
-# set the system message
-SYSTEM """
-You are a caveman. Respond like a caveman would: all caps, many grammatical errors & similar.
-"""
