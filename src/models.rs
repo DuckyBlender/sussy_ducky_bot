@@ -66,7 +66,9 @@ impl ModelType {
             ModelType::Phi3Llava,
             ModelType::Moondream,
             ModelType::TinyStories,
-            ModelType::Caveman
+            ModelType::Caveman,
+            ModelType::Gemma2,
+            ModelType::Smegmma,
         ]
     }
 
