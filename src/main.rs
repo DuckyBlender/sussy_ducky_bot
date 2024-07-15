@@ -114,11 +114,6 @@ enum Commands {
     Dalle3,
     #[command(description = "[☁️] generate text using 70B LLAMA 3 model", aliases = ["llama", "l"])]
     LLAMA3,
-    #[command(
-        description = "[🖥️] respond to an image using the Moondream model",
-        alias = "v"
-    )]
-    Moondream,
     #[command(description = "[🖥️] jsonify text", alias = "json")]
     Jsonify,
     #[command(
@@ -133,7 +128,7 @@ enum Commands {
         hide
     )]
     AmazonTitanText,
-    #[command(description = "[☁️] generate image using amazon titan", alias = "img", hide)]
+    #[command(description = "[☁️] generate image using amazon titan", hide)]
     AmazonTitanImage,
     // outpaint needs to be in a different file (or function in the same file) because it needs much more logic. 1. download image 2. add white borders around the image 3. continuation is obv
     // #[command(description = "outpaint an image using amazon titan", alias="outpaint", hide)]
@@ -142,8 +137,6 @@ enum Commands {
     Clone,
     #[command(description = "[☁️] claude 3.5 multimodal model", alias = "claude", hide)]
     Claude3,
-    #[command(description = "[🖥️] respond to an image using llava phi3", alias = "llava")]
-    Vision,
     #[command(
         description = "[🖥️] custom bawialniaGPT model (nonsense model)",
         alias = "bawialnia"
@@ -169,6 +162,12 @@ enum Commands {
     InternLM2,
     #[command(description = "[🖥️] generate multilingual text using the 9B GLM4 LLM", alias = "glm")]
     GLM4,
+    #[command(description = "[☁️] generate images using the sdxl-turbo for free", aliases = ["sdxl"])]
+    Img,
+    #[command(description = "[☁️] generate 30-second audio using stable audio open", alias = "audio")]
+    StableAudio,
+    #[command(description = "[☁️] generate high quality images using AuraFlow", alias = "aura", hide)]
+    AuraFlow,
 }
 
 // Handler function for bot events
@@ -194,6 +193,31 @@ async fn handler(
                     get_prompt(trimmed_text, &msg),
                     ModelType::InternLM2,
                     ollama_client,
+                ));
+            }
+            Ok(Commands::AuraFlow) => {
+                tokio::spawn(fal(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::AuraFlow
+                ));
+            }
+            Ok(Commands::Img) => {
+                tokio::spawn(fal(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    // ModelType::SDXLTurbo,
+                    ModelType::SDXL
+                ));
+            }
+            Ok(Commands::StableAudio) => {
+                tokio::spawn(fal(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::StableAudio
                 ));
             }
             Ok(Commands::GLM4) => {
@@ -267,24 +291,6 @@ async fn handler(
                     get_prompt(trimmed_text, &msg),
                     ModelType::Claude3,
                     bedrock_client,
-                ));
-            }
-            Ok(Commands::Moondream) => {
-                tokio::spawn(vision(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Moondream,
-                    ollama_client,
-                ));
-            }
-            Ok(Commands::Vision) => {
-                tokio::spawn(vision(
-                    bot.clone(),
-                    msg.clone(),
-                    get_prompt(trimmed_text, &msg),
-                    ModelType::Phi3Llava,
-                    ollama_client,
                 ));
             }
             Ok(Commands::AmazonTitanImage) => {

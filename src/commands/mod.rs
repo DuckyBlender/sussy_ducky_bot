@@ -28,11 +28,11 @@ pub use openai::openai;
 mod dalle;
 pub use dalle::dalle;
 
-mod vision;
-pub use vision::vision;
-
 mod bedrock;
 pub use bedrock::bedrock;
 
 mod summarize;
 pub use summarize::summarize;
+
+mod fal;
+pub use fal::fal;

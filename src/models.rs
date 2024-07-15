@@ -22,9 +22,11 @@ pub enum ModelType {
     InternLM2,      // internlm2:7b-chat-v2.5-q4_K_M
     GLM4,           // glm4:9b-chat-q4_K_M
 
-    // Ollama (image recognition)
-    Moondream, // moondream:1.8b-v2-q4_K_M
-    Phi3Llava, // llava-phi3
+    // Fal.ai
+    SDXLTurbo, // fast-lightning-sdxl
+    SDXL,      // fast-sdxl
+    StableAudio, // stable-audio
+    AuraFlow, // aura-flow
 
     // Perplexity (online)
     // Mixtral, // mixtral-8x7b-instruct
@@ -58,14 +60,11 @@ impl ModelType {
             ModelType::StableLM2,
             ModelType::Uncensored,
             ModelType::Phi3,
-            ModelType::Moondream,
             ModelType::Racist,
             ModelType::Json,
             ModelType::BawialniaGPT,
             ModelType::PolishLobotomy,
             ModelType::Aya,
-            ModelType::Phi3Llava,
-            ModelType::Moondream,
             ModelType::TinyStories,
             ModelType::Caveman,
             ModelType::Gemma2,
@@ -76,13 +75,13 @@ impl ModelType {
         ]
     }
 
+    pub fn return_fal() -> Vec<ModelType> {
+        vec![ModelType::SDXLTurbo, ModelType::SDXL, ModelType::StableAudio, ModelType::AuraFlow]
+    }
+
     // pub fn return_perplexity() -> Vec<ModelType> {
     //     vec![ModelType::Online]
     // }
-
-    pub fn return_vision() -> Vec<ModelType> {
-        vec![ModelType::Moondream, ModelType::Phi3Llava]
-    }
 
     pub fn return_bedrock() -> Vec<ModelType> {
         vec![
@@ -109,9 +108,7 @@ impl std::fmt::Display for ModelType {
             ModelType::PolishLobotomy => write!(f, "duckyblender/polish-lobotomy"), // for ollama
             ModelType::TinyStories => write!(f, "duckyblender/tinystories-656k"),                     // for ollama
             ModelType::BawialniaGPT => write!(f, "duckyblender/bawialniagpt"),      // for ollama
-            ModelType::Phi3Llava => write!(f, "llava-phi3"),                        // for ollama
             ModelType::Json => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
-            ModelType::Moondream => write!(f, "moondream:1.8b-v2-q4_K_M"),          // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
             ModelType::GPT4 => write!(f, "gpt-4o"),                                 // for openai
             ModelType::Uncensored => write!(f, "gurubot/llama3-alpha-centauri-uncensored"), // for ollama
@@ -134,6 +131,10 @@ impl std::fmt::Display for ModelType {
             ModelType::Gemma2 => write!(f, "gemma2:9b-instruct-q4_K_M"), // for ollama
             ModelType::InternLM2 => write!(f, "internlm2:7b-chat-v2.5-q4_K_M"), // for ollama
             ModelType::GLM4 => write!(f, "glm4:9b-chat-q4_K_M"), // for ollama
+            ModelType::SDXLTurbo => write!(f, "fast-lightning-sdxl"), // for fal.ai
+            ModelType::SDXL => write!(f, "fast-sdxl"), // for fal.ai
+            ModelType::StableAudio => write!(f, "stable-audio"), // for fal.ai
+            ModelType::AuraFlow => write!(f, "aura-flow"), // for fal.ai
         }
     }
 }
