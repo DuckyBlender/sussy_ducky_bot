@@ -144,11 +144,28 @@ pub async fn fal(
                     }
 
                     info!("Audio URL: {audio_url}");
+                    // Download the audio
+                    let audio = reqwest::get(audio_url).await.unwrap().bytes().await.unwrap();
+
                     // Send the audio
-                    bot.send_audio(msg.chat.id, InputFile::url(Url::parse(&audio_url).unwrap()).file_name(audio_filename))
+                    let res = bot.send_audio(msg.chat.id, InputFile::memory(audio).file_name(audio_filename))
                         .caption(format!("{prompt}",))
                         .reply_to_message_id(msg.id)
-                        .await?;
+                        .await;
+                    match res {
+                        Ok(_) => {
+                            info!("Audio sent successfully!");
+                        }
+                        Err(e) => {
+                            error!("Error sending audio: {}", e);
+                            bot.edit_message_text(
+                                generating_message.chat.id,
+                                generating_message.id,
+                                format!("Error: {}", e),
+                            )
+                            .await?;
+                        }
+                    }
                     bot.delete_message(generating_message.chat.id, generating_message.id)
                         .await?;
                 }

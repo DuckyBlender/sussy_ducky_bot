@@ -37,7 +37,8 @@ pub enum ModelType {
     LLAMA3,  // llama3
 
     // OpenAI (best LLMs, paid)
-    GPT4,
+    // GPT4o,
+    GPT4oMini,
     Dalle3,
 
     // Bedrock
@@ -79,6 +80,10 @@ impl ModelType {
         vec![ModelType::SDXLTurbo, ModelType::SDXL, ModelType::StableAudio, ModelType::AuraFlow]
     }
 
+    // pub fn return_openai() -> Vec<ModelType> {
+    //     vec![ModelType::GPT4oMini, ModelType::Dalle3]
+    // }
+
     // pub fn return_perplexity() -> Vec<ModelType> {
     //     vec![ModelType::Online]
     // }
@@ -110,7 +115,7 @@ impl std::fmt::Display for ModelType {
             ModelType::BawialniaGPT => write!(f, "duckyblender/bawialniagpt"),      // for ollama
             ModelType::Json => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
-            ModelType::GPT4 => write!(f, "gpt-4o"),                                 // for openai
+            ModelType::GPT4oMini => write!(f, "gpt-4o-mini"),                                 // for openai
             ModelType::Uncensored => write!(f, "gurubot/llama3-alpha-centauri-uncensored"), // for ollama
             ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
             ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama

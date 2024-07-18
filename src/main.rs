@@ -108,8 +108,8 @@ enum Commands {
     ChatLGBT,
     #[command(description = "[☁️] generate text using the pplx-7b-online model", hide)]
     Online,
-    #[command(description = "[☁️] multimodal GPT-4-vision", alias = "gpt", hide)]
-    GPT4,
+    #[command(description = "[☁️] multimodal GPT4o mini", aliases = ["gpt4", "gpt4o", "gpt4omini"])]
+    GPT,
     #[command(description = "[☁️] DALLE 3", alias = "dalle", hide)]
     Dalle3,
     #[command(description = "[☁️] generate text using 70B LLAMA 3 model", aliases = ["llama", "l"])]
@@ -347,12 +347,12 @@ async fn handler(
                     ollama_client,
                 ));
             }
-            Ok(Commands::GPT4) => {
+            Ok(Commands::GPT) => {
                 tokio::spawn(openai(
                     bot.clone(),
                     msg.clone(),
                     get_prompt(trimmed_text, &msg),
-                    ModelType::GPT4,
+                    ModelType::GPT4oMini,
                 ));
             }
             Ok(Commands::Dalle3) => {

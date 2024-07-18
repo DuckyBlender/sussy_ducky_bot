@@ -2,7 +2,6 @@ use crate::ModelType;
 use log::{error, info};
 use serde_json::json;
 use teloxide::payloads::SendMessageSetters;
-use teloxide::prelude::*;
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
@@ -15,17 +14,6 @@ pub async fn openai(
     prompt: Option<String>,
     model: ModelType,
 ) -> Result<(), RequestError> {
-    // Check if the user is from the owner
-    let owner_id = match std::env::var("OWNER_ID") {
-        Ok(id) => id.parse().unwrap(),
-        Err(_) => {
-            bot.send_message(msg.chat.id, "Error: Unable to fetch OWNER_ID")
-                .reply_to_message_id(msg.id)
-                .await?;
-            return Ok(());
-        }
-    };
-
     // Check if prompt is empty
     let prompt = match prompt {
         Some(prompt) => prompt,
@@ -45,24 +33,20 @@ pub async fn openai(
         }
     };
 
-    if msg.from().unwrap().id != UserId(owner_id) {
-        bot.send_message(
-            msg.chat.id,
-            "You are not the owner. Please mention @DuckyBlender if you want to use this command!",
-        )
-        .reply_to_message_id(msg.id)
-        .await?;
-        return Ok(());
-    }
-
-    // Check if there is an image attached in the reply
-    let img_attachment = if let Some(reply) = msg.reply_to_message() {
-        reply.photo().map(|photo| photo.last().unwrap())
+    // Check if there is an image or sticker attached in the reply
+    let attachment_id = if let Some(reply) = msg.reply_to_message() {
+        if let Some(attachment) = reply.photo() {
+            Some(attachment.last().unwrap().file.id.clone())
+        } else if let Some(attachment) = reply.sticker() {
+            Some(attachment.file.id.clone())
+        } else {
+            None
+        }
     } else {
         None
     };
 
-    if prompt.is_empty() && img_attachment.is_none() {
+    if prompt.is_empty() && attachment_id.is_none() {
         let bot_msg = bot
             .send_message(msg.chat.id, "No prompt provided")
             .reply_to_message_id(msg.id)
@@ -79,8 +63,12 @@ pub async fn openai(
 
     info!(
         "Starting OpenAI request function with prompt: {}{}",
-        prompt,
-        if img_attachment.is_some() {
+        if prompt.is_empty() {
+            "None"
+        } else {
+            &prompt
+        },
+        if attachment_id.is_some() {
             " and an image"
         } else {
             ""
@@ -101,8 +89,8 @@ pub async fn openai(
     let now = std::time::Instant::now();
 
     // Get the image URL if it exists
-    let img_url = if let Some(img_attachment) = img_attachment {
-        let img_attachment = bot.get_file(&img_attachment.file.id).await?;
+    let img_url = if let Some(img_attachment) = attachment_id {
+        let img_attachment = bot.get_file(&img_attachment).await?;
         let teloxide_token = match std::env::var("TELOXIDE_TOKEN") {
             Ok(token) => token,
             Err(_) => {
@@ -194,7 +182,24 @@ pub async fn openai(
     // Parse the response
     let res = res.unwrap().json::<serde_json::Value>().await;
 
-    info!("Response: {:#?}", res);
+    let prompt_tokens = res.as_ref().unwrap()["usage"]["prompt_tokens"]
+        .as_i64()
+        .unwrap_or(0);
+    let completion_tokens = res.as_ref().unwrap()["usage"]["completion_tokens"]
+        .as_i64()
+        .unwrap_or(0);
+
+    // $0.150 / 1M input tokens
+    // $0.600 / 1M output tokens
+    let prompt_tokens_in_millions = prompt_tokens as f64 / 1_000_000.0;
+    let completion_tokens_in_millions = completion_tokens as f64 / 1_000_000.0;
+
+    let input_token_cost = prompt_tokens_in_millions * 0.150;
+    let output_token_cost = completion_tokens_in_millions * 0.600;
+
+    let total_price = input_token_cost + output_token_cost;
+
+    info!("Total price for the request: ${}", total_price);
 
     // Send the response
     match res {
