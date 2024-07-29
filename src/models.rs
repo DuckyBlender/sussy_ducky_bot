@@ -35,6 +35,7 @@ pub enum ModelType {
     // Groq (fast LLMs, free)
     Mixtral, // mixtral-8x7b-32768
     LLAMA3,  // llama3
+    Rushify, // llama3
 
     // OpenAI (best LLMs, paid)
     // GPT4o,
@@ -99,7 +100,7 @@ impl ModelType {
     }
 
     pub fn return_groq() -> Vec<ModelType> {
-        vec![ModelType::Mixtral, ModelType::LLAMA3]
+        vec![ModelType::Mixtral, ModelType::LLAMA3, ModelType::Rushify]
     }
 
     pub fn return_custom() -> Vec<ModelType> {
@@ -117,7 +118,7 @@ impl std::fmt::Display for ModelType {
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
             ModelType::GPT4oMini => write!(f, "gpt-4o-mini"),                                 // for openai
             ModelType::Uncensored => write!(f, "gurubot/llama3-alpha-centauri-uncensored"), // for ollama
-            ModelType::LLAMA3 => write!(f, "llama3-70b-8192"), // for groq
+            ModelType::LLAMA3 => write!(f, "llama-3.1-70b-versatile"), // for groq
             ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama
             ModelType::Racist => write!(f, "duckyblender/racist-phi3"), // for ollama
             ModelType::Furry => write!(f, "furry-llama3"),     // for ollama
@@ -140,6 +141,7 @@ impl std::fmt::Display for ModelType {
             ModelType::SDXL => write!(f, "fast-sdxl"), // for fal.ai
             ModelType::StableAudio => write!(f, "stable-audio"), // for fal.ai
             ModelType::AuraFlow => write!(f, "aura-flow"), // for fal.ai
+            ModelType::Rushify => write!(f, "llama-3.1-8b-instant"), // for groq
         }
     }
 }

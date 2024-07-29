@@ -37,11 +37,7 @@ pub async fn openai(
     let attachment_id = if let Some(reply) = msg.reply_to_message() {
         if let Some(attachment) = reply.photo() {
             Some(attachment.last().unwrap().file.id.clone())
-        } else if let Some(attachment) = reply.sticker() {
-            Some(attachment.file.id.clone())
-        } else {
-            None
-        }
+        } else { reply.sticker().map(|attachment| attachment.file.id.clone()) }
     } else {
         None
     };

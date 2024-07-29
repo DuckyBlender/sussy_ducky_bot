@@ -35,7 +35,7 @@ pub async fn fal(
         error!("Model {} is not supported by fal.ai", model.to_string());
         bot.send_message(
             msg.chat.id,
-            format!("Model {} is not supported by fal.ai! Congrats you successfully broke the bot somehow!", model.to_string()),
+            format!("Model {} is not supported by fal.ai! Congrats you successfully broke the bot somehow!", model),
         )
         .reply_to_message_id(msg.id)
         .await?;
@@ -43,16 +43,14 @@ pub async fn fal(
     }
 
     // If the model is AuraFlow, check if the user is the owner
-    if model == ModelType::AuraFlow {
-        if msg.from().unwrap().id != UserId(std::env::var("OWNER_ID").unwrap().parse().unwrap()) {
-            bot.send_message(
-                msg.chat.id,
-                "You are not the owner. Please mention @DuckyBlender if you want to use this command!",
-            )
-            .reply_to_message_id(msg.id)
-            .await?;
-            return Ok(());
-        }
+    if model == ModelType::AuraFlow && msg.from().unwrap().id != UserId(std::env::var("OWNER_ID").unwrap().parse().unwrap()) {
+        bot.send_message(
+            msg.chat.id,
+            "You are not the owner. Please mention @DuckyBlender if you want to use this command!",
+        )
+        .reply_to_message_id(msg.id)
+        .await?;
+        return Ok(());
     }
 
     // Check if prompt is empty
@@ -89,7 +87,7 @@ pub async fn fal(
 
     // Send the response to the image gen
     let fal_res = reqwest::Client::new()
-        .post(format!("https://fal.run/fal-ai/{}", model.to_string()))
+        .post(format!("https://fal.run/fal-ai/{}", model))
         .header(
             "Authorization",
             format!("Key {}", std::env::var("FAL_KEY").unwrap()),
@@ -149,7 +147,7 @@ pub async fn fal(
 
                     // Send the audio
                     let res = bot.send_audio(msg.chat.id, InputFile::memory(audio).file_name(audio_filename))
-                        .caption(format!("{prompt}",))
+                        .caption(prompt.to_string())
                         .reply_to_message_id(msg.id)
                         .await;
                     match res {
@@ -190,7 +188,7 @@ pub async fn fal(
 
                     // Send the image
                     bot.send_photo(msg.chat.id, InputFile::url(Url::parse(img_url).unwrap()))
-                        .caption(format!("{prompt}",))
+                        .caption(prompt.to_string())
                         .reply_to_message_id(msg.id)
                         .await?;
                     bot.delete_message(generating_message.chat.id, generating_message.id)

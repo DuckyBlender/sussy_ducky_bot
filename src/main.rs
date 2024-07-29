@@ -168,6 +168,8 @@ enum Commands {
     StableAudio,
     #[command(description = "[☁️] generate high quality images using AuraFlow", alias = "aura", hide)]
     AuraFlow,
+    #[command(description = "[☁️] rushify text using llama 3.1 8B model", alias = "rush", hide)]
+    Rushify
 }
 
 // Handler function for bot events
@@ -186,6 +188,14 @@ async fn handler(
             .trim()
             .to_string();
         match BotCommands::parse(text, me.username()) {
+            Ok(Commands::Rushify) => {
+                tokio::spawn(groq(
+                    bot.clone(),
+                    msg.clone(),
+                    get_prompt(trimmed_text, &msg),
+                    ModelType::Rushify,
+                ));
+            }
             Ok(Commands::InternLM2) => {
                 tokio::spawn(ollama(
                     bot.clone(),

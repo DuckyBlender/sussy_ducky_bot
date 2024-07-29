@@ -11,7 +11,7 @@ pub async fn groq(
     prompt: Option<String>,
     model: ModelType,
 ) -> Result<(), RequestError> {
-    info!("Starting perplexity request function");
+    info!("Starting groq request function");
 
     // Check if the model is one of groqs models
     let groq_models = ModelType::return_groq();
@@ -41,6 +41,11 @@ pub async fn groq(
         }
     };
 
+    let system_prompt = match model {
+        ModelType::Rushify => "Rewrite the users text to look much more rushed, filled with grammatical errors, bad grammar and typos.",
+        _ => "Be precise and concise.",
+    };
+
     // groq is too fast for generating message 🔥
     // Send "typing indicator" to show that the bot is typing
     bot.send_chat_action(msg.chat.id, teloxide::types::ChatAction::Typing)
@@ -59,7 +64,7 @@ pub async fn groq(
             messages: vec![
                 PerplexityRequestMessage {
                     role: "system".to_string(),
-                    content: "Be precise and concise.".to_string(),
+                    content: system_prompt.to_string(),
                 },
                 PerplexityRequestMessage {
                     role: "user".to_string(),
