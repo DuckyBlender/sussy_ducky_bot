@@ -117,7 +117,7 @@ impl std::fmt::Display for ModelType {
             ModelType::Json => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
             ModelType::Phi3 => write!(f, "phi3:3.8b-mini-4k-instruct-q4_K_M"),      // for ollama
             ModelType::GPT4oMini => write!(f, "gpt-4o-mini"),                                 // for openai
-            ModelType::Uncensored => write!(f, "gurubot/llama3-alpha-centauri-uncensored"), // for ollama
+            ModelType::Uncensored => write!(f, "mannix/llama3.1-8b-abliterated"), // for ollama
             ModelType::LLAMA3 => write!(f, "llama-3.1-70b-versatile"), // for groq
             ModelType::Caveman => write!(f, "caveman-llama3"), // for ollama
             ModelType::Racist => write!(f, "duckyblender/racist-phi3"), // for ollama

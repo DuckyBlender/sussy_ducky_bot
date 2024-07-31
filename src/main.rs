@@ -69,7 +69,7 @@ async fn main() {
 )]
 enum Commands {
     #[command(
-        description = "[🖥️] generate uncensored text using llama3-alpha-centauri-uncensored",
+        description = "[🖥️] generate uncensored text using fine-tuned llama3",
         alias = "u"
     )]
     Uncensored,
