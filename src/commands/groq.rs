@@ -1,3 +1,5 @@
+use std::env;
+
 use log::{error, info};
 use teloxide::payloads::SendMessageSetters;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
@@ -57,7 +59,7 @@ pub async fn groq(
         .post("https://api.groq.com/openai/v1/chat/completions")
         .header("accept", "application/json")
         .header("content-type", "application/json")
-        .bearer_auth(std::env::var("GROQ_KEY").unwrap_or_default())
+        .bearer_auth(env::var("GROQ_KEY").unwrap_or_default())
         .json(&PerplexityRequest {
             // this should be openai but perplexity works too
             model: model.to_string(),

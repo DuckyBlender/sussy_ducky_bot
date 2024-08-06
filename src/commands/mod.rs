@@ -16,20 +16,11 @@ pub use perplexity::perplexity;
 mod noviews;
 pub use noviews::noviews;
 
-mod chatlgbt;
-pub use chatlgbt::chatlgbt;
-
 mod groq;
 pub use groq::groq;
 
 mod openai;
 pub use openai::openai;
-
-mod dalle;
-pub use dalle::dalle;
-
-mod bedrock;
-pub use bedrock::bedrock;
 
 mod summarize;
 pub use summarize::summarize;

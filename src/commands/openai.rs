@@ -1,3 +1,5 @@
+use std::env;
+
 use crate::ModelType;
 use log::{error, info};
 use serde_json::json;
@@ -37,7 +39,9 @@ pub async fn openai(
     let attachment_id = if let Some(reply) = msg.reply_to_message() {
         if let Some(attachment) = reply.photo() {
             Some(attachment.last().unwrap().file.id.clone())
-        } else { reply.sticker().map(|attachment| attachment.file.id.clone()) }
+        } else {
+            reply.sticker().map(|attachment| attachment.file.id.clone())
+        }
     } else {
         None
     };
@@ -59,11 +63,7 @@ pub async fn openai(
 
     info!(
         "Starting OpenAI request function with prompt: {}{}",
-        if prompt.is_empty() {
-            "None"
-        } else {
-            &prompt
-        },
+        if prompt.is_empty() { "None" } else { &prompt },
         if attachment_id.is_some() {
             " and an image"
         } else {
@@ -87,7 +87,7 @@ pub async fn openai(
     // Get the image URL if it exists
     let img_url = if let Some(img_attachment) = attachment_id {
         let img_attachment = bot.get_file(&img_attachment).await?;
-        let teloxide_token = match std::env::var("TELOXIDE_TOKEN") {
+        let teloxide_token = match env::var("TELOXIDE_TOKEN") {
             Ok(token) => token,
             Err(_) => {
                 bot.edit_message_text(
@@ -138,7 +138,7 @@ pub async fn openai(
             }));
     }
 
-    let openai_key = match std::env::var("OPENAI_KEY") {
+    let openai_key = match env::var("OPENAI_KEY") {
         Ok(key) => key,
         Err(_) => {
             bot.edit_message_text(

@@ -22,7 +22,5 @@ enum-iterator = "2.1.0"
 ollama-rs = { version = "0.2.0", features = ["stream"] }
 tokio-stream = "0.1.15"
 image = "0.25.1"
-aws-config = { version = "1.5", features = ["behavior-version-latest"] }
-aws-sdk-bedrockruntime = "^1.36"
 regex = "1.10.5"
 # indicatif = "0.17.8"

@@ -59,10 +59,10 @@ pub async fn summarize(
         }
     };
 
-    let generating_message = 
-        bot.send_message(msg.chat.id, "Summarizing text...")
-            .reply_to_message_id(msg.id)
-            .await?;
+    let generating_message = bot
+        .send_message(msg.chat.id, "Summarizing text...")
+        .reply_to_message_id(msg.id)
+        .await?;
 
     info!("Starting summarization command");
 

@@ -1,13 +1,14 @@
+use std::env;
 use log::{error, info};
 use serde::Serialize;
 use teloxide::payloads::SendMessageSetters;
-use teloxide::prelude::*;
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
     Bot, RequestError,
 };
 
+use crate::utils::check_owner;
 use crate::ModelType;
 
 #[derive(Debug, Serialize)]
@@ -29,17 +30,10 @@ pub async fn perplexity(
     prompt: Option<String>,
     model: ModelType,
 ) -> Result<(), RequestError> {
-    // Check if the user is from the owner
-    if msg.from().unwrap().id != UserId(std::env::var("OWNER_ID").unwrap().parse().unwrap()) {
-        bot.send_message(
-            msg.chat.id,
-            "You are not the owner. Please mention @DuckyBlender if you want to use this command!",
-        )
-        .reply_to_message_id(msg.id)
-        .await?;
-        return Ok(());
-    }
     info!("Starting perplexity request function");
+    
+        // Check if the model is owner-only
+        check_owner(&bot, &msg, &model).await?;
 
     // Determine the prompt
     let prompt = match prompt {
@@ -77,7 +71,7 @@ pub async fn perplexity(
         .post("https://api.perplexity.ai/chat/completions")
         .header("accept", "application/json")
         .header("content-type", "application/json")
-        .bearer_auth(std::env::var("PERPLEXITY_KEY").unwrap_or_default())
+        .bearer_auth(env::var("PERPLEXITY_KEY").unwrap_or_default())
         .json(&PerplexityRequest {
             model: model.to_string(),
             messages: vec![
