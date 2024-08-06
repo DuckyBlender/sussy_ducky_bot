@@ -75,6 +75,7 @@ impl ModelType {
             ModelType::SDXL,
             ModelType::StableAudio,
             ModelType::AuraFlow,
+            ModelType::FluxShnell,
         ]
     }
 
