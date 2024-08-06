@@ -127,7 +127,7 @@ enum Commands {
 }
 
 // Handler function for bot events
-async fn handler(bot: &Bot, msg: Message, ollama_client: Ollama) -> Result<(), RequestError> {
+async fn handler(bot: Bot, msg: Message, ollama_client: Ollama) -> Result<(), RequestError> {
     // Handle commands
     if let Some(text) = &msg.text() {
         if let Ok(command) = Commands::parse(text, bot.get_me().await.unwrap().username()) {
