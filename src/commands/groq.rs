@@ -45,6 +45,7 @@ pub async fn groq(
 
     let system_prompt = match model {
         ModelType::Rushify => "Rewrite the users text to look much more rushed, filled with grammatical errors, bad grammar and typos.",
+        ModelType::Caveman => "You are a caveman. Respond like a caveman would: all caps, many grammatical errors, simple words, no verbs.",
         _ => "Be precise and concise.",
     };
 

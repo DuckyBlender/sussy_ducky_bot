@@ -263,12 +263,11 @@ async fn handle_command(
             ));
         }
         Commands::Caveman => {
-            tokio::spawn(ollama(
+            tokio::spawn(groq(
                 bot.clone(),
                 msg.clone(),
                 get_prompt(trimmed_text, &msg),
                 ModelType::Caveman,
-                ollama_client,
             ));
         }
         Commands::Lobotomy => {

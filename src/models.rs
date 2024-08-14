@@ -91,7 +91,7 @@ impl std::fmt::Display for ModelType {
             ModelType::GPT4oMini => write!(f, "gpt-4o-mini"),
             ModelType::Uncensored => write!(f, "mannix/llama3.1-8b-abliterated"),
             ModelType::LLAMA3 => write!(f, "llama-3.1-70b-versatile"),
-            ModelType::Caveman => write!(f, "caveman-llama3"),
+            ModelType::Caveman => write!(f, "llama-3.1-70b-versatile"),
             ModelType::Racist => write!(f, "duckyblender/racist-phi3"),
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),
             ModelType::Online => write!(f, "llama-3-sonar-large-32k-online"),
