@@ -46,10 +46,8 @@ impl ModelType {
             ModelType::Racist,
             ModelType::Json,
             ModelType::PolishLobotomy,
-            ModelType::Caveman,
             ModelType::Gemma2,
             ModelType::GLM4,
-            ModelType::Caveman,
         ]
     }
 
@@ -71,7 +69,7 @@ impl ModelType {
     }
 
     pub fn return_groq() -> Vec<ModelType> {
-        vec![ModelType::LLAMA3, ModelType::Rushify]
+        vec![ModelType::LLAMA3, ModelType::Rushify, ModelType::Caveman]
     }
 
     pub fn owner_only() -> Vec<ModelType> {
