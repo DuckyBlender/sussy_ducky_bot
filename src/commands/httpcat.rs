@@ -4,6 +4,7 @@ use teloxide::payloads::SendMessageSetters;
 use teloxide::payloads::SendPhotoSetters;
 use teloxide::types::InputFile;
 
+use teloxide::types::ReplyParameters;
 use teloxide::RequestError;
 use teloxide::{
     requests::Requester,
@@ -18,7 +19,7 @@ pub async fn httpcat(bot: Bot, msg: Message, prompt: Option<String>) -> Result<(
         None => {
             let bot_msg = bot
                 .send_message(msg.chat.id, "Please provide a status code.")
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
 
             // Wait 5 seconds
@@ -38,7 +39,7 @@ pub async fn httpcat(bot: Bot, msg: Message, prompt: Option<String>) -> Result<(
             msg.chat.id,
             "Invalid argument: Please provide a 3 digit status code",
         )
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
         return Ok(());
     }
@@ -53,7 +54,7 @@ pub async fn httpcat(bot: Bot, msg: Message, prompt: Option<String>) -> Result<(
             bot.send_chat_action(msg.chat.id, ChatAction::UploadPhoto)
                 .await?;
             bot.send_photo(msg.chat.id, file)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
         }
         Err(e) => {
@@ -65,12 +66,12 @@ pub async fn httpcat(bot: Bot, msg: Message, prompt: Option<String>) -> Result<(
                         msg.chat.id,
                         format!("Error: {status_code} is not a valid status code"),
                     )
-                    .reply_to_message_id(msg.id)
+                    .reply_parameters(ReplyParameters::new(msg.id))
                     .await?;
                 }
                 _ => {
                     bot.send_message(msg.chat.id, format!("Error downloading image: {e}"))
-                        .reply_to_message_id(msg.id)
+                        .reply_parameters(ReplyParameters::new(msg.id))
                         .await?;
                 }
             }

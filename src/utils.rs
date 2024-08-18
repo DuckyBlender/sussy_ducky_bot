@@ -1,4 +1,4 @@
-use teloxide::{payloads::SendMessageSetters, requests::Requester, types::Message, Bot, RequestError};
+use teloxide::{payloads::SendMessageSetters, requests::Requester, types::{Message, ReplyParameters}, Bot, RequestError};
 use log::{info, warn};
 use std::env;
 
@@ -9,10 +9,10 @@ pub async fn check_owner(bot: &Bot, msg: &Message, model: &ModelType) -> Result<
     let gated_models = ModelType::owner_only();
     if gated_models.contains(model) {
         // Check if the user is the owner
-        if msg.from().unwrap().id.0 != env::var("OWNER_ID").unwrap().parse::<u64>().unwrap() {
+        if msg.from.clone().unwrap().id.0 != env::var("OWNER_ID").unwrap().parse::<u64>().unwrap() {
             warn!("Model {} is owner-only!", model.to_string());
             bot.send_message(msg.chat.id, format!("Model {} is owner-only!", model))
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             return Ok(());
         } else {

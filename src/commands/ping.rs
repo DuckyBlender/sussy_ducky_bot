@@ -3,6 +3,7 @@ use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
 use teloxide::requests::ResponseResult;
 
+use teloxide::types::ReplyParameters;
 use teloxide::{types::Message, Bot};
 
 pub async fn ping(bot: Bot, msg: Message) -> ResponseResult<Message> {
@@ -13,7 +14,7 @@ pub async fn ping(bot: Bot, msg: Message) -> ResponseResult<Message> {
     match res {
         Ok(_) => {
             bot.send_message(msg.chat.id, format!("Pong! Latency: `{latency}ms`"))
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .parse_mode(teloxide::types::ParseMode::MarkdownV2)
                 .await
         }
@@ -21,7 +22,7 @@ pub async fn ping(bot: Bot, msg: Message) -> ResponseResult<Message> {
             error!("Error calculating latency: {e}");
             bot.send_message(msg.chat.id, format!("Error calculating latency: `{e}`"))
                 .parse_mode(teloxide::types::ParseMode::MarkdownV2)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await
         }
     }

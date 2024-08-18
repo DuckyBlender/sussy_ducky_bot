@@ -4,6 +4,7 @@ use crate::ModelType;
 use log::{error, info};
 use serde_json::json;
 use teloxide::payloads::SendMessageSetters;
+use teloxide::types::ReplyParameters;
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
@@ -16,13 +17,29 @@ pub async fn openai(
     prompt: Option<String>,
     model: ModelType,
 ) -> Result<(), RequestError> {
+    // Check if the model is openai
+    let openai_models = ModelType::return_openai();
+    if !openai_models.contains(&model) {
+        error!("Model {} is not supported by OpenAI", model.to_string());
+        bot.send_message(
+            msg.chat.id,
+            format!(
+                "Model {} is not supported by OpenAI! Congrats you successfully broke the bot somehow!",
+                model
+            ),
+        )
+        .reply_parameters(ReplyParameters::new(msg.id))
+        .await?;
+        return Ok(());
+    }
+
     // Check if prompt is empty
     let prompt = match prompt {
         Some(prompt) => prompt,
         None => {
             let bot_msg = bot
                 .send_message(msg.chat.id, "No prompt provided")
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
 
             // Wait 5 seconds
@@ -49,7 +66,7 @@ pub async fn openai(
     if prompt.is_empty() && attachment_id.is_none() {
         let bot_msg = bot
             .send_message(msg.chat.id, "No prompt provided")
-            .reply_to_message_id(msg.id)
+            .reply_parameters(ReplyParameters::new(msg.id))
             .await?;
 
         // Wait 5 seconds and delete the users and the bots message
@@ -74,7 +91,7 @@ pub async fn openai(
     // Send generating... message
     let generating_message = bot
         .send_message(msg.chat.id, "Generating...")
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .disable_notification(true)
         .await?;
 

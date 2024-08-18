@@ -2,6 +2,7 @@ use std::env;
 
 use log::{error, info};
 use teloxide::payloads::SendMessageSetters;
+use teloxide::types::ReplyParameters;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
 use crate::commands::perplexity::{PerplexityRequest, PerplexityRequestMessage};
@@ -19,7 +20,7 @@ pub async fn groq(
     let groq_models = ModelType::return_groq();
     if !groq_models.contains(&model) {
         bot.send_message(msg.chat.id, "Error: Invalid model")
-            .reply_to_message_id(msg.id)
+            .reply_parameters(ReplyParameters::new(msg.id))
             .await?;
         error!("Invalid model: {model}. This should not happen!");
         return Ok(());
@@ -30,7 +31,7 @@ pub async fn groq(
         None => {
             let bot_msg = bot
                 .send_message(msg.chat.id, "No prompt provided")
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
 
             // Wait 5 seconds
@@ -87,7 +88,7 @@ pub async fn groq(
         Err(e) => {
             error!("Error sending request: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {e}"))
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             return Ok(());
         }
@@ -107,14 +108,14 @@ pub async fn groq(
                 (elapsed * 10.0).round() / 10.0
             );
             bot.send_message(msg.chat.id, content)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             Ok(())
         }
         Err(e) => {
             error!("Error parsing response: {}", e);
             bot.send_message(msg.chat.id, format!("Error: {e}"))
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             Ok(())
         }

@@ -1,5 +1,6 @@
 use teloxide::payloads::SendMessageSetters;
 
+use teloxide::types::ReplyParameters;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
 pub async fn noviews(bot: Bot, msg: Message) -> Result<(), RequestError> {
@@ -28,7 +29,7 @@ pub async fn noviews(bot: Bot, msg: Message) -> Result<(), RequestError> {
 
     // Send the video URL as a message
     bot.send_message(msg.chat.id, video)
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
     Ok(())
 }

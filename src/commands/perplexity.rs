@@ -2,6 +2,7 @@ use std::env;
 use log::{error, info};
 use serde::Serialize;
 use teloxide::payloads::SendMessageSetters;
+use teloxide::types::ReplyParameters;
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
@@ -31,6 +32,22 @@ pub async fn perplexity(
     model: ModelType,
 ) -> Result<(), RequestError> {
     info!("Starting perplexity request function");
+
+    // Check if the model is perplexity
+    let perplexity_models = ModelType::return_perplexity();
+    if !perplexity_models.contains(&model) {
+        error!("Model {} is not supported by Perplexity", model.to_string());
+        bot.send_message(
+            msg.chat.id,
+            format!(
+                "Model {} is not supported by Perplexity! Congrats you successfully broke the bot somehow!",
+                model
+            ),
+        )
+        .reply_parameters(ReplyParameters::new(msg.id))
+        .await?;   
+        return Ok(());
+    }
     
         // Check if the model is owner-only
         check_owner(&bot, &msg, &model).await?;
@@ -41,7 +58,7 @@ pub async fn perplexity(
         None => {
             let bot_msg = bot
                 .send_message(msg.chat.id, "No prompt provided")
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
 
             // Wait 5 seconds
@@ -57,7 +74,7 @@ pub async fn perplexity(
     // Send generating... message
     let generating_message = bot
         .send_message(msg.chat.id, "Generating...")
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .disable_notification(true)
         .await?;
 
@@ -99,7 +116,7 @@ pub async fn perplexity(
             bot.delete_message(generating_message.chat.id, generating_message.id)
                 .await?;
             bot.send_message(msg.chat.id, format!("Error: {e}"))
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             return Ok(());
         }
@@ -121,7 +138,7 @@ pub async fn perplexity(
             bot.delete_message(generating_message.chat.id, generating_message.id)
                 .await?;
             bot.send_message(msg.chat.id, content)
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             Ok(())
         }
@@ -130,7 +147,7 @@ pub async fn perplexity(
             bot.delete_message(generating_message.chat.id, generating_message.id)
                 .await?;
             bot.send_message(msg.chat.id, format!("Error: {e}"))
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             Ok(())
         }

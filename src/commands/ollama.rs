@@ -3,6 +3,7 @@ use ollama_rs::generation::parameters::FormatType;
 use ollama_rs::{generation::completion::request::GenerationRequest, Ollama};
 use teloxide::payloads::{EditMessageTextSetters, SendMessageSetters};
 
+use teloxide::types::ReplyParameters;
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
@@ -26,7 +27,7 @@ pub async fn ollama(
     let ollama_models = ModelType::return_ollama();
     if !ollama_models.contains(&model) {
         bot.send_message(msg.chat.id, "Error: Invalid model")
-            .reply_to_message_id(msg.id)
+            .reply_parameters(ReplyParameters::new(msg.id))
             .await?;
         error!("Invalid model: {model}. This should not happen!");
         return Ok(());
@@ -38,7 +39,7 @@ pub async fn ollama(
         None => {
             let bot_msg = bot
                 .send_message(msg.chat.id, "No prompt provided")
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
 
             // Wait 5 seconds
@@ -95,7 +96,7 @@ pub async fn ollama(
     // Send a message to the chat to show that the bot is generating a response
     let generating_message = bot
         .send_message(msg.chat.id, "Generating response...".to_string())
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .disable_notification(true)
         .await?;
 

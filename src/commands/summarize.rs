@@ -4,6 +4,7 @@ use log::{error, info, warn};
 use ollama_rs::generation::completion::request::GenerationRequest;
 use ollama_rs::Ollama;
 use teloxide::payloads::SendMessageSetters;
+use teloxide::types::ReplyParameters;
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
@@ -31,7 +32,7 @@ pub async fn summarize(
                 } else {
                     let bot_msg = bot
                         .send_message(msg.chat.id, "No prompt provided")
-                        .reply_to_message_id(msg.id)
+                        .reply_parameters(ReplyParameters::new(msg.id))
                         .await?;
 
                     // Wait 5 seconds
@@ -45,7 +46,7 @@ pub async fn summarize(
             } else {
                 let bot_msg = bot
                     .send_message(msg.chat.id, "No prompt provided")
-                    .reply_to_message_id(msg.id)
+                    .reply_parameters(ReplyParameters::new(msg.id))
                     .await?;
 
                 // Wait 5 seconds
@@ -61,7 +62,7 @@ pub async fn summarize(
 
     let generating_message = bot
         .send_message(msg.chat.id, "Summarizing text...")
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
 
     info!("Starting summarization command");

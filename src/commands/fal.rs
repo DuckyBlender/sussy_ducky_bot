@@ -4,7 +4,7 @@ use reqwest::Url;
 use serde_json::json;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
-use teloxide::types::InputFile;
+use teloxide::types::{InputFile, ReplyParameters};
 use teloxide::{
     requests::Requester,
     types::{ChatAction, Message},
@@ -31,7 +31,7 @@ pub async fn fal(
             msg.chat.id,
             format!("Model {} is not supported by fal.ai! Congrats you successfully broke the bot somehow!", model),
         )
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
         return Ok(());
     }
@@ -42,7 +42,7 @@ pub async fn fal(
         None => {
             let bot_msg = bot
                 .send_message(msg.chat.id, "No prompt provided")
-                .reply_to_message_id(msg.id)
+                .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
 
             // Wait 5 seconds
@@ -60,7 +60,7 @@ pub async fn fal(
     // Send generating... message
     let generating_message = bot
         .send_message(msg.chat.id, "Generating...")
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .disable_notification(true)
         .await?;
 
@@ -150,7 +150,7 @@ pub async fn fal(
                             InputFile::memory(audio).file_name(audio_filename),
                         )
                         .caption(prompt.to_string())
-                        .reply_to_message_id(msg.id)
+                        .reply_parameters(ReplyParameters::new(msg.id))
                         .await;
                     match res {
                         Ok(_) => {
@@ -192,7 +192,7 @@ pub async fn fal(
                     // Send the image
                     bot.send_photo(msg.chat.id, InputFile::url(Url::parse(img_url).unwrap()))
                         .caption(prompt.to_string())
-                        .reply_to_message_id(msg.id)
+                        .reply_parameters(ReplyParameters::new(msg.id))
                         .await?;
                     bot.delete_message(generating_message.chat.id, generating_message.id)
                         .await?;

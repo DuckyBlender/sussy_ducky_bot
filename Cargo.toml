@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-teloxide = { git = "https://github.com/teloxide/teloxide", features = [
+teloxide = { git = "https://github.com/teloxide/teloxide", rev = "3ee803d1066b393e4a30fdf45e0000769c02ed78", features = [
     "macros",
 ] } # we need some features from the master branch
 log = "0.4"
