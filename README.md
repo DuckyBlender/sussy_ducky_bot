@@ -39,10 +39,11 @@ This bot also has experimental image generation support in a custom crate (`comf
 
 ## Installation
 
-1. Clone this repository: `git clone https://github.com/DuckyBlender/sussy_ducky_bot`
-2. Navigate to the cloned repository: `cd sussy_ducky_bot`
-3. Install the caveman and racist model model:
-4. Install Ollama following the instructions on its [official website](https://ollama.ai/).
+1. Install dependencies: `sudo apt install pkg-config libssl-dev`
+2. Clone this repository: `git clone https://github.com/DuckyBlender/sussy_ducky_bot`
+3. Navigate to the cloned repository: `cd sussy_ducky_bot`
+4. Install the caveman and racist model model:
+5. Install Ollama following the instructions on its [official website](https://ollama.ai/).
 
 ## Usage
 
