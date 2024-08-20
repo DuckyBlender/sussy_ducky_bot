@@ -65,7 +65,7 @@ enum Commands {
         alias = "u"
     )]
     Uncensored,
-    #[command(description = "[🖥️] generate caveman-like text", alias = "cv")]
+    #[command(description = "[☁️] generate caveman-like text", alias = "cv")]
     Caveman,
     #[command(description = "[🖥️] generate text using the phi3 LLM", alias = "phi")]
     Phi3,
@@ -114,7 +114,8 @@ enum Commands {
     Img,
     #[command(
         description = "[☁️] generate 30-second audio using stable audio open",
-        alias = "audio"
+        alias = "audio",
+        hide
     )]
     StableAudio,
     #[command(
@@ -124,6 +125,8 @@ enum Commands {
     Rushify,
     #[command(description = "[☁️] generate high-quality images using the FLUX.1[schnell] model")]
     Flux,
+    #[command(description = "[☁️] gemini 1.0 pro vision", aliases = ["gemini", "g"])]
+    GeminiProVision,
 }
 
 // Handler function for bot events
@@ -157,6 +160,14 @@ async fn handle_command(
     match command {
         Commands::Help => {
             tokio::spawn(help(bot.clone(), msg));
+        }
+        Commands::GeminiProVision => {
+            tokio::spawn(openrouter(
+                bot.clone(),
+                msg.clone(),
+                get_prompt(trimmed_text, &msg),
+                ModelType::GeminiProVision,
+            ));
         }
         Commands::Flux => {
             tokio::spawn(fal(

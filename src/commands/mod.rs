@@ -27,3 +27,6 @@ pub use summarize::summarize;
 
 mod fal;
 pub use fal::fal;
+
+mod openrouter;
+pub use openrouter::openrouter;

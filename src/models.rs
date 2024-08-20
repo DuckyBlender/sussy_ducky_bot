@@ -21,6 +21,9 @@ pub enum ModelType {
     StableAudio,
     FluxShnell,
 
+    // Openrouter
+    GeminiProVision,
+
     // Perplexity (online)
     Online,
 
@@ -37,6 +40,10 @@ impl ModelType {
     // pub fn return_all() -> Vec<ModelType> {
     //     enum_iterator::all::<ModelType>().collect()
     // }
+
+    pub fn return_openrouter() -> Vec<ModelType> {
+        vec![ModelType::GeminiProVision]
+    }
 
     pub fn return_ollama() -> Vec<ModelType> {
         vec![
@@ -100,6 +107,7 @@ impl std::fmt::Display for ModelType {
             ModelType::StableAudio => write!(f, "stable-audio"),
             ModelType::FluxShnell => write!(f, "flux/schnell"),
             ModelType::Rushify => write!(f, "llama-3.1-8b-instant"),
+            ModelType::GeminiProVision => write!(f, "gemini-pro-vision"),
         }
     }
 }
