@@ -1,11 +1,11 @@
 use std::env;
 
 use log::{error, info};
+use serde_json::json;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::types::ReplyParameters;
 use teloxide::{requests::Requester, types::Message, Bot, RequestError};
 
-use crate::commands::perplexity::{PerplexityRequest, PerplexityRequestMessage};
 use crate::ModelType;
 
 pub async fn groq(
@@ -62,21 +62,20 @@ pub async fn groq(
         .header("accept", "application/json")
         .header("content-type", "application/json")
         .bearer_auth(env::var("GROQ_KEY").unwrap_or_default())
-        .json(&PerplexityRequest {
-            // this should be openai but perplexity works too
-            model: model.to_string(),
-            messages: vec![
-                PerplexityRequestMessage {
-                    role: "system".to_string(),
-                    content: system_prompt.to_string(),
+        .json(&json!({
+            "model": model.to_string(),
+            "messages": [
+                {
+                    "role": "system",
+                    "content": system_prompt
                 },
-                PerplexityRequestMessage {
-                    role: "user".to_string(),
-                    content: prompt,
-                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ],
-            temperature: 0.2,
-        })
+            "temperature": 0.2
+        }))
         .send()
         .await;
     let elapsed = now.elapsed().as_secs_f32();

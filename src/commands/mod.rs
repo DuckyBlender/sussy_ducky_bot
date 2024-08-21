@@ -10,9 +10,6 @@ pub use ollama::ollama;
 mod ping;
 pub use ping::ping;
 
-mod perplexity;
-pub use perplexity::perplexity;
-
 mod noviews;
 pub use noviews::noviews;
 

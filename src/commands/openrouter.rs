@@ -1,8 +1,11 @@
 use std::env;
 
 use crate::ModelType;
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::engine::Engine as _;
 use log::{error, info};
 use serde_json::json;
+use teloxide::net::Download;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::types::ReplyParameters;
 use teloxide::{
@@ -33,6 +36,13 @@ pub async fn openrouter(
         return Ok(());
     }
 
+    // Check if the model is vision
+    let vision_models = ModelType::return_vision();
+    let mut vision = false;
+    if vision_models.contains(&model) {
+        vision = true;
+    }
+
     // Check if prompt is empty
     let prompt = match prompt {
         Some(prompt) => prompt,
@@ -46,7 +56,6 @@ pub async fn openrouter(
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
             // Deleting the messages
-            bot.delete_message(msg.chat.id, msg.id).await?;
             bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
             return Ok(());
         }
@@ -73,7 +82,6 @@ pub async fn openrouter(
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
         // Deleting the messages
-        bot.delete_message(msg.chat.id, msg.id).await?;
         bot.delete_message(bot_msg.chat.id, bot_msg.id).await?;
         return Ok(());
     }
@@ -95,55 +103,24 @@ pub async fn openrouter(
     let now = std::time::Instant::now();
 
     // Get the image URL if it exists
-    let img_url = if let Some(img_attachment) = attachment_id {
+    let base64_img = if let Some(img_attachment) = attachment_id {
         let img_attachment = bot.get_file(&img_attachment).await?;
-        let teloxide_token = match env::var("TELOXIDE_TOKEN") {
-            Ok(token) => token,
-            Err(_) => {
-                bot.send_message(msg.chat.id, "Error: Unable to fetch TELOXIDE_TOKEN")
-                    .reply_parameters(ReplyParameters::new(msg.id))
-                    .await?;
-                return Ok(());
-            }
+        let img_url = img_attachment.path;
+        let mut buf: Vec<u8> = Vec::new();
+        bot.download_file(&img_url, &mut buf).await?;
+        let extension = img_url.split('.').last().unwrap();
+        let extension = match extension {
+            "jpg" => "jpeg",
+            _ => extension,
         };
-        let img_url = format!(
-            "https://api.telegram.org/file/bot{}/{}",
-            teloxide_token, img_attachment.path
-        );
-        Some(img_url)
+        Some(format!(
+            "data:image/{};base64,{}",
+            extension,
+            BASE64.encode(buf)
+        ))
     } else {
         None
     };
-
-    let mut json = json!(
-            {
-                "model": model.to_string(),
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": prompt
-                            },
-                        ]
-                    }
-                ],
-                "max_tokens": 512,
-            }
-    );
-
-    if let Some(img_url) = img_url {
-        json["messages"][0]["content"]
-            .as_array_mut()
-            .unwrap()
-            .push(json!({
-                "type": "image_url",
-                "image_url": {
-                    "url": img_url
-                }
-            }));
-    }
 
     let openrouter_key = match env::var("OPENROUTER_KEY") {
         Ok(key) => key,
@@ -154,6 +131,41 @@ pub async fn openrouter(
         }
     };
 
+    let mut json = json!(
+        {
+            "model": model.to_string(),
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        },
+                    ]
+                }
+            ],
+            "max_tokens": 512,
+        }
+    );
+
+    if let Some(base64_img) = base64_img {
+        if vision {
+            json["messages"][0]["content"]
+                .as_array_mut()
+                .unwrap()
+                .push(json!({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": base64_img
+                    }
+                }));
+        }
+    }
+
+    // print out the final json
+    // info!("Final JSON: {}", json.to_string());
+
     let res = reqwest::Client::new()
         .post("https://openrouter.ai/api/v1/chat/completions")
         .bearer_auth(openrouter_key)
@@ -162,9 +174,12 @@ pub async fn openrouter(
         .await;
     let elapsed = now.elapsed().as_secs_f32();
 
-    match res {
-        Ok(_) => {
-            info!("Request to OpenRouter sent successfully");
+    let status;
+    let res = match res {
+        Ok(res) => {
+            info!("Request to OpenRouter recieved successfully");
+            status = res.status();
+            res
         }
         Err(e) => {
             error!("Error sending request: {}", e);
@@ -176,49 +191,51 @@ pub async fn openrouter(
     };
 
     // Parse the response
-    let res = res.unwrap().json::<serde_json::Value>().await;
+    let json = res.json::<serde_json::Value>().await.unwrap();
 
-    // let prompt_tokens = res.as_ref().unwrap()["usage"]["prompt_tokens"]
-    //     .as_i64()
-    //     .unwrap_or(0);
-    // let completion_tokens = res.as_ref().unwrap()["usage"]["completion_tokens"]
-    //     .as_i64()
-    //     .unwrap_or(0);
+    // Check if non 200
+    if status != 200 {
+        let error = json["message"].as_str().unwrap_or_default();
+        error!("Error from OpenRouter: {}", json.to_string());
+        let bot_msg = bot
+            .send_message(msg.chat.id, format!("Error: code {} - {}", status, error))
+            .reply_parameters(ReplyParameters::new(msg.id))
+            .await?;
 
-    // // $0.150 / 1M input tokens
-    // // $0.600 / 1M output tokens
-    // let prompt_tokens_in_millions = prompt_tokens as f64 / 1_000_000.0;
-    // let completion_tokens_in_millions = completion_tokens as f64 / 1_000_000.0;
+        // Wait 5 seconds and delete the bots message
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-    // let input_token_cost = prompt_tokens_in_millions * 0.150;
-    // let output_token_cost = completion_tokens_in_millions * 0.600;
-
-    // let total_price = input_token_cost + output_token_cost;
-
-    // info!("Total price for the request: ${}", total_price);
+        // Deleting the messages
+        bot.delete_message(bot_msg.chat.id, msg.id).await?;
+        return Ok(());
+    }
 
     // Send the response
-    match res {
-        Ok(res) => {
-            let content = res["choices"][0]["message"]["content"]
-                .as_str()
-                .unwrap_or_default();
-            info!(
-                "Replying to message using OpenRouter ({}). Generation took {}s",
-                model.to_string(),
-                (elapsed * 10.0).round() / 10.0
-            );
-            bot.send_message(msg.chat.id, content)
-                .reply_parameters(ReplyParameters::new(msg.id))
-                .await?;
-            Ok(())
-        }
-        Err(e) => {
-            error!("Error parsing response: {}", e);
-            bot.send_message(msg.chat.id, format!("Error: {e}"))
-                .reply_parameters(ReplyParameters::new(msg.id))
-                .await?;
-            Ok(())
-        }
+    // info!("Parsed response: {:?}", json);
+
+    // Check whats the finish_reason
+    let finish_reason = json["finish_reason"].as_str().unwrap_or_default();
+    if finish_reason == "SAFETY" {
+        bot.send_message(msg.chat.id, "Error: Blocked by google")
+            .reply_parameters(ReplyParameters::new(msg.id))
+            .await?;
+        return Ok(());
     }
+    let content = json["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or_default();
+    info!(
+        "Replying to message using OpenRouter ({}). Generation took {}s",
+        model.to_string(),
+        (elapsed * 10.0).round() / 10.0
+    );
+    let content = if content.is_empty() {
+        "<no response>".to_string()
+    } else {
+        content.to_string()
+    };
+    bot.send_message(msg.chat.id, content)
+        .reply_parameters(ReplyParameters::new(msg.id))
+        .await?;
+    Ok(())
 }

@@ -1,6 +1,11 @@
-use teloxide::{payloads::SendMessageSetters, requests::Requester, types::{Message, ReplyParameters}, Bot, RequestError};
 use log::{info, warn};
 use std::env;
+use teloxide::{
+    payloads::SendMessageSetters,
+    requests::Requester,
+    types::{Message, ReplyParameters},
+    Bot, RequestError,
+};
 
 use crate::models::ModelType;
 
@@ -16,7 +21,10 @@ pub async fn check_owner(bot: &Bot, msg: &Message, model: &ModelType) -> Result<
                 .await?;
             return Ok(());
         } else {
-            info!("Model {} is owner-only but the user is the owner", model.to_string());
+            info!(
+                "Model {} is owner-only but the user is the owner",
+                model.to_string()
+            );
         }
     }
     Ok(())

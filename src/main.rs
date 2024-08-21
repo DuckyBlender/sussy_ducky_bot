@@ -125,8 +125,11 @@ enum Commands {
     Rushify,
     #[command(description = "[☁️] generate high-quality images using the FLUX.1[schnell] model")]
     Flux,
-    #[command(description = "[☁️] gemini 1.0 pro vision", aliases = ["gemini", "g"])]
-    GeminiProVision,
+    #[command(description = "[☁️] gemini 1.0 pro vision", aliases = ["gemini"])]
+    // this is one letter because it's easier to differenciate from the other gemma (in a different bot)
+    G,
+    #[command(description = "[☁️] llama 405B (hermes 3 fine-tune)", alias = "hermes")]
+    Llama405,
 }
 
 // Handler function for bot events
@@ -161,7 +164,15 @@ async fn handle_command(
         Commands::Help => {
             tokio::spawn(help(bot.clone(), msg));
         }
-        Commands::GeminiProVision => {
+        Commands::Llama405 => {
+            tokio::spawn(openrouter(
+                bot.clone(),
+                msg.clone(),
+                get_prompt(trimmed_text, &msg),
+                ModelType::Llama405,
+            ));
+        }
+        Commands::G => {
             tokio::spawn(openrouter(
                 bot.clone(),
                 msg.clone(),
@@ -311,9 +322,8 @@ async fn handle_command(
                 ModelType::LLAMA3,
             ));
         }
-
         Commands::Online => {
-            tokio::spawn(perplexity(
+            tokio::spawn(openrouter(
                 bot.clone(),
                 msg.clone(),
                 get_prompt(trimmed_text, &msg),

@@ -1,7 +1,7 @@
-use std::env;
 use log::{error, info};
 use reqwest::Url;
 use serde_json::json;
+use std::env;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
 use teloxide::types::{InputFile, ReplyParameters};

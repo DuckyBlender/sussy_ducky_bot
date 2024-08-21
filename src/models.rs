@@ -23,8 +23,7 @@ pub enum ModelType {
 
     // Openrouter
     GeminiProVision,
-
-    // Perplexity (online)
+    Llama405,
     Online,
 
     // Groq (fast LLMs, free)
@@ -41,8 +40,16 @@ impl ModelType {
     //     enum_iterator::all::<ModelType>().collect()
     // }
 
+    pub fn return_vision() -> Vec<ModelType> {
+        vec![ModelType::GeminiProVision, ModelType::GPT4oMini]
+    }
+
     pub fn return_openrouter() -> Vec<ModelType> {
-        vec![ModelType::GeminiProVision]
+        vec![
+            ModelType::GeminiProVision,
+            ModelType::Online,
+            ModelType::Llama405,
+        ]
     }
 
     pub fn return_ollama() -> Vec<ModelType> {
@@ -71,19 +78,12 @@ impl ModelType {
         vec![ModelType::GPT4oMini]
     }
 
-    pub fn return_perplexity() -> Vec<ModelType> {
-        vec![ModelType::Online]
-    }
-
     pub fn return_groq() -> Vec<ModelType> {
         vec![ModelType::LLAMA3, ModelType::Rushify, ModelType::Caveman]
     }
 
     pub fn owner_only() -> Vec<ModelType> {
-        vec![
-            ModelType::Online,
-            ModelType::StableAudio,
-        ]
+        vec![ModelType::Online, ModelType::StableAudio]
     }
 }
 
@@ -99,7 +99,7 @@ impl std::fmt::Display for ModelType {
             ModelType::Caveman => write!(f, "llama-3.1-70b-versatile"),
             ModelType::Racist => write!(f, "duckyblender/racist-phi3"),
             ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),
-            ModelType::Online => write!(f, "llama-3-sonar-large-32k-online"),
+            ModelType::Online => write!(f, "perplexity/llama-3.1-sonar-large-128k-online"),
             ModelType::Gemma2 => write!(f, "gemma2:9b-instruct-q4_K_M"),
             ModelType::GLM4 => write!(f, "glm4:9b-chat-q4_K_M"),
             ModelType::SDXLTurbo => write!(f, "fast-lightning-sdxl"),
@@ -107,7 +107,8 @@ impl std::fmt::Display for ModelType {
             ModelType::StableAudio => write!(f, "stable-audio"),
             ModelType::FluxShnell => write!(f, "flux/schnell"),
             ModelType::Rushify => write!(f, "llama-3.1-8b-instant"),
-            ModelType::GeminiProVision => write!(f, "gemini-pro-vision"),
+            ModelType::GeminiProVision => write!(f, "google/gemini-pro-vision"),
+            ModelType::Llama405 => write!(f, "nousresearch/hermes-3-llama-3.1-405b"),
         }
     }
 }
