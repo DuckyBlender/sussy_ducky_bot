@@ -136,6 +136,15 @@ pub async fn openrouter(
             "model": model.to_string(),
             "messages": [
                 {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Be precise and concise. Don't be verbose."
+                        }
+                    ]
+                },
+                {
                     "role": "user",
                     "content": [
                         {
