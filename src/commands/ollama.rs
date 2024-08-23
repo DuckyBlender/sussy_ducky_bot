@@ -107,12 +107,12 @@ pub async fn ollama(
     // Send the stream request using ollama-rs
     let before_request = std::time::Instant::now();
     let mut request = GenerationRequest::new(model.to_string(), prompt);
-    if model == ModelType::Json {
-        request = request.format(FormatType::Json).system(
-            "You are a JSONify bot. Convert the text to JSON. Structure it however you like."
-                .to_string(),
-        );
-    }
+    request = match model {
+        ModelType::Json => request
+            .format(FormatType::Json)
+            .system("You are a JSONify bot. Convert the text to JSON. Structure it however you like.".to_string()),
+        _ => request.system("Be precise and concise. Don't be verbose.".to_string()),
+    };
     let stream = ollama_client.generate_stream(request).await;
 
     match stream {
