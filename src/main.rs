@@ -72,8 +72,7 @@ enum Commands {
     #[command(description = "[🖥️] generate racist responses using custom fine-tuned LLM")]
     Racist,
     #[command(
-        description = "[🖥️] generate nonsense text using a highly quantized 300MB LLM",
-        hide
+        description = "[🖥️] generate nonsense text using a 90MB model (SmolLM 135M q2_K)"
     )]
     Lobotomy,
     #[command(description = "show available commands")]

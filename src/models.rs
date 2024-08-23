@@ -98,7 +98,7 @@ impl std::fmt::Display for ModelType {
             ModelType::LLAMA3 => write!(f, "llama-3.1-70b-versatile"),
             ModelType::Caveman => write!(f, "llama-3.1-70b-versatile"),
             ModelType::Racist => write!(f, "duckyblender/racist-phi3"),
-            ModelType::Lobotomy => write!(f, "qwen:0.5b-chat-v1.5-q2_K"),
+            ModelType::Lobotomy => write!(f, "smollm:135m-instruct-v0.2-q2_K"),
             ModelType::Online => write!(f, "perplexity/llama-3.1-sonar-large-128k-online"),
             ModelType::Gemma2 => write!(f, "gemma2:9b-instruct-q4_K_M"),
             ModelType::GLM4 => write!(f, "glm4:9b-chat-q4_K_M"),
