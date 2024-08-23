@@ -21,7 +21,10 @@ pub async fn fal(
     model: ModelType,
 ) -> Result<(), RequestError> {
     // Check if the model is owner-only
-    check_owner(&bot, &msg, &model).await?;
+    let exit = check_owner(&bot, &msg, &model).await?;
+    if exit {
+        return Ok(());
+    }
 
     // Check if the model is supported by fal
     let supported_models = ModelType::return_fal();

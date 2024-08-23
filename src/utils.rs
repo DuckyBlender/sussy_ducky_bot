@@ -9,7 +9,7 @@ use teloxide::{
 
 use crate::models::ModelType;
 
-pub async fn check_owner(bot: &Bot, msg: &Message, model: &ModelType) -> Result<(), RequestError> {
+pub async fn check_owner(bot: &Bot, msg: &Message, model: &ModelType) -> Result<bool, RequestError> {
     // Check if the model is owner-only
     let gated_models = ModelType::owner_only();
     if gated_models.contains(model) {
@@ -19,15 +19,16 @@ pub async fn check_owner(bot: &Bot, msg: &Message, model: &ModelType) -> Result<
             bot.send_message(msg.chat.id, format!("Model {} is owner-only!", model))
                 .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
-            return Ok(());
+            return Ok(true);
         } else {
             info!(
                 "Model {} is owner-only but the user is the owner",
                 model.to_string()
             );
+            return Ok(false);
         }
     }
-    Ok(())
+    Ok(false)
 }
 
 /// If the prompt is empty, check the reply
