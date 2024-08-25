@@ -170,7 +170,7 @@ async fn handle_command(
                 ModelType::Llama405,
             ));
         }
-        Commands::G => {
+        Commands::Gemini => {
             tokio::spawn(openrouter(
                 bot.clone(),
                 msg.clone(),
