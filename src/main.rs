@@ -124,9 +124,8 @@ enum Commands {
     Rushify,
     #[command(description = "[☁️] generate high-quality images using the FLUX.1[schnell] model")]
     Flux,
-    #[command(description = "[☁️] gemini 1.0 pro vision", aliases = ["gemini"])]
-    // this is one letter because it's easier to differenciate from the other gemma (in a different bot)
-    G,
+    #[command(description = "[☁️] gemini 1.0 pro vision", alias = "gpro")]
+    Gemini,
     #[command(description = "[☁️] llama 405B (hermes 3 fine-tune)", alias = "hermes")]
     Llama405,
 }
