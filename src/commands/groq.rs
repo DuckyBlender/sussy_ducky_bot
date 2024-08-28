@@ -56,7 +56,7 @@ pub async fn groq(
         .await?;
 
     let now = std::time::Instant::now();
-    // Send the request to the Perplexity API
+    
     let res = reqwest::Client::new()
         .post("https://api.groq.com/openai/v1/chat/completions")
         .header("accept", "application/json")

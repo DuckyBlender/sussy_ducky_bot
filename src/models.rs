@@ -33,6 +33,9 @@ pub enum ModelType {
     // OpenAI (best LLMs, paid)
     // GPT4o,
     GPT4oMini,
+
+    // Custom Lambda
+    Goody2
 }
 
 impl ModelType {
@@ -43,6 +46,7 @@ impl ModelType {
     pub fn return_vision() -> Vec<ModelType> {
         vec![ModelType::GeminiProVision, ModelType::GPT4oMini]
     }
+
 
     pub fn return_openrouter() -> Vec<ModelType> {
         vec![
@@ -109,6 +113,7 @@ impl std::fmt::Display for ModelType {
             ModelType::Rushify => write!(f, "llama-3.1-8b-instant"),
             ModelType::GeminiProVision => write!(f, "google/gemini-pro-vision"),
             ModelType::Llama405 => write!(f, "nousresearch/hermes-3-llama-3.1-405b"),
+            ModelType::Goody2 => write!(f, ""),
         }
     }
 }

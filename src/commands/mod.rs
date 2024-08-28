@@ -27,3 +27,6 @@ pub use fal::fal;
 
 mod openrouter;
 pub use openrouter::openrouter;
+
+mod goody;
+pub use goody::goody;

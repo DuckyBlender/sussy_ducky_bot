@@ -128,6 +128,8 @@ enum Commands {
     Gemini,
     #[command(description = "[☁️] llama 405B (hermes 3 fine-tune)", alias = "hermes")]
     Llama405,
+    #[command(description = "[☁️] GOODY-2", alias = "goody2")]
+    Goody,
 }
 
 // Handler function for bot events
@@ -161,6 +163,13 @@ async fn handle_command(
     match command {
         Commands::Help => {
             tokio::spawn(help(bot.clone(), msg));
+        }
+        Commands::Goody => {
+            tokio::spawn(goody(
+                bot.clone(),
+                msg.clone(),
+                get_prompt(trimmed_text, &msg),
+            ));
         }
         Commands::Llama405 => {
             tokio::spawn(openrouter(
