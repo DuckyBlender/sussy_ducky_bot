@@ -151,6 +151,10 @@ async fn handle_command(
                 Ok(response) => response,
                 Err(e) => {
                     error!("Failed to get response from AI API: {:?}", e);
+                    bot.send_message(message.chat.id, "Failed to get response from API")
+                        .reply_parameters(ReplyParameters::new(message.id))
+                        .await
+                        .unwrap();
                     return Ok(lambda_http::Response::builder()
                         .status(200)
                         .body("Failed to get response from AI API".into())
@@ -198,6 +202,10 @@ async fn handle_command(
                 Ok(response) => response,
                 Err(e) => {
                     error!("Failed to get response from AI API: {:?}", e);
+                    bot.send_message(message.chat.id, "Failed to get response from API")
+                        .reply_parameters(ReplyParameters::new(message.id))
+                        .await
+                        .unwrap();
                     return Ok(lambda_http::Response::builder()
                         .status(200)
                         .body("Failed to get response from AI API".into())
@@ -265,7 +273,7 @@ fn return_multimodal_request(
         .build()
         .unwrap();
 
-    req.service_tier = None;
+    req.service_tier = None; // groq doesn't support service_tier
     req
 }
 
@@ -288,53 +296,6 @@ fn return_chat_request(system_prompt: &str, msg_text: &str) -> CreateChatComplet
         .build()
         .unwrap();
 
-    req.service_tier = None;
+    req.service_tier = None; // groq doesn't support service_tier
     req
 }
-
-// #[test]
-// async fn test_multimodal() {
-//     let openai_config = OpenAIConfig::new()
-//         .with_api_key(env::
-//             var("OPENAI_API_KEY")
-//             .unwrap())
-//         .with_api_base("https://api.groq.com/openai/v1");
-
-//     let client = Client::with_config(openai_config);
-
-//     let request = CreateChatCompletionRequestArgs::default()
-//         .model("llava-v1.5-7b-4096-preview")
-//         .max_tokens(512_u32)
-//         .messages([ChatCompletionRequestUserMessageArgs::default()
-//             .content(vec![
-//                 ChatCompletionRequestMessageContentPartTextArgs::default()
-//                     .text("What is this image?")
-//                     .build()?
-//                     .into(),
-//                 ChatCompletionRequestMessageContentPartImageArgs::default()
-//                     .image_url(
-//                         ImageUrlArgs::default()
-//                             .url(image_url)
-//                             .build()?,
-//                     )
-//                     .build()?
-//                     .into(),
-//             ])
-//             .build()?
-//             .into()])
-//         .build()?;
-
-//         println!("{}", serde_json::to_string(&request).unwrap());
-
-//         let response = client.chat().create(request).await?;
-
-//         println!("\nResponse:\n");
-//         for choice in response.choices {
-//             println!(
-//                 "{}: Role: {}  Content: {:?}",
-//                 choice.index,
-//                 choice.message.role,
-//                 choice.message.content.unwrap_or_default()
-//             );
-//         }
-// }
