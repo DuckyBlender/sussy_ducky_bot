@@ -20,6 +20,10 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
     "fmt",
 ] }
 teloxide = { version = "0.13", features = ["macros"] }
+anyhow = "1.0.87"
+base64 = "0.22.1"
+# tempfile = "3.12.0"
+# mime = "0.3.17"
 
 [package.metadata.lambda.deploy]
 memory = 128      # Function's memory

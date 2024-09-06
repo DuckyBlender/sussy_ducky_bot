@@ -1,19 +1,20 @@
 use lambda_http::{run, service_fn, Body, Error, Request};
-use reqwest::Client as ReqwestClient;
-use serde_json::{json, Value};
+
+use teloxide::net::Download;
 use std::env;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
-use teloxide::types::Message;
-use teloxide::types::ReplyParameters;
-use teloxide::types::UpdateKind;
+use teloxide::types::{Message, PhotoSize, ReplyParameters, UpdateKind};
 use teloxide::utils::command::BotCommands;
-use tracing::{error, warn};
+use tracing::{debug, error, info, warn};
 use tracing_subscriber::fmt;
+use serde_json::{json, Value};
+use reqwest::Client as ReqwestClient;
+use base64::{engine::general_purpose, Engine as _};
 
 const BASE_URL: &str = "https://api.groq.com/openai/v1";
 
-#[derive(BotCommands, Clone)]
+#[derive(BotCommands, Clone, Debug)]
 #[command(rename_rule = "lowercase")]
 enum BotCommand {
     #[command(description = "display this text")]
@@ -32,25 +33,30 @@ enum BotCommand {
 async fn main() -> Result<(), Error> {
     // Initialize tracing for logging
     fmt()
-        .with_max_level(tracing::Level::INFO)
+        .with_max_level(tracing::Level::DEBUG)
         .with_target(false)
-        .without_time()
         .init();
+
+    info!("Starting the Telegram bot application");
 
     // Setup telegram bot (we do it here because this place is a cold start)
     let bot = Bot::new(env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set!"));
+    info!("Telegram bot initialized");
 
     let groq_key = env::var("GROQ_KEY").expect("GROQ_KEY not set!");
     let client = ReqwestClient::new();
+    info!("Groq API client initialized");
 
     // Set commands
     let res = bot.set_my_commands(BotCommand::bot_commands()).await;
 
-    if let Err(e) = res {
-        warn!("Failed to set commands: {:?}", e);
+    match res {
+        Ok(_) => info!("Bot commands set successfully"),
+        Err(e) => warn!("Failed to set commands: {:?}", e),
     }
 
     // Run the Lambda function
+    info!("Starting Lambda function");
     run(service_fn(|req| handler(req, &bot, &client, &groq_key))).await
 }
 
@@ -60,11 +66,16 @@ async fn handler(
     client: &ReqwestClient,
     groq_key: &str,
 ) -> Result<lambda_http::Response<String>, lambda_http::Error> {
+    debug!("Received a new request");
+    
     // Parse JSON webhook
     let bot = bot.clone();
 
     let update = match parse_webhook(req).await {
-        Ok(message) => message,
+        Ok(message) => {
+            debug!("Successfully parsed webhook");
+            message
+        },
         Err(e) => {
             error!("Failed to parse webhook: {:?}", e);
             return Ok(lambda_http::Response::builder()
@@ -77,11 +88,15 @@ async fn handler(
     // Handle commands
     if let UpdateKind::Message(message) = &update.kind {
         if let Some(text) = &message.text() {
+            debug!("Received message: {}", text);
             if let Ok(command) = BotCommand::parse(text, bot.get_me().await.unwrap().username()) {
+                info!("Parsed command: {:?}", command);
                 return handle_command(bot.clone(), message, command, client, groq_key).await;
             }
         }
     }
+
+    debug!("No command found in the message");
     Ok(lambda_http::Response::builder()
         .status(200)
         .body(String::new())
@@ -95,42 +110,35 @@ async fn handle_command(
     client: &ReqwestClient,
     groq_key: &str,
 ) -> Result<lambda_http::Response<String>, lambda_http::Error> {
+    info!("Handling command: {:?}", command);
+
     // msg_text contains the text of the message or reply to a message with text
     let msg_text = message
         .text()
         .or_else(|| message.reply_to_message().and_then(|m| m.text()))
         .unwrap_or_default();
 
-    // img contains the url of the image, sticker or reply to a message with an image or sticker
-    let img = message
-        .photo()
-        .and_then(|p| p.last())
-        .map(|p| p.file.id.clone())
-        .or_else(|| message.sticker().map(|s| s.file.id.clone()))
-        .or_else(|| {
-            message
-                .reply_to_message()
-                .and_then(|m| m.photo().and_then(|p| p.last()).map(|p| p.file.id.clone()))
-        })
-        .or_else(|| {
-            message
-                .reply_to_message()
-                .and_then(|m| m.sticker().map(|s| s.file.id.clone()))
-        });
+    debug!("Message text: {}", msg_text);
+
+    // Get the image file, if any
+    let img = get_image_from_message(message);
+    
+    if img.is_some() {
+        debug!("Image file found in the message");
+    } else {
+        debug!("No image found in the message");
+    }
 
     match command {
-        BotCommand::Help => {
-            bot.send_message(message.chat.id, BotCommand::descriptions().to_string())
-                .await
-                .unwrap();
-        }
-        BotCommand::Start => {
+        BotCommand::Help | BotCommand::Start => {
+            info!("Sending help or start message");
             bot.send_message(message.chat.id, BotCommand::descriptions().to_string())
                 .await
                 .unwrap();
         }
 
         BotCommand::Llama | BotCommand::Caveman => {
+            info!("Handling Llama or Caveman command");
             // Typing indicator
             bot.send_chat_action(message.chat.id, teloxide::types::ChatAction::Typing)
                 .await
@@ -142,10 +150,15 @@ async fn handle_command(
                 _ => unreachable!(),
             };
 
+            debug!("System prompt: {}", system_prompt);
+
             // Send request to groq
             let response = send_chat_request(client, groq_key, system_prompt, msg_text).await;
             let response = match response {
-                Ok(response) => response,
+                Ok(response) => {
+                    debug!("Received response from Groq: {:?}", response);
+                    response
+                },
                 Err(e) => {
                     error!("Failed to get response from AI API: {:?}", e);
                     bot.send_message(message.chat.id, "Failed to get response from API")
@@ -161,8 +174,9 @@ async fn handle_command(
 
             let text_response = response["choices"][0]["message"]["content"]
                 .as_str()
-                .unwrap_or("<no response>")
-                .to_string();
+                .unwrap_or("<no response>");
+
+            info!("Sending response to user: {}", text_response);
 
             bot.send_message(message.chat.id, text_response)
                 .reply_parameters(ReplyParameters::new(message.id))
@@ -170,10 +184,12 @@ async fn handle_command(
                 .unwrap();
         }
         BotCommand::Llava => {
+            info!("Handling Llava command");
             // If there is no image, return
             let img = match img {
                 Some(img) => img,
                 None => {
+                    warn!("No image provided for Llava command");
                     bot.send_message(message.chat.id, "Please provide an image to analyze.")
                         .reply_parameters(ReplyParameters::new(message.id))
                         .await
@@ -190,12 +206,35 @@ async fn handle_command(
                 .await
                 .unwrap();
 
-            // Send request to groq
-            let response = send_vision_request(client, groq_key, &img, msg_text).await;
-            let response = match response {
-                Ok(response) => response,
+            debug!("Downloading and processing image");
+
+            // Download and process the image
+            let base64_img = match download_and_encode_image(&bot, &img).await {
+                Ok(result) => result,
                 Err(e) => {
-                    error!("Failed to get response from AI API: {:?}", e);
+                    error!("Failed to download and encode image: {:?}", e);
+                    bot.send_message(message.chat.id, "Failed to process the image")
+                        .reply_parameters(ReplyParameters::new(message.id))
+                        .await
+                        .unwrap();
+                    return Ok(lambda_http::Response::builder()
+                        .status(200)
+                        .body("Failed to process the image".into())
+                        .unwrap());
+                }
+            };
+
+            debug!("Sending vision request with processed image");
+
+            // Send request to groq
+            let response = send_vision_request(client, groq_key, &base64_img, msg_text).await;
+            let response = match response {
+                Ok(response) => {
+                    debug!("Received vision response from Groq: {:?}", response);
+                    response
+                },
+                Err(e) => {
+                    error!("Failed to get vision response from AI API: {:?}", e);
                     bot.send_message(message.chat.id, "Failed to get response from API")
                         .reply_parameters(ReplyParameters::new(message.id))
                         .await
@@ -209,8 +248,9 @@ async fn handle_command(
 
             let text_response = response["choices"][0]["message"]["content"]
                 .as_str()
-                .unwrap_or("<no response>")
-                .to_string();
+                .unwrap_or("<no response>");
+
+            info!("Sending vision response to user: {}", text_response);
 
             bot.send_message(message.chat.id, text_response)
                 .reply_parameters(ReplyParameters::new(message.id))
@@ -226,12 +266,17 @@ async fn handle_command(
 }
 
 pub async fn parse_webhook(input: Request) -> Result<Update, Error> {
+    debug!("Parsing webhook");
     let body = input.body();
     let body_str = match body {
         Body::Text(text) => text,
-        not => panic!("expected Body::Text(...) got {not:?}"),
+        not => {
+            error!("Expected Body::Text(...) got {:?}", not);
+            panic!("expected Body::Text(...) got {:?}", not);
+        }
     };
     let body_json: Update = serde_json::from_str(body_str)?;
+    debug!("Successfully parsed webhook");
     Ok(body_json)
 }
 
@@ -240,7 +285,8 @@ async fn send_chat_request(
     groq_key: &str,
     system_prompt: &str,
     msg_text: &str,
-) -> Result<Value, reqwest::Error> {
+) -> anyhow::Result<Value> {
+    info!("Sending chat request to Groq API");
     let request_body = json!({
         "model": "llama-3.1-70b-versatile",
         "messages": [
@@ -256,25 +302,32 @@ async fn send_chat_request(
         "max_tokens": 1024
     });
 
+    debug!("Chat request body: {:?}", request_body);
+
     let response = client
         .post(format!("{}/chat/completions", BASE_URL))
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", groq_key))
         .json(&request_body)
         .send()
-        .await?
-        .json::<Value>()
         .await?;
 
-    Ok(response)
+    debug!("Received response status: {:?}", response.status());
+
+    let response_body = response.text().await?;
+    debug!("Response body: {}", response_body);
+
+    let json_response: Value = serde_json::from_str(&response_body)?;
+    Ok(json_response)
 }
 
 async fn send_vision_request(
     client: &ReqwestClient,
     groq_key: &str,
-    img: &str,
+    base64_img: &str,
     msg_text: &str,
-) -> Result<Value, reqwest::Error> {
+) -> anyhow::Result<Value> {
+    info!("Sending vision request to Groq API");
     let request_body = json!({
         "model": "llava-v1.5-7b-4096-preview",
         "messages": [
@@ -288,7 +341,7 @@ async fn send_vision_request(
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": img
+                            "url": format!("data:image/jpeg;base64,{}", base64_img)
                         }
                     }
                 ]
@@ -297,15 +350,44 @@ async fn send_vision_request(
         "max_tokens": 1024
     });
 
+    debug!("Vision request body: {:?}", request_body);
+
     let response = client
         .post(format!("{}/chat/completions", BASE_URL))
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", groq_key))
         .json(&request_body)
         .send()
-        .await?
-        .json::<Value>()
         .await?;
 
-    Ok(response)
+    debug!("Received vision response status: {:?}", response.status());
+
+    let response_body = response.text().await?;
+    debug!("Vision response body: {}", response_body);
+
+    let json_response: Value = serde_json::from_str(&response_body)?;
+    Ok(json_response)
 }
+
+fn get_image_from_message(message: &Message) -> Option<PhotoSize> {
+    // check stickers, replies
+    if let Some(photo) = message.photo() {
+        let photo = photo.first().unwrap();
+        Some(photo.clone())
+    } else if let Some(photo) = message.reply_to_message().and_then(|m| m.photo()) {
+        let photo = photo.first().unwrap();
+        return Some(photo.clone());
+    }
+    else {
+        return None;
+    }
+}
+
+async fn download_and_encode_image(bot: &Bot, photo: &PhotoSize) -> anyhow::Result<String> {
+    let mut buf: Vec<u8> = Vec::new();
+    bot.download_file(&photo.file.id, &mut buf).await?;
+
+    let base64_img = general_purpose::STANDARD.encode(&buf).to_string();
+
+    Ok(base64_img)
+}   
