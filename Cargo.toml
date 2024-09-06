@@ -20,6 +20,7 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
     "fmt",
 ] }
 teloxide = { version = "0.13", features = ["macros"] }
+async-openai = "0.24.0"
 
 [package.metadata.lambda.deploy]
 memory = 128      # Function's memory
