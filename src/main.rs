@@ -1,352 +1,132 @@
-#![allow(clippy::upper_case_acronyms)]
-
+use aws_config::meta::region::RegionProviderChain;
+use aws_config::BehaviorVersion;
+use lambda_http::{run, service_fn, Body, Error, Request};
+use mime::Mime;
+use utils::delete_message_delay;
+use utils::split_string;
+use core::str;
 use std::env;
-
-use log::info;
-
-use ollama_rs::Ollama;
-use teloxide::{prelude::*, utils::command::BotCommands, RequestError};
-mod models;
-
-use models::ModelType;
-
-mod commands;
-use commands::*;
-use utils::get_prompt;
-mod utils;
-
-use crate::models::setup_models;
-
-#[tokio::main]
-async fn main() {
-    dotenv::dotenv().ok();
-    env::set_var("RUST_LOG", "info,aws_config=warn,tracing=warn");
-    pretty_env_logger::init();
-    info!("Starting command bot...");
-
-    // If the --download flag is present in the command line arguments, download the models
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 1 && args[1] == "--download" {
-        info!("Running with --download flag");
-        setup_models().await;
-    } else {
-        info!("Running without --download flag")
-    }
-
-    let bot = Bot::from_env();
-    let ollama = Ollama::default();
-
-    let handler = dptree::entry().branch(Update::filter_message().endpoint(handler));
-    // Get the bot commands
-    bot.set_my_commands(Commands::bot_commands()).await.unwrap();
-
-    info!(
-        "{} has started!",
-        bot.get_me().send().await.unwrap().user.username.unwrap()
-    );
-
-    // Start the bots event loop
-    Dispatcher::builder(bot, handler)
-        .dependencies(dptree::deps![ollama])
-        .enable_ctrlc_handler()
-        .build()
-        .dispatch()
-        .await;
-}
+use std::str::FromStr;
+use teloxide::types::ChatAction;
+use teloxide::types::Message;
+use teloxide::types::ReplyParameters;
+use teloxide::types::UpdateKind;
+use teloxide::utils::command::BotCommands;
+use teloxide::{net::Download, prelude::*};
+use tracing::{debug, error, info, warn};
+use tracing_subscriber::fmt;
 
 #[derive(BotCommands, Clone)]
-#[command(
-    rename_rule = "lowercase",
-    description = "Bot commands. Local models use q4_K_M quantization unless specified otherwise. Some joke commands are hidden. [🖥️] = local (GTX 1660S), [☁️] = cloud model"
-)]
-enum Commands {
-    #[command(
-        description = "[🖥️] generate uncensored text using fine-tuned llama3",
-        alias = "u"
-    )]
-    Uncensored,
-    #[command(description = "[☁️] generate caveman-like text", alias = "cv")]
-    Caveman,
-    #[command(description = "[🖥️] generate text using the phi3 LLM", alias = "phi")]
-    Phi3,
-    #[command(description = "[🖥️] generate racist responses using custom fine-tuned LLM")]
-    Racist,
-    #[command(
-        description = "[🖥️] generate nonsense text using a 90MB model (SmolLM 135M q2_K)"
-    )]
-    Lobotomy,
-    #[command(description = "show available commands")]
+#[command(rename_rule = "lowercase")]
+enum BotCommand {
+    #[command(description = "display this text")]
     Help,
-    #[command(description = "check the bots latency")]
-    Ping,
-    #[command(description = "get an image of a cat for a given HTTP status code")]
-    HttpCat,
-    #[command(description = "get a random youtube video with no views")]
-    NoViews,
-    #[command(description = "[☁️] generate text using perplexity.ai", hide)]
-    Online,
-    #[command(description = "[☁️] multimodal GPT4o mini", aliases = ["gpt4", "gpt4o", "gpt4omini"])]
-    GPT,
-    #[command(description = "[☁️] generate text using 70B LLAMA 3 model", aliases = ["llama", "l"])]
-    LLAMA3,
-    #[command(description = "[🖥️] jsonify text", alias = "json")]
-    Jsonify,
-    #[command(
-        description = "[🖥️] fine-tuned polish lobotomy",
-        alias = "lobotomypl",
-        hide
-    )]
-    Lobotomia,
-    #[command(description = "[🖥️] summarize text")]
-    Summarize,
-    #[command(
-        description = "[🖥️] generate text using Gemma2 9B model",
-        alias = "gemma"
-    )]
-    Gemma2,
-    #[command(
-        description = "[🖥️] generate multilingual text using the 9B GLM4 LLM",
-        alias = "glm"
-    )]
-    GLM4,
-    #[command(description = "[☁️] generate images using the sdxl-turbo for free", aliases = ["sdxl"])]
-    Img,
-    #[command(
-        description = "[☁️] generate 30-second audio using stable audio open",
-        alias = "audio",
-        hide
-    )]
-    StableAudio,
-    #[command(
-        description = "[☁️] rushify text using llama 3.1 8B model",
-        alias = "rush"
-    )]
-    Rushify,
-    #[command(description = "[☁️] generate high-quality images using the FLUX.1[schnell] model")]
-    Flux,
-    #[command(description = "[☁️] gemini 1.0 pro vision", alias = "gpro")]
-    Gemini,
-    #[command(description = "[☁️] llama 405B (hermes 3 fine-tune)", alias = "hermes")]
-    Llama405,
-    #[command(description = "[☁️] GOODY-2", alias = "goody2")]
-    Goody,
+    #[command(description = "welcome message")]
+    Start,
+    #[command(description = "caveman version of llama3.1")]
+    Caveman,
+    #[command(description = "llama3.1 70b", alias="l")]
+    Llama,
+    #[command(description = "llava 7b vision model", alias="v")]
+    Llava,
 }
 
-// Handler function for bot events
-async fn handler(bot: Bot, msg: Message, ollama_client: Ollama) -> Result<(), RequestError> {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    // Initialize tracing for logging
+    fmt()
+        .with_max_level(tracing::Level::INFO)
+        .with_target(false)
+        .without_time()
+        .init();
+
+    // Setup telegram bot (we do it here because this place is a cold start)
+    let bot = Bot::new(env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set!"));
+
+    // Set commands
+    let res = bot.set_my_commands(BotCommand::bot_commands()).await;
+
+    if let Err(e) = res {
+        warn!("Failed to set commands: {:?}", e);
+    }
+
+    // Run the Lambda function
+    run(service_fn(|req| handler(req, &bot, &dynamodb, &kms))).await
+}
+
+async fn handler(
+    req: lambda_http::Request,
+    bot: &Bot,
+    dynamodb: &aws_sdk_dynamodb::Client,
+    kms: &aws_sdk_kms::Client,
+) -> Result<lambda_http::Response<String>, lambda_http::Error> {
+    // Parse JSON webhook
+    let bot = bot.clone();
+
+    let update = match parse_webhook(req).await {
+        Ok(message) => message,
+        Err(e) => {
+            error!("Failed to parse webhook: {:?}", e);
+            return Ok(lambda_http::Response::builder()
+                .status(400)
+                .body("Failed to parse webhook".into())
+                .unwrap());
+        }
+    };
+
     // Handle commands
-    if let Some(text) = &msg.text() {
-        if let Ok(command) = Commands::parse(text, bot.get_me().await.unwrap().username()) {
-            return handle_command(bot.clone(), msg.clone(), command, ollama_client).await;
+    if let UpdateKind::Message(message) = &update.kind {
+        if let Some(text) = &message.text() {
+            if let Ok(command) = BotCommand::parse(text, bot.get_me().await.unwrap().username()) {
+                return handle_command(bot.clone(), message, command, dynamodb).await;
+            }
         }
     }
 
-    Ok(())
+    // Handle audio messages
+    handle_audio_message(update, bot, dynamodb, kms).await
 }
 
-// Handle the command
 async fn handle_command(
     bot: Bot,
-    msg: Message,
-    command: Commands,
-    ollama_client: Ollama,
-) -> Result<(), RequestError> {
-    let trimmed_text = msg
-        .text()
-        .unwrap_or_default()
-        .split_once(' ')
-        .map(|x| x.1)
-        .unwrap_or_default()
-        .trim()
-        .to_string();
-
+    message: &Message,
+    command: BotCommand,
+    dynamodb: &aws_sdk_dynamodb::Client,
+) -> Result<lambda_http::Response<String>, lambda_http::Error> {
     match command {
-        Commands::Help => {
-            tokio::spawn(help(bot.clone(), msg));
+        BotCommand::Help => {
+            bot.send_message(message.chat.id, BotCommand::descriptions().to_string())
+                .await
+                .unwrap();
         }
-        Commands::Goody => {
-            tokio::spawn(goody(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-            ));
+        BotCommand::Start => {
+            bot.send_message(message.chat.id, "Welcome!").await.unwrap();
+                .await
+                .unwrap();
         }
-        Commands::Llama405 => {
-            tokio::spawn(openrouter(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Llama405,
-            ));
+        BotCommand::Caveman => {
+            bot.send_message(message.chat.id, "todo: Caveman version of llama3.1").await.unwrap();
         }
-        Commands::Gemini => {
-            tokio::spawn(openrouter(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::GeminiProVision,
-            ));
+        BotCommand::Llama => {
+            bot.send_message(message.chat.id, "todo: llama3.1 70b").await.unwrap();
         }
-        Commands::Flux => {
-            tokio::spawn(fal(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::FluxShnell,
-            ));
-        }
-        Commands::Rushify => {
-            tokio::spawn(groq(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Rushify,
-            ));
-        }
-        Commands::Img => {
-            tokio::spawn(fal(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                // ModelType::SDXLTurbo,
-                ModelType::SDXL,
-            ));
-        }
-        Commands::StableAudio => {
-            tokio::spawn(fal(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::StableAudio,
-            ));
-        }
-        Commands::GLM4 => {
-            tokio::spawn(ollama(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::GLM4,
-                ollama_client,
-            ));
-        }
-
-        Commands::Lobotomia => {
-            tokio::spawn(ollama(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::PolishLobotomy,
-                ollama_client,
-            ));
-        }
-        Commands::Gemma2 => {
-            tokio::spawn(ollama(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Gemma2,
-                ollama_client,
-            ));
-        }
-        Commands::Summarize => {
-            tokio::spawn(summarize(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ollama_client,
-            ));
-        }
-        Commands::Jsonify => {
-            tokio::spawn(ollama(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Json,
-                ollama_client,
-            ));
-        }
-        Commands::Uncensored => {
-            tokio::spawn(ollama(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Uncensored,
-                ollama_client,
-            ));
-        }
-        Commands::Phi3 => {
-            tokio::spawn(ollama(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Phi3,
-                ollama_client,
-            ));
-        }
-        Commands::GPT => {
-            tokio::spawn(openai(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::GPT4oMini,
-            ));
-        }
-        Commands::Caveman => {
-            tokio::spawn(groq(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Caveman,
-            ));
-        }
-        Commands::Lobotomy => {
-            tokio::spawn(ollama(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Lobotomy,
-                ollama_client,
-            ));
-        }
-        Commands::Ping => {
-            tokio::spawn(ping(bot.clone(), msg));
-        }
-        Commands::HttpCat => {
-            tokio::spawn(httpcat(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-            ));
-        }
-        Commands::NoViews => {
-            tokio::spawn(noviews(bot.clone(), msg.clone()));
-        }
-        Commands::LLAMA3 => {
-            tokio::spawn(groq(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::LLAMA3,
-            ));
-        }
-        Commands::Online => {
-            tokio::spawn(openrouter(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Online,
-            ));
-        }
-        Commands::Racist => {
-            tokio::spawn(ollama(
-                bot.clone(),
-                msg.clone(),
-                get_prompt(trimmed_text, &msg),
-                ModelType::Racist,
-                ollama_client,
-            ));
-        }
+        BotCommand::Llava => {
+            bot.send_message(message.chat.id, "todo: llava 7b vision model").await.unwrap();
+        }        
     }
 
-    Ok(())
+    Ok(lambda_http::Response::builder()
+        .status(200)
+        .body(String::new())
+        .unwrap())
+}
+
+pub async fn parse_webhook(input: Request) -> Result<Update, Error> {
+    let body = input.body();
+    let body_str = match body {
+        Body::Text(text) => text,
+        not => panic!("expected Body::Text(...) got {not:?}"),
+    };
+    let body_json: Update = serde_json::from_str(body_str)?;
+    Ok(body_json)
 }
