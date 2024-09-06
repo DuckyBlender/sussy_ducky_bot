@@ -1,8 +1,6 @@
-use async_openai::config::OpenAIConfig;
-use async_openai::types::*;
-use async_openai::Client;
-use core::str;
 use lambda_http::{run, service_fn, Body, Error, Request};
+use reqwest::Client as ReqwestClient;
+use serde_json::{json, Value};
 use std::env;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
@@ -12,6 +10,8 @@ use teloxide::types::UpdateKind;
 use teloxide::utils::command::BotCommands;
 use tracing::{error, warn};
 use tracing_subscriber::fmt;
+
+const BASE_URL: &str = "https://api.groq.com/openai/v1";
 
 #[derive(BotCommands, Clone)]
 #[command(rename_rule = "lowercase")]
@@ -40,11 +40,8 @@ async fn main() -> Result<(), Error> {
     // Setup telegram bot (we do it here because this place is a cold start)
     let bot = Bot::new(env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set!"));
 
-    let openai_config = OpenAIConfig::new()
-        .with_api_key(env::var("GROQ_KEY").unwrap())
-        .with_api_base("https://api.groq.com/openai/v1");
-
-    let client = Client::with_config(openai_config);
+    let groq_key = env::var("GROQ_KEY").expect("GROQ_KEY not set!");
+    let client = ReqwestClient::new();
 
     // Set commands
     let res = bot.set_my_commands(BotCommand::bot_commands()).await;
@@ -54,13 +51,14 @@ async fn main() -> Result<(), Error> {
     }
 
     // Run the Lambda function
-    run(service_fn(|req| handler(req, &bot, &client))).await
+    run(service_fn(|req| handler(req, &bot, &client, &groq_key))).await
 }
 
 async fn handler(
     req: lambda_http::Request,
     bot: &Bot,
-    client: &Client<OpenAIConfig>,
+    client: &ReqwestClient,
+    groq_key: &str,
 ) -> Result<lambda_http::Response<String>, lambda_http::Error> {
     // Parse JSON webhook
     let bot = bot.clone();
@@ -80,7 +78,7 @@ async fn handler(
     if let UpdateKind::Message(message) = &update.kind {
         if let Some(text) = &message.text() {
             if let Ok(command) = BotCommand::parse(text, bot.get_me().await.unwrap().username()) {
-                return handle_command(bot.clone(), message, command, client).await;
+                return handle_command(bot.clone(), message, command, client, groq_key).await;
             }
         }
     }
@@ -94,7 +92,8 @@ async fn handle_command(
     bot: Bot,
     message: &Message,
     command: BotCommand,
-    client: &Client<OpenAIConfig>,
+    client: &ReqwestClient,
+    groq_key: &str,
 ) -> Result<lambda_http::Response<String>, lambda_http::Error> {
     // msg_text contains the text of the message or reply to a message with text
     let msg_text = message
@@ -144,9 +143,7 @@ async fn handle_command(
             };
 
             // Send request to groq
-            let request = return_chat_request(system_prompt, msg_text);
-
-            let response = client.chat().create(request).await;
+            let response = send_chat_request(client, groq_key, system_prompt, msg_text).await;
             let response = match response {
                 Ok(response) => response,
                 Err(e) => {
@@ -162,11 +159,10 @@ async fn handle_command(
                 }
             };
 
-            let text_response = response.choices[0]
-                .message
-                .content
-                .clone()
-                .unwrap_or("<no response>".to_string());
+            let text_response = response["choices"][0]["message"]["content"]
+                .as_str()
+                .unwrap_or("<no response>")
+                .to_string();
 
             bot.send_message(message.chat.id, text_response)
                 .reply_parameters(ReplyParameters::new(message.id))
@@ -195,9 +191,7 @@ async fn handle_command(
                 .unwrap();
 
             // Send request to groq
-            let request = return_multimodal_request(&img, msg_text);
-
-            let response = client.chat().create(request).await;
+            let response = send_vision_request(client, groq_key, &img, msg_text).await;
             let response = match response {
                 Ok(response) => response,
                 Err(e) => {
@@ -213,11 +207,10 @@ async fn handle_command(
                 }
             };
 
-            let text_response = response.choices[0]
-                .message
-                .content
-                .clone()
-                .unwrap_or("<no response>".to_string());
+            let text_response = response["choices"][0]["message"]["content"]
+                .as_str()
+                .unwrap_or("<no response>")
+                .to_string();
 
             bot.send_message(message.chat.id, text_response)
                 .reply_parameters(ReplyParameters::new(message.id))
@@ -242,60 +235,77 @@ pub async fn parse_webhook(input: Request) -> Result<Update, Error> {
     Ok(body_json)
 }
 
-fn return_multimodal_request(
-    img: &str,
+async fn send_chat_request(
+    client: &ReqwestClient,
+    groq_key: &str,
+    system_prompt: &str,
     msg_text: &str,
-) -> CreateChatCompletionRequest {
-    let mut req = CreateChatCompletionRequestArgs::default()
-        .model("llava-v1.5-7b-4096-preview")
-        .max_tokens(1024_u32)
-        .messages([ChatCompletionRequestUserMessageArgs::default()
-            .content(vec![
-                ChatCompletionRequestMessageContentPartTextArgs::default()
-                    .text(msg_text)
-                    .build()
-                    .unwrap()
-                    .into(),
-                ChatCompletionRequestMessageContentPartImageArgs::default()
-                    .image_url(
-                        ImageUrlArgs::default()
-                            .url(img)
-                            .build()
-                            .unwrap(),
-                    )
-                    .build()
-                    .unwrap()
-                    .into(),
-            ])
-            .build()
-            .unwrap()
-            .into()])
-        .build()
-        .unwrap();
+) -> Result<Value, reqwest::Error> {
+    let request_body = json!({
+        "model": "llama-3.1-70b-versatile",
+        "messages": [
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {
+                "role": "user",
+                "content": msg_text
+            }
+        ],
+        "max_tokens": 1024
+    });
 
-    req.service_tier = None; // groq doesn't support service_tier
-    req
+    let response = client
+        .post(format!("{}/chat/completions", BASE_URL))
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", groq_key))
+        .json(&request_body)
+        .send()
+        .await?
+        .json::<Value>()
+        .await?;
+
+    Ok(response)
 }
 
-fn return_chat_request(system_prompt: &str, msg_text: &str) -> CreateChatCompletionRequest {
-    let mut req = CreateChatCompletionRequestArgs::default()
-        .model("llama-3.1-70b-versatile")
-        .max_tokens(1024_u32)
-        .messages([
-            ChatCompletionRequestSystemMessageArgs::default()
-                .content(system_prompt)
-                .build()
-                .unwrap()
-                .into(),
-            ChatCompletionRequestUserMessageArgs::default()
-                .content(msg_text)
-                .build()
-                .unwrap()
-                .into(),
-        ])
-        .build()
-        .unwrap();
+async fn send_vision_request(
+    client: &ReqwestClient,
+    groq_key: &str,
+    img: &str,
+    msg_text: &str,
+) -> Result<Value, reqwest::Error> {
+    let request_body = json!({
+        "model": "llava-v1.5-7b-4096-preview",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": msg_text
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": img
+                        }
+                    }
+                ]
+            }
+        ],
+        "max_tokens": 1024
+    });
 
-    req.service_tier = None; // groq doesn't support service_tier
-    req
+    let response = client
+        .post(format!("{}/chat/completions", BASE_URL))
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", groq_key))
+        .json(&request_body)
+        .send()
+        .await?
+        .json::<Value>()
+        .await?;
+
+    Ok(response)
 }
