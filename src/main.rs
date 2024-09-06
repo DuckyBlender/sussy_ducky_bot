@@ -82,9 +82,6 @@ async fn handler(
             }
         }
     }
-
-    // Handle audio messages
-    handle_audio_message(update, bot, dynamodb, kms).await
 }
 
 async fn handle_command(
