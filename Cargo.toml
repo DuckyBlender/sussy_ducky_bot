@@ -12,7 +12,7 @@ reqwest = { version = "0.12", features = [
     "json",
     "native-tls-vendored",
 ], default-features = false }
-serde = "1.0"
+serde = "1.0.210"
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
 tracing = { version = "0.1", features = ["log"] }

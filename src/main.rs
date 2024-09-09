@@ -129,6 +129,8 @@ async fn handle_command(
         debug!("No image found in the message");
     }
 
+    let msg_text = remove_command(msg_text).await;
+
     match command {
         BotCommand::Help | BotCommand::Start => {
             info!("Sending help or start message");
@@ -153,7 +155,7 @@ async fn handle_command(
             debug!("System prompt: {}", system_prompt);
 
             // Send request to groq
-            let response = send_chat_request(client, groq_key, system_prompt, msg_text).await;
+            let response = send_chat_request(client, groq_key, system_prompt, &msg_text).await;
             let response = match response {
                 Ok(response) => {
                     debug!("Received response from Groq: {:?}", response);
@@ -227,7 +229,7 @@ async fn handle_command(
             debug!("Sending vision request with processed image");
 
             // Send request to groq
-            let response = send_vision_request(client, groq_key, &base64_img, msg_text).await;
+            let response = send_vision_request(client, groq_key, &base64_img, &msg_text).await;
             let response = match response {
                 Ok(response) => {
                     debug!("Received vision response from Groq: {:?}", response);
@@ -370,7 +372,6 @@ async fn send_vision_request(
 }
 
 fn get_image_from_message(message: &Message) -> Option<PhotoSize> {
-    // check stickers, replies
     if let Some(photo) = message.photo() {
         let photo = photo.first().unwrap();
         Some(photo.clone())
@@ -390,4 +391,10 @@ async fn download_and_encode_image(bot: &Bot, photo: &PhotoSize) -> anyhow::Resu
     let base64_img = general_purpose::STANDARD.encode(&buf).to_string();
 
     Ok(base64_img)
-}   
+}
+
+async fn remove_command(text: &str) -> String {
+    let mut words = text.split_whitespace();
+    words.next();
+    words.collect::<Vec<&str>>().join(" ").trim().to_string()
+}
