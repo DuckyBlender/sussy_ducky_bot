@@ -1,16 +1,16 @@
 use lambda_http::{run, service_fn, Body, Error, Request};
 
-use teloxide::net::Download;
+use base64::{engine::general_purpose, Engine as _};
+use reqwest::Client as ReqwestClient;
+use serde_json::{json, Value};
 use std::env;
+use teloxide::net::Download;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
 use teloxide::types::{Message, PhotoSize, ReplyParameters, UpdateKind};
 use teloxide::utils::command::BotCommands;
 use tracing::{debug, error, info, warn};
 use tracing_subscriber::fmt;
-use serde_json::{json, Value};
-use reqwest::Client as ReqwestClient;
-use base64::{engine::general_purpose, Engine as _};
 
 const BASE_URL: &str = "https://api.groq.com/openai/v1";
 
@@ -67,7 +67,7 @@ async fn handler(
     groq_key: &str,
 ) -> Result<lambda_http::Response<String>, lambda_http::Error> {
     debug!("Received a new request");
-    
+
     // Parse JSON webhook
     let bot = bot.clone();
 
@@ -75,7 +75,7 @@ async fn handler(
         Ok(message) => {
             debug!("Successfully parsed webhook");
             message
-        },
+        }
         Err(e) => {
             error!("Failed to parse webhook: {:?}", e);
             return Ok(lambda_http::Response::builder()
@@ -113,23 +113,69 @@ async fn handle_command(
     info!("Handling command: {:?}", command);
 
     // msg_text contains the text of the message or reply to a message with text
-    let msg_text = message
-        .text()
-        .or_else(|| message.reply_to_message().and_then(|m| m.text()))
-        .unwrap_or_default();
+    let msg_text = message.text();
+
+    if msg_text.is_none() {
+        warn!("No text found in the message");
+        bot.send_message(message.chat.id, "Please provide a message to analyze.")
+            .reply_parameters(ReplyParameters::new(message.id))
+            .await
+            .unwrap();
+        return Ok(lambda_http::Response::builder()
+            .status(200)
+            .body(String::new())
+            .unwrap());
+    }
+
+    let msg_text = msg_text.unwrap();
+    let msg_text = remove_command(msg_text).await;
+    let msg_text = if msg_text.is_empty() {
+        // Find in reply message
+        if let Some(reply) = message.reply_to_message() {
+            if let Some(text) = reply.text() {
+                text
+            } else {
+                warn!("No text found in the reply message");
+                bot.send_message(
+                    message.chat.id,
+                    "Please provide a prompt. It can be in the message or a reply to a message.",
+                )
+                .reply_parameters(ReplyParameters::new(message.id))
+                .await
+                .unwrap();
+                return Ok(lambda_http::Response::builder()
+                    .status(200)
+                    .body(String::new())
+                    .unwrap());
+            }
+        } else {
+            warn!("No text found in the message & no reply message");
+            bot.send_message(
+                message.chat.id,
+                "Please provide a prompt. It can be in the message or a reply to a message.",
+            )
+            .reply_parameters(ReplyParameters::new(message.id))
+            .await
+            .unwrap();
+            return Ok(lambda_http::Response::builder()
+                .status(200)
+                .body(String::new())
+                .unwrap());
+        }
+    } else {
+        &msg_text
+    };
 
     debug!("Message text: {}", msg_text);
 
     // Get the image file, if any
     let img = get_image_from_message(message);
-    
+
     if img.is_some() {
         debug!("Image file found in the message");
     } else {
         debug!("No image found in the message");
     }
-
-    let msg_text = remove_command(msg_text).await;
 
     match command {
         BotCommand::Help | BotCommand::Start => {
@@ -155,12 +201,12 @@ async fn handle_command(
             debug!("System prompt: {}", system_prompt);
 
             // Send request to groq
-            let response = send_chat_request(client, groq_key, system_prompt, &msg_text).await;
+            let response = send_chat_request(client, groq_key, system_prompt, msg_text).await;
             let response = match response {
                 Ok(response) => {
                     debug!("Received response from Groq: {:?}", response);
                     response
-                },
+                }
                 Err(e) => {
                     error!("Failed to get response from AI API: {:?}", e);
                     bot.send_message(message.chat.id, "Failed to get response from API")
@@ -229,12 +275,12 @@ async fn handle_command(
             debug!("Sending vision request with processed image");
 
             // Send request to groq
-            let response = send_vision_request(client, groq_key, &base64_img, &msg_text).await;
+            let response = send_vision_request(client, groq_key, &base64_img, msg_text).await;
             let response = match response {
                 Ok(response) => {
                     debug!("Received vision response from Groq: {:?}", response);
                     response
-                },
+                }
                 Err(e) => {
                     error!("Failed to get vision response from AI API: {:?}", e);
                     bot.send_message(message.chat.id, "Failed to get response from API")
@@ -378,15 +424,15 @@ fn get_image_from_message(message: &Message) -> Option<PhotoSize> {
     } else if let Some(photo) = message.reply_to_message().and_then(|m| m.photo()) {
         let photo = photo.first().unwrap();
         return Some(photo.clone());
-    }
-    else {
+    } else {
         return None;
     }
 }
 
 async fn download_and_encode_image(bot: &Bot, photo: &PhotoSize) -> anyhow::Result<String> {
     let mut buf: Vec<u8> = Vec::new();
-    bot.download_file(&photo.file.id, &mut buf).await?;
+    let file = bot.get_file(&photo.file.id).await?;
+    bot.download_file(&file.path, &mut buf).await?;
 
     let base64_img = general_purpose::STANDARD.encode(&buf).to_string();
 
@@ -395,6 +441,15 @@ async fn download_and_encode_image(bot: &Bot, photo: &PhotoSize) -> anyhow::Resu
 
 async fn remove_command(text: &str) -> String {
     let mut words = text.split_whitespace();
-    words.next();
-    words.collect::<Vec<&str>>().join(" ").trim().to_string()
+    // if first starts with /
+    let text = if let Some(word) = words.next() {
+        if word.starts_with('/') {
+            words.collect::<Vec<&str>>().join(" ")
+        } else {
+            text.to_string()
+        }
+    } else {
+        text.to_string()
+    };
+    text.trim().to_string()
 }
