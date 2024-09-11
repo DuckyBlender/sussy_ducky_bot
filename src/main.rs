@@ -15,7 +15,7 @@ use tracing_subscriber::fmt;
 const BASE_URL: &str = "https://api.groq.com/openai/v1";
 
 #[derive(BotCommands, Clone, Debug, PartialEq)]
-#[command(rename_rule = "lowercase")]
+#[command(rename_rule = "lowercase", description = "Models from GroqCloud & OpenRouter")]
 enum BotCommand {
     #[command(description = "display this text")]
     Help,
