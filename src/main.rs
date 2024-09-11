@@ -14,7 +14,7 @@ use tracing_subscriber::fmt;
 
 const BASE_URL: &str = "https://api.groq.com/openai/v1";
 
-#[derive(BotCommands, Clone, Debug)]
+#[derive(BotCommands, Clone, Debug, PartialEq)]
 #[command(rename_rule = "lowercase")]
 enum BotCommand {
     #[command(description = "display this text")]
@@ -112,13 +112,9 @@ async fn handle_command(
 ) -> Result<lambda_http::Response<String>, lambda_http::Error> {
     info!("Handling command: {:?}", command);
 
-    // msg_text contains the text of the message or reply to a message with text
-    let msg_text = message.text();
-
-    if msg_text.is_none() {
-        warn!("No text found in the message");
-        bot.send_message(message.chat.id, "Please provide a message to analyze.")
-            .reply_parameters(ReplyParameters::new(message.id))
+    if command == BotCommand::Help || command == BotCommand::Start {
+        info!("Sending help or start message");
+        bot.send_message(message.chat.id, BotCommand::descriptions().to_string())
             .await
             .unwrap();
         return Ok(lambda_http::Response::builder()
@@ -127,29 +123,10 @@ async fn handle_command(
             .unwrap());
     }
 
-    let msg_text = msg_text.unwrap();
-    let msg_text = remove_command(msg_text).await;
-    let msg_text = if msg_text.is_empty() {
-        // Find in reply message
-        if let Some(reply) = message.reply_to_message() {
-            if let Some(text) = reply.text() {
-                text
-            } else {
-                warn!("No text found in the reply message");
-                bot.send_message(
-                    message.chat.id,
-                    "Please provide a prompt. It can be in the message or a reply to a message.",
-                )
-                .reply_parameters(ReplyParameters::new(message.id))
-                .await
-                .unwrap();
-                return Ok(lambda_http::Response::builder()
-                    .status(200)
-                    .body(String::new())
-                    .unwrap());
-            }
-        } else {
-            warn!("No text found in the message & no reply message");
+    let msg_text = match find_prompt(message).await {
+        Some(prompt) => prompt,
+        None => {
+            warn!("No prompt found in the message or reply message");
             bot.send_message(
                 message.chat.id,
                 "Please provide a prompt. It can be in the message or a reply to a message.",
@@ -162,11 +139,7 @@ async fn handle_command(
                 .body(String::new())
                 .unwrap());
         }
-    } else {
-        &msg_text
     };
-
-    debug!("Message text: {}", msg_text);
 
     // Get the image file, if any
     let img = get_image_from_message(message);
@@ -178,13 +151,6 @@ async fn handle_command(
     }
 
     match command {
-        BotCommand::Help | BotCommand::Start => {
-            info!("Sending help or start message");
-            bot.send_message(message.chat.id, BotCommand::descriptions().to_string())
-                .await
-                .unwrap();
-        }
-
         BotCommand::Llama | BotCommand::Caveman => {
             info!("Handling Llama or Caveman command");
             // Typing indicator
@@ -201,7 +167,7 @@ async fn handle_command(
             debug!("System prompt: {}", system_prompt);
 
             // Send request to groq
-            let response = send_chat_request(client, groq_key, system_prompt, msg_text).await;
+            let response = send_chat_request(client, groq_key, system_prompt, &msg_text).await;
             let response = match response {
                 Ok(response) => {
                     debug!("Received response from Groq: {:?}", response);
@@ -275,7 +241,7 @@ async fn handle_command(
             debug!("Sending vision request with processed image");
 
             // Send request to groq
-            let response = send_vision_request(client, groq_key, &base64_img, msg_text).await;
+            let response = send_vision_request(client, groq_key, &base64_img, &msg_text).await;
             let response = match response {
                 Ok(response) => {
                     debug!("Received vision response from Groq: {:?}", response);
@@ -304,6 +270,9 @@ async fn handle_command(
                 .reply_parameters(ReplyParameters::new(message.id))
                 .await
                 .unwrap();
+        }
+        BotCommand::Help | BotCommand::Start => {
+            unreachable!();
         }
     }
 
@@ -452,4 +421,36 @@ async fn remove_command(text: &str) -> String {
         text.to_string()
     };
     text.trim().to_string()
+}
+
+async fn find_prompt(message: &Message) -> Option<String> {
+    // msg_text contains the text of the message or reply to a message with text
+    let msg_text = message.text();
+
+    if msg_text.is_none() {
+        warn!("No text found in the message");
+        return None;
+    }
+
+    let msg_text = msg_text.unwrap();
+    let msg_text = remove_command(msg_text).await;
+    let msg_text = if msg_text.is_empty() {
+        // Find in reply message
+        if let Some(reply) = message.reply_to_message() {
+            if let Some(text) = reply.text() {
+                text
+            } else {
+                warn!("No text found in the reply message");
+                return None;
+            }
+        } else {
+            warn!("No text found in the message & no reply message");
+            return None;
+        }
+    } else {
+        &msg_text
+    };
+
+    debug!("Message text: {}", msg_text);
+    Some(msg_text.to_string())
 }
