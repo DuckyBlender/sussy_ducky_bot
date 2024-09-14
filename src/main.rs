@@ -15,7 +15,10 @@ use tracing_subscriber::fmt;
 const BASE_URL: &str = "https://api.groq.com/openai/v1";
 
 #[derive(BotCommands, Clone, Debug, PartialEq)]
-#[command(rename_rule = "lowercase", description = "Models from GroqCloud & OpenRouter")]
+#[command(
+    rename_rule = "lowercase",
+    description = "Models from GroqCloud & OpenRouter"
+)]
 enum BotCommand {
     #[command(description = "display this text")]
     Help,
@@ -97,6 +100,21 @@ async fn handler(
     }
 
     debug!("No command found in the message");
+    // Secret bawialnia easter egg
+    if let UpdateKind::Message(message) = &update.kind {
+        if message.text().is_some()
+            && (message.chat.id == ChatId(-1001865084475)
+                || message.chat.id == ChatId(-1001641972650))
+        {
+            let random: f64 = rand::random();
+            debug!("Random number: {}", random);
+            if random < 0.01 {
+                return handle_command(bot.clone(), message, BotCommand::Caveman, client, groq_key)
+                    .await;
+            }
+        }
+    }
+
     Ok(lambda_http::Response::builder()
         .status(200)
         .body(String::new())
