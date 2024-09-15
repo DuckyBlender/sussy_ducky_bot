@@ -31,7 +31,7 @@ enum BotCommand {
     Llama,
     #[command(description = "pixtral 12b vision model", aliases = ["p"])]
     Pixtral,
-    #[command(description = "qwen2-vl 7b uncensored vision model", aliases = ["qwen2", "q", "v", "vision"])]
+    #[command(description = "qwen2-vl 7b uncensored vision model", aliases = ["qwen2", "q", "qwen", "v"])]
     Vision,
 }
 

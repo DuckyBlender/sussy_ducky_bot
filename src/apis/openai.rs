@@ -127,6 +127,13 @@ pub async fn openai_request(
     let status = response.status();
 
     if !status.is_success() {
+        if status.as_u16() == 429 {
+            let message: Value = response.json().await?;
+            let message = message["message"].as_str().unwrap_or("Rate limited");
+            error!("Rate limited: {}", message);
+            return Err(anyhow::anyhow!("rate limited: {}", message));
+        }
+        
         let response_body: Value = response.json().await?;
         let response_body_pretty = serde_json::to_string_pretty(&response_body)?;
         error!("Status non-200: {}", response_body_pretty);
