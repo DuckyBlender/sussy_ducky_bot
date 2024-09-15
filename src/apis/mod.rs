@@ -1,4 +1,3 @@
-mod groq;
-mod openrouter;
+mod openai;
 
-pub use groq::*;
+pub use openai::*;

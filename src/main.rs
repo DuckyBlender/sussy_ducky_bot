@@ -1,4 +1,4 @@
-use apis::send_groq_request;
+use apis::openai_request;
 use lambda_http::{run, service_fn, Error};
 
 use reqwest::Client as ReqwestClient;
@@ -8,7 +8,7 @@ use teloxide::prelude::*;
 use teloxide::types::{Message, ReplyParameters, UpdateKind};
 use teloxide::utils::command::BotCommands;
 use tracing::{debug, error, info, warn};
-use tracing_subscriber::fmt;
+use tracing_subscriber::EnvFilter;
 
 mod apis;
 
@@ -29,16 +29,21 @@ enum BotCommand {
     Caveman,
     #[command(description = "llama3.1 70b", alias = "l")]
     Llama,
-    #[command(description = "llava 7b vision model", alias = "v")]
+    #[command(description = "llava 7b vision model", aliases = ["v", "vision"])]
     Llava,
+    #[command(description = "pixtral 12b vision model", aliases = ["p"])]
+    Pixtral,
+    #[command(description = "qwen2-vl 7b uncensored vision model", aliases = ["qwen2", "q"])]
+    Qwen,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     // Initialize tracing for logging
-    fmt()
+    tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_target(false)
+        .with_env_filter(EnvFilter::new("sussy_ducky_bot=debug"))
         .init();
 
     info!("Starting the Telegram bot application");
@@ -47,7 +52,6 @@ async fn main() -> Result<(), Error> {
     let bot = Bot::new(env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set!"));
     info!("Telegram bot initialized");
 
-    let groq_key = env::var("GROQ_KEY").expect("GROQ_KEY not set!");
     let client = ReqwestClient::new();
     info!("Groq API client initialized");
 
@@ -61,14 +65,13 @@ async fn main() -> Result<(), Error> {
 
     // Run the Lambda function
     info!("Starting Lambda function");
-    run(service_fn(|req| handler(req, &bot, &client, &groq_key))).await
+    run(service_fn(|req| handler(req, &bot, &client))).await
 }
 
 async fn handler(
     req: lambda_http::Request,
     bot: &Bot,
     client: &ReqwestClient,
-    groq_key: &str,
 ) -> Result<lambda_http::Response<String>, lambda_http::Error> {
     debug!("Received a new request");
 
@@ -95,12 +98,13 @@ async fn handler(
             debug!("Received message: {}", text);
             if let Ok(command) = BotCommand::parse(text, bot.get_me().await.unwrap().username()) {
                 info!("Parsed command: {:?}", command);
-                return handle_command(bot.clone(), message, command, client, groq_key).await;
+                return handle_command(bot.clone(), message, command, client).await;
             }
         }
     }
 
     debug!("No command found in the message");
+
     // Secret bawialnia easter egg
     if let UpdateKind::Message(message) = &update.kind {
         if message.text().is_some()
@@ -111,8 +115,7 @@ async fn handler(
             debug!("Random number: {}", random);
             if random < 0.01 {
                 // 1% chance of triggering
-                return handle_command(bot.clone(), message, BotCommand::Caveman, client, groq_key)
-                    .await;
+                return handle_command(bot.clone(), message, BotCommand::Caveman, client).await;
             }
         }
     }
@@ -128,7 +131,6 @@ async fn handle_command(
     message: &Message,
     command: BotCommand,
     client: &ReqwestClient,
-    groq_key: &str,
 ) -> Result<lambda_http::Response<String>, lambda_http::Error> {
     info!("Handling command: {:?}", command);
 
@@ -170,134 +172,48 @@ async fn handle_command(
         debug!("No image found in the message");
     }
 
-    match command {
-        BotCommand::Llama | BotCommand::Caveman => {
-            info!("Handling Llama or Caveman command");
-            // Typing indicator
-            bot.send_chat_action(message.chat.id, teloxide::types::ChatAction::Typing)
-                .await
-                .unwrap();
+    let base64_img = match img {
+        Some(photo) => Some(download_and_encode_image(&bot, &photo).await.unwrap()),
+        None => None,
+    };
 
-            let system_prompt = match command {
-                BotCommand::Llama => "Be concise and precise. Don't be verbose. Answer in the user's language.",
-                BotCommand::Caveman => "You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc.",
-                _ => unreachable!(),
-            };
+    // Send the request
+    let res = openai_request(client, &msg_text, base64_img.as_deref(), command).await;
 
-            debug!("System prompt: {}", system_prompt);
+    // Catch error
+    if let Err(e) = res {
+        bot.send_message(message.chat.id, format!("error: {:?}", e))
+            .reply_parameters(ReplyParameters::new(message.id))
+            .await
+            .unwrap();
 
-            // Send request to groq
-            let response =
-                send_groq_request(client, groq_key, system_prompt, &msg_text, None).await;
-            let response = match response {
-                Ok(response) => {
-                    debug!("Received response from Groq: {:?}", response);
-                    response
-                }
-                Err(e) => {
-                    error!("Failed to get response from AI API: {:?}", e);
-                    bot.send_message(message.chat.id, "Failed to get response from API")
-                        .reply_parameters(ReplyParameters::new(message.id))
-                        .await
-                        .unwrap();
-                    return Ok(lambda_http::Response::builder()
-                        .status(200)
-                        .body("Failed to get response from AI API".into())
-                        .unwrap());
-                }
-            };
-
-            let text_response = response["choices"][0]["message"]["content"]
-                .as_str()
-                .unwrap_or("<no response>");
-
-            info!("Sending response to user: {}", text_response);
-
-            bot.send_message(message.chat.id, text_response)
-                .reply_parameters(ReplyParameters::new(message.id))
-                .await
-                .unwrap();
-        }
-        BotCommand::Llava => {
-            info!("Handling Llava command");
-            // If there is no image, return
-            let img = match img {
-                Some(img) => img,
-                None => {
-                    warn!("No image provided for Llava command");
-                    bot.send_message(message.chat.id, "Please provide an image to analyze.")
-                        .reply_parameters(ReplyParameters::new(message.id))
-                        .await
-                        .unwrap();
-                    return Ok(lambda_http::Response::builder()
-                        .status(200)
-                        .body(String::new())
-                        .unwrap());
-                }
-            };
-
-            // Typing indicator
-            bot.send_chat_action(message.chat.id, teloxide::types::ChatAction::Typing)
-                .await
-                .unwrap();
-
-            debug!("Downloading and processing image");
-
-            // Download and process the image
-            let base64_img = match download_and_encode_image(&bot, &img).await {
-                Ok(result) => result,
-                Err(e) => {
-                    error!("Failed to download and encode image: {:?}", e);
-                    bot.send_message(message.chat.id, "Failed to process the image")
-                        .reply_parameters(ReplyParameters::new(message.id))
-                        .await
-                        .unwrap();
-                    return Ok(lambda_http::Response::builder()
-                        .status(200)
-                        .body("Failed to process the image".into())
-                        .unwrap());
-                }
-            };
-
-            debug!("Sending vision request with processed image");
-
-            // Send request to groq
-            let response =
-                send_groq_request(client, groq_key, &base64_img, &msg_text, Some(&base64_img))
-                    .await;
-            let response = match response {
-                Ok(response) => {
-                    debug!("Received vision response from Groq: {:?}", response);
-                    response
-                }
-                Err(e) => {
-                    error!("Failed to get vision response from AI API: {:?}", e);
-                    bot.send_message(message.chat.id, "Failed to get response from API")
-                        .reply_parameters(ReplyParameters::new(message.id))
-                        .await
-                        .unwrap();
-                    return Ok(lambda_http::Response::builder()
-                        .status(200)
-                        .body("Failed to get response from AI API".into())
-                        .unwrap());
-                }
-            };
-
-            let text_response = response["choices"][0]["message"]["content"]
-                .as_str()
-                .unwrap_or("<no response>");
-
-            info!("Sending vision response to user: {}", text_response);
-
-            bot.send_message(message.chat.id, text_response)
-                .reply_parameters(ReplyParameters::new(message.id))
-                .await
-                .unwrap();
-        }
-        BotCommand::Help | BotCommand::Start => {
-            unreachable!();
-        }
+        return Ok(lambda_http::Response::builder()
+            .status(200)
+            .body(String::new())
+            .unwrap());
     }
+
+    let response_text = res.unwrap();
+
+    // Check if empty response
+    if response_text.is_empty() {
+        warn!("Empty response from API");
+        bot.send_message(message.chat.id, "<no text>")
+            .reply_parameters(ReplyParameters::new(message.id))
+            .await
+            .unwrap();
+        return Ok(lambda_http::Response::builder()
+            .status(200)
+            .body(String::new())
+            .unwrap());
+    }
+
+    // Send the response
+    info!("Sending response: {}", response_text);
+    bot.send_message(message.chat.id, response_text)
+        .reply_parameters(ReplyParameters::new(message.id))
+        .await
+        .unwrap();
 
     Ok(lambda_http::Response::builder()
         .status(200)

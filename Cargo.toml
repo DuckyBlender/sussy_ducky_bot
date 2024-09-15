@@ -20,7 +20,7 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
     "fmt",
 ] }
 teloxide = { version = "0.13", features = ["macros"] }
-anyhow = "1.0.87"
+anyhow = "1.0.89"
 base64 = "0.22.1"
 rand = "0.8.5"
 # tempfile = "3.12.0"
