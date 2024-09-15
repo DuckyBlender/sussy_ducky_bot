@@ -17,23 +17,24 @@ Serverless Rust Telegram bot that interacts with OpenAI and other AI models thro
    - `GROQ_KEY`: API key for GroqCloud.
    - `OPENROUTER_KEY`: API key for OpenRouter.
 
-2. **Dependencies**: The project uses the following Rust crates:
-   - `reqwest` for HTTP requests.
-   - `teloxide` for Telegram bot API.
-   - `lambda_http` for AWS Lambda integration.
-   - `tracing` for logging.
+2. **Cargo Lambda**: Install the `cargo-lambda` tool. More information can be found [here](https://www.cargo-lambda.info/guide/installation.html).
+
+> [!IMPORTANT]  
+> Don't install cargo lambda using `cargo install cargo-lambda`, as it doesn't support ARM64. Because of this, the brew installation is recommended.
+
+3. **AWS CLI**: Ensure you have the AWS CLI installed and configured.
 
 ## Commands
 
 - `/help` & `/start` - Displays help text.
-- `/caveman` - Uses the "caveman" model.
-- `/llama` - Uses the "llama3.1 70b" model.
-- `/pixtral` - Uses the "pixtral 12b" vision model.
-- `/vision` - Uses the "qwen2-vl 7b" vision model.
+- `/caveman` - Uses the "llama3.1 70b" model from GroqCloud with a custom system prompt.
+- `/llama` - Uses the "llama3.1 70b" model from GroqCloud
+- `/pixtral` - Uses the "pixtral 12b" vision model from OpenRouter.
+- `/vision` - Uses the "qwen2-vl 7b" uncensored vision model from OpenRouter.
 
 ## Running the Bot
 
-To run the bot, ensure all environment variables are set, then execute the deploy.sh script
+To run the bot, ensure all environment variables are set, then execute the `deploy.sh` script. It compiles the project in arm64 and deploys it to AWS Lambda.
 
 ## Contributing
 
