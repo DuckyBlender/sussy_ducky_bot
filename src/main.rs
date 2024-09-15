@@ -142,27 +142,35 @@ async fn handle_command(
             .body(String::new())
             .unwrap());
     }
+    
+    // Get the image file, if any
+    let img = get_image_from_message(message);
 
     let msg_text = match find_prompt(message).await {
         Some(prompt) => prompt,
         None => {
-            warn!("No prompt found in the message or reply message");
-            bot.send_message(
-                message.chat.id,
-                "Please provide a prompt. It can be in the message or a reply to a message.",
-            )
-            .reply_parameters(ReplyParameters::new(message.id))
-            .await
-            .unwrap();
-            return Ok(lambda_http::Response::builder()
-                .status(200)
-                .body(String::new())
-                .unwrap());
+            if img.is_some() {
+                info!("No prompt found in the message or reply message, but image found");
+                // Return msg_text as an empty string
+                String::new()
+            } else {
+                warn!("No prompt found in the message or reply message");
+                bot.send_message(
+                    message.chat.id,
+                    "Please provide a prompt. It can be in the message or a reply to a message.",
+                )
+                .reply_parameters(ReplyParameters::new(message.id))
+                .await
+                .unwrap();
+                
+                return Ok(lambda_http::Response::builder()
+                    .status(200)
+                    .body(String::new())
+                    .unwrap());
+            }
         }
-    };
+    };    
 
-    // Get the image file, if any
-    let img = get_image_from_message(message);
 
     let base64_img = match img {
         Some(photo) => Some(download_and_encode_image(&bot, &photo).await.unwrap()),
