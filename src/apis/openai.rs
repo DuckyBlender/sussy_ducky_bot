@@ -1,9 +1,11 @@
-use std::env;
+use std::{env, str::FromStr};
 
 use anyhow::Result;
 use reqwest::Client as ReqwestClient;
 use serde_json::{json, Value};
-use tracing::error;
+use tracing::{debug, error};
+
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
 use crate::BotCommand;
 
@@ -11,6 +13,7 @@ use crate::BotCommand;
 
 const GROQ_BASE_URL: &str = "https://api.groq.com/openai/v1";
 const OPENROUTER_BASE_URL: &str = "https://openrouter.ai/api/v1";
+
 const OPENROUTER_HEADERS: [&str; 2] = [
     "X-Title: sussy_ducky_bot",
     "HTTP-Referer: https://t.me/sussy_ducky_bot",
@@ -33,15 +36,14 @@ pub async fn openai_request(
     let model_str = match model {
         BotCommand::Caveman => "llama-3.1-70b-versatile",
         BotCommand::Llama => "llama-3.1-70b-versatile",
-        BotCommand::Llava => "llava-v1.5-7b-4096-preview",
         BotCommand::Pixtral => "mistralai/pixtral-12b:free",
-        BotCommand::Qwen => "qwen/qwen-2-vl-7b-instruct:free",
+        BotCommand::Vision => "qwen/qwen-2-vl-7b-instruct:free",
         BotCommand::Help | BotCommand::Start => unreachable!(),
     };
 
     let provider = match model {
-        BotCommand::Caveman | BotCommand::Llama | BotCommand::Llava => Providers::Groq,
-        BotCommand::Pixtral | BotCommand::Qwen => Providers::OpenRouter,
+        BotCommand::Caveman | BotCommand::Llama => Providers::Groq,
+        BotCommand::Pixtral | BotCommand::Vision => Providers::OpenRouter,
         BotCommand::Help | BotCommand::Start => unreachable!(),
     };
 
@@ -58,96 +60,83 @@ pub async fn openai_request(
     let system_prompt = match model {
         BotCommand::Caveman => Some("You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc."),
         BotCommand::Llama => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
-        BotCommand::Llava | BotCommand::Pixtral | BotCommand::Qwen => None,
+        BotCommand::Pixtral | BotCommand::Vision => None,
         BotCommand::Help | BotCommand::Start => unreachable!(),
     };
 
-    let mut request_body = json!({
-        "model": model_str,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": prompt
-                    }
-                ]
-            }
-        ],
-        "max_tokens": 300
-    });
+    let mut messages = vec![];
 
-    // Add image to the request
-    if let Some(img) = base64_img {
-        let img_url = format!("data:image/jpeg;base64,{}", img);
-        let img_json = json!({
+    // Add system message if provided
+    if let Some(system) = system_prompt {
+        messages.push(json!({
+            "role": "system",
+            "content": system
+        }));
+    }
+
+    // Construct user message content
+    let mut user_content = vec![json!({
+        "type": "text",
+        "text": prompt
+    })];
+
+    // Add image if provided
+    if let Some(image) = base64_img {
+        user_content.push(json!({
             "type": "image_url",
             "image_url": {
-                "url": img_url
+                "url": format!("data:image/jpeg;base64,{}", image)
             }
-        });
-        let messages = request_body["messages"].as_array_mut().unwrap();
-        let user = messages[0].as_object_mut().unwrap();
-        let content = user["content"].as_array_mut().unwrap();
-        content.push(img_json);
+        }));
     }
 
-    // Add system prompt
-    if let Some(prompt) = system_prompt {
-        let system_prompt = json!({
-            "role": "system",
-            "content": [
-                {
-                    "type": "text",
-                    "text": prompt
-                }
-            ]
-        });
-        let messages = request_body["messages"].as_array_mut().unwrap();
-        messages.push(system_prompt);
-    }
-
-    use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+    // Add user message
+    messages.push(json!({
+        "role": "user",
+        "content": user_content
+    }));
 
     let additional_headers = match provider {
         Providers::Groq => HeaderMap::new(),
         Providers::OpenRouter => {
             let mut headers = HeaderMap::new();
             for header in OPENROUTER_HEADERS.iter() {
-                let parts: Vec<&str> = header.splitn(2, ": ").collect();
-                if parts.len() == 2 {
-                    headers.insert(
-                        HeaderName::from_lowercase(parts[0].as_bytes()).unwrap(),
-                        HeaderValue::from_str(parts[1]).unwrap(),
-                    );
-                }
+                let header_parts: Vec<&str> = header.splitn(2, ": ").collect();
+                let header_name = HeaderName::from_str(header_parts[0].trim()).unwrap();
+                let header_value = HeaderValue::from_str(header_parts[1].trim()).unwrap();
+                headers.insert(header_name, header_value);
             }
             headers
         }
     };
 
+    debug!("headers: {:?}", additional_headers);
+
     let response = client
         .post(format!("{provider_base_url}/chat/completions"))
         .bearer_auth(api_key)
         .headers(additional_headers)
-        .json(&request_body)
+        .json(&json!({
+            "model": model_str,
+            "messages": messages,
+            "max_tokens": 512,
+        }))
         .send()
         .await?;
 
     let status = response.status();
 
     if !status.is_success() {
-        response.json().await?;
-        let response_body = serde_json::to_string_pretty(&())?;
-        error!("Status non-200: {}", response_body);
+        let response_body: Value = response.json().await?;
+        let response_body_pretty = serde_json::to_string_pretty(&response_body)?;
+        error!("Status non-200: {}", response_body_pretty);
         return Err(anyhow::anyhow!("something went wrong :("));
     }
 
     let response_body = response.text().await?;
     let json_response: Value = serde_json::from_str(&response_body)?;
-    let text_resposne = json_response["choices"][0]["message"]["content"]
+    let text_response = json_response["choices"][0]["message"]["content"]
         .as_str()
         .ok_or_else(|| anyhow::anyhow!("No text found in the response"))?;
-    Ok(text_resposne.to_string())
+    Ok(text_response.to_string())
 }

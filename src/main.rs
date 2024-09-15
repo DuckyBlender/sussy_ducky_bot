@@ -29,12 +29,10 @@ enum BotCommand {
     Caveman,
     #[command(description = "llama3.1 70b", alias = "l")]
     Llama,
-    #[command(description = "llava 7b vision model", aliases = ["v", "vision"])]
-    Llava,
     #[command(description = "pixtral 12b vision model", aliases = ["p"])]
     Pixtral,
-    #[command(description = "qwen2-vl 7b uncensored vision model", aliases = ["qwen2", "q"])]
-    Qwen,
+    #[command(description = "qwen2-vl 7b uncensored vision model", aliases = ["qwen2", "q", "v", "vision"])]
+    Vision,
 }
 
 #[tokio::main]
@@ -86,7 +84,7 @@ async fn handler(
         Err(e) => {
             error!("Failed to parse webhook: {:?}", e);
             return Ok(lambda_http::Response::builder()
-                .status(400)
+                .status(200)
                 .body("Failed to parse webhook".into())
                 .unwrap());
         }
@@ -176,6 +174,11 @@ async fn handle_command(
         Some(photo) => Some(download_and_encode_image(&bot, &photo).await.unwrap()),
         None => None,
     };
+
+    // Send typing indicator
+    bot.send_chat_action(message.chat.id, teloxide::types::ChatAction::Typing)
+        .await
+        .unwrap();
 
     // Send the request
     let res = openai_request(client, &msg_text, base64_img.as_deref(), command).await;
