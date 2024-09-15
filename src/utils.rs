@@ -4,12 +4,15 @@ use tracing::*;
 
 pub fn get_image_from_message(message: &Message) -> Option<PhotoSize> {
     if let Some(photo) = message.photo() {
+        debug!("Photo found in the message");
         let photo = photo.first().unwrap();
         Some(photo.clone())
     } else if let Some(photo) = message.reply_to_message().and_then(|m| m.photo()) {
+        debug!("Photo found in the reply message");
         let photo = photo.first().unwrap();
         return Some(photo.clone());
     } else {
+        debug!("No photo found in the message or reply message");
         return None;
     }
 }

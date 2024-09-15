@@ -164,12 +164,6 @@ async fn handle_command(
     // Get the image file, if any
     let img = get_image_from_message(message);
 
-    if img.is_some() {
-        debug!("Image file found in the message");
-    } else {
-        debug!("No image found in the message");
-    }
-
     let base64_img = match img {
         Some(photo) => Some(download_and_encode_image(&bot, &photo).await.unwrap()),
         None => None,
