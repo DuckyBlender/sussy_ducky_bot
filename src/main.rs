@@ -5,7 +5,7 @@ use reqwest::Client as ReqwestClient;
 use std::env;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
-use teloxide::types::{Message, ReplyParameters, UpdateKind};
+use teloxide::types::{Message, ParseMode, ReplyParameters, UpdateKind};
 use teloxide::utils::command::BotCommands;
 use tracing::{debug, error, info, warn};
 use tracing_subscriber::EnvFilter;
@@ -213,12 +213,25 @@ async fn handle_command(
             .unwrap());
     }
 
-    // Send the response
-    info!("Sending response: {}", response_text);
-    bot.send_message(message.chat.id, response_text)
+    // Escape markdown characters
+    let escaped_response_text = escape_markdown(&response_text);
+
+    debug!("Before escaping: {}", response_text);
+    debug!("After escaping: {}", escaped_response_text);
+
+    // Try sending the response as markdown
+    let res = bot.send_message(message.chat.id, escaped_response_text)
         .reply_parameters(ReplyParameters::new(message.id))
-        .await
-        .unwrap();
+        .parse_mode(ParseMode::MarkdownV2)
+        .await;
+
+    if let Err(e) = res {
+        error!("Failed to send markdown message: {:?}", e);
+        bot.send_message(message.chat.id, response_text)
+            .reply_parameters(ReplyParameters::new(message.id))
+            .await
+            .unwrap();
+    }
 
     Ok(lambda_http::Response::builder()
         .status(200)

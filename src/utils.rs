@@ -90,3 +90,16 @@ pub async fn parse_webhook(
     debug!("Successfully parsed webhook");
     Ok(body_json)
 }
+
+pub fn escape_markdown(input: &str) -> String {
+    let chars_to_escape = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+    let mut result = String::new();
+    for c in input.chars() {
+        if chars_to_escape.contains(&c) {
+            result.push('\\');
+        }
+        result.push(c);
+    }
+
+    result
+}
