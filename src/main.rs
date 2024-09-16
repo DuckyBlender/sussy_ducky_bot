@@ -142,7 +142,7 @@ async fn handle_command(
             .body(String::new())
             .unwrap());
     }
-    
+
     // Get the image file, if any
     let img = get_image_from_message(message);
 
@@ -162,15 +162,14 @@ async fn handle_command(
                 .reply_parameters(ReplyParameters::new(message.id))
                 .await
                 .unwrap();
-                
+
                 return Ok(lambda_http::Response::builder()
                     .status(200)
                     .body(String::new())
                     .unwrap());
             }
         }
-    };    
-
+    };
 
     let base64_img = match img {
         Some(photo) => Some(download_and_encode_image(&bot, &photo).await.unwrap()),
@@ -220,7 +219,8 @@ async fn handle_command(
     debug!("After escaping: {}", escaped_response_text);
 
     // Try sending the response as markdown
-    let res = bot.send_message(message.chat.id, escaped_response_text)
+    let res = bot
+        .send_message(message.chat.id, escaped_response_text)
         .reply_parameters(ReplyParameters::new(message.id))
         .parse_mode(ParseMode::MarkdownV2)
         .await;

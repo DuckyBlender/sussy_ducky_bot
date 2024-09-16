@@ -92,7 +92,9 @@ pub async fn parse_webhook(
 }
 
 pub fn escape_markdown(input: &str) -> String {
-    let chars_to_escape = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+    let chars_to_escape = [
+        '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!',
+    ];
     let mut result = String::new();
     for c in input.chars() {
         if chars_to_escape.contains(&c) {

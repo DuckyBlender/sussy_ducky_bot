@@ -3,7 +3,7 @@ use std::{env, str::FromStr};
 use anyhow::Result;
 use reqwest::Client as ReqwestClient;
 use serde_json::{json, Value};
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
@@ -112,15 +112,19 @@ pub async fn openai_request(
 
     debug!("headers: {:?}", additional_headers);
 
+    let json = &json!({
+        "model": model_str,
+        "messages": messages,
+        "max_tokens": 512,
+    });
+
+    info!("JSON: {}", serde_json::to_string_pretty(json)?);
+
     let response = client
         .post(format!("{provider_base_url}/chat/completions"))
         .bearer_auth(api_key)
         .headers(additional_headers)
-        .json(&json!({
-            "model": model_str,
-            "messages": messages,
-            "max_tokens": 512,
-        }))
+        .json(json)
         .send()
         .await?;
 
@@ -133,7 +137,7 @@ pub async fn openai_request(
             error!("Rate limited: {}", message);
             return Err(anyhow::anyhow!("rate limited: {}", message));
         }
-        
+
         let response_body: Value = response.json().await?;
         let response_body_pretty = serde_json::to_string_pretty(&response_body)?;
         error!("Status non-200: {}", response_body_pretty);
