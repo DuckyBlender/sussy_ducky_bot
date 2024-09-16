@@ -118,7 +118,7 @@ pub async fn openai_request(
         "max_tokens": 512,
     });
 
-    info!("JSON: {}", serde_json::to_string_pretty(json)?);
+    // info!("JSON: {}", serde_json::to_string_pretty(json)?);
 
     let response = client
         .post(format!("{provider_base_url}/chat/completions"))
