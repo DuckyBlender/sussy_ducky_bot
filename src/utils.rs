@@ -55,19 +55,28 @@ pub async fn find_prompt(message: &Message) -> Option<String> {
     let msg_text = remove_command(msg_text).await;
     let msg_text = if msg_text.is_empty() {
         // Find in reply message
-        if let Some(reply) = message.reply_to_message() {
-            if let Some(text) = reply.text() {
-                text
-            } else {
-                warn!("No text found in the reply message");
+        match message.reply_to_message() {
+            Some(reply) => match reply.text() {
+                Some(text) => {
+                    let msg_text = remove_command(text).await;
+                    if msg_text.is_empty() {
+                        warn!("No text found in the reply message");
+                        return None;
+                    }
+                    msg_text
+                }
+                None => {
+                    warn!("No text found in the reply message");
+                    return None;
+                }
+            },
+            None => {
+                warn!("No text found in the message & no reply message");
                 return None;
             }
-        } else {
-            warn!("No text found in the message & no reply message");
-            return None;
         }
     } else {
-        &msg_text
+        msg_text
     };
 
     debug!("Message text: {}", msg_text);

@@ -3,7 +3,7 @@ use std::{env, str::FromStr};
 use anyhow::Result;
 use reqwest::Client as ReqwestClient;
 use serde_json::{json, Value};
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
