@@ -137,9 +137,20 @@ async fn handle_command(
             .unwrap());
     }
 
-    // Flux command
-    // Flux command
 if command == BotCommand::Flux {
+    // This command is owner-only
+    if message.from.clone().unwrap().id != UserId(5337682436) {
+        info!("Unauthorized user tried to use the Flux command");
+        bot.send_message(message.chat.id, "You are not authorized to use this command.")
+            .reply_parameters(ReplyParameters::new(message.id))
+            .await
+            .unwrap();
+        return Ok(lambda_http::Response::builder()
+            .status(200)
+            .body(String::new())
+            .unwrap());
+    }
+
     // Just the prompt, no image
     let msg_text = match find_prompt(message).await {
         Some(prompt) => prompt,
