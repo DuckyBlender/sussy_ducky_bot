@@ -6,6 +6,7 @@
 use apis::{FalClient, ImageRequest, OpenAIClient};
 use lambda_http::{run, service_fn, Error};
 use reqwest::Url;
+use teloxide::utils::markdown;
 
 use std::env;
 use teloxide::payloads::SendMessageSetters;
@@ -19,7 +20,7 @@ mod apis;
 
 mod utils;
 use utils::{
-    download_and_encode_image, escape_markdown, find_prompt, get_image_from_message, parse_webhook,
+    download_and_encode_image, find_prompt, get_image_from_message, parse_webhook,
 };
 
 #[derive(BotCommands, Clone, Debug, PartialEq)]
@@ -360,7 +361,7 @@ async fn handle_command(
     }
 
     // Escape markdown characters
-    let escaped_response_text = escape_markdown(&response_text);
+    let escaped_response_text = markdown::escape(&response_text);
 
     debug!("Before escaping: {}", response_text);
     debug!("After escaping: {}", escaped_response_text);
@@ -378,6 +379,9 @@ async fn handle_command(
             .reply_parameters(ReplyParameters::new(message.id))
             .await
             .unwrap();
+        info!("Plain text message sent successfully");
+    } else {
+        info!("Markdown message sent successfully");
     }
 
     Ok(lambda_http::Response::builder()
