@@ -1,7 +1,10 @@
 use std::{env, str::FromStr};
 
 use anyhow::Result;
-use reqwest::{Client as ReqwestClient, header::{HeaderMap, HeaderName, HeaderValue}};
+use reqwest::{
+    header::{HeaderMap, HeaderName, HeaderValue},
+    Client as ReqwestClient,
+};
 use serde_json::{json, Value};
 use tracing::{debug, error};
 
@@ -34,9 +37,13 @@ impl OpenAIClient {
 
     fn get_model_and_provider(model: &BotCommand) -> (String, Providers) {
         match model {
-            BotCommand::Caveman => ("llama-3.1-70b-versatile".to_string(), Providers::Groq),
-            BotCommand::Llama => ("llama-3.1-70b-versatile".to_string(), Providers::Groq),
-            BotCommand::Vision => ("mistralai/pixtral-12b:free".to_string(), Providers::OpenRouter),
+            BotCommand::Llama | BotCommand::Caveman => {
+                ("llama-3.1-70b-versatile".to_string(), Providers::Groq)
+            }
+            BotCommand::Vision => (
+                "mistralai/pixtral-12b:free".to_string(),
+                Providers::OpenRouter,
+            ),
             BotCommand::Help | BotCommand::Start | BotCommand::Flux => unreachable!(),
         }
     }
@@ -64,12 +71,12 @@ impl OpenAIClient {
         }
     }
 
-    fn get_additional_headers(provider: Providers) -> HeaderMap {
+    fn get_additional_headers(provider: &Providers) -> HeaderMap {
         match provider {
             Providers::Groq => HeaderMap::new(),
             Providers::OpenRouter => {
                 let mut headers = HeaderMap::new();
-                for header in OPENROUTER_HEADERS.iter() {
+                for header in &OPENROUTER_HEADERS {
                     let header_parts: Vec<&str> = header.splitn(2, ": ").collect();
                     let header_name = HeaderName::from_str(header_parts[0].trim()).unwrap();
                     let header_value = HeaderValue::from_str(header_parts[1].trim()).unwrap();
@@ -123,7 +130,7 @@ impl OpenAIClient {
             "content": user_content
         }));
 
-        let additional_headers = Self::get_additional_headers(provider);
+        let additional_headers = Self::get_additional_headers(&provider);
 
         debug!("headers: {:?}", additional_headers);
 
@@ -133,7 +140,8 @@ impl OpenAIClient {
             "max_tokens": 512,
         });
 
-        let response = self.client
+        let response = self
+            .client
             .post(format!("{provider_base_url}/chat/completions"))
             .bearer_auth(api_key)
             .headers(additional_headers)

@@ -1,3 +1,8 @@
+#![warn(clippy::all, clippy::pedantic)]
+#![allow(clippy::unreadable_literal)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::too_many_lines)]
+
 use apis::{FalClient, ImageRequest, OpenAIClient};
 use lambda_http::{run, service_fn, Error};
 use reqwest::Url;
@@ -13,7 +18,9 @@ use tracing_subscriber::EnvFilter;
 mod apis;
 
 mod utils;
-use utils::*;
+use utils::{
+    download_and_encode_image, escape_markdown, find_prompt, get_image_from_message, parse_webhook,
+};
 
 #[derive(BotCommands, Clone, Debug, PartialEq)]
 #[command(
@@ -71,7 +78,7 @@ async fn handler(
     // Parse JSON webhook
     let bot = bot.clone();
 
-    let update = match parse_webhook(req).await {
+    let update = match parse_webhook(&req) {
         Ok(message) => {
             debug!("Successfully parsed webhook");
             message
@@ -137,24 +144,25 @@ async fn handle_command(
             .unwrap());
     }
 
-if command == BotCommand::Flux {
-    // This command is owner-only
-    if message.from.clone().unwrap().id != UserId(5337682436) {
-        info!("Unauthorized user tried to use the Flux command");
-        bot.send_message(message.chat.id, "You are not authorized to use this command.")
+    if command == BotCommand::Flux {
+        // This command is owner-only
+        if message.from.clone().unwrap().id != UserId(5337682436) {
+            info!("Unauthorized user tried to use the Flux command");
+            bot.send_message(
+                message.chat.id,
+                "You are not authorized to use this command.",
+            )
             .reply_parameters(ReplyParameters::new(message.id))
             .await
             .unwrap();
-        return Ok(lambda_http::Response::builder()
-            .status(200)
-            .body(String::new())
-            .unwrap());
-    }
+            return Ok(lambda_http::Response::builder()
+                .status(200)
+                .body(String::new())
+                .unwrap());
+        }
 
-    // Just the prompt, no image
-    let msg_text = match find_prompt(message).await {
-        Some(prompt) => prompt,
-        None => {
+        // Just the prompt, no image
+        let Some(msg_text) = find_prompt(message).await else {
             warn!("No prompt found in the message or reply message");
             bot.send_message(
                 message.chat.id,
@@ -168,47 +176,27 @@ if command == BotCommand::Flux {
                 .status(200)
                 .body(String::new())
                 .unwrap());
-        }
-    };
+        };
 
-    // Send typing indicator
-    bot.send_chat_action(message.chat.id, teloxide::types::ChatAction::Typing)
-        .await
-        .unwrap();
+        // Send typing indicator
+        bot.send_chat_action(message.chat.id, teloxide::types::ChatAction::Typing)
+            .await
+            .unwrap();
 
-    // Send the request
-    let image_request = ImageRequest {
-        prompt: msg_text,
-        image_size: "landscape_4_3".to_string(),
-        num_inference_steps: 4,
-        num_images: 1,
-        enable_safety_checker: false,
-    };
+        // Send the request
+        let image_request = ImageRequest {
+            prompt: msg_text,
+            image_size: "landscape_4_3".to_string(),
+            num_inference_steps: 4,
+            num_images: 1,
+            enable_safety_checker: false,
+        };
 
-    let client = FalClient::new();
-    let response = match client.submit_request(image_request).await {
-        Ok(response) => response,
-        Err(err) => {
-            error!("Error submitting request: {}", err);
-            return Ok(lambda_http::Response::builder()
-                .status(200)
-                .body(String::new())
-                .unwrap());
-        }
-    };
-
-    let mut total_waiting = 0;
-
-    // Initial wait of 1 second
-    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-    total_waiting += 1;
-
-    let mut status;
-    loop {
-        status = match client.check_status(&response.request_id).await {
-            Ok(status) => status,
+        let client = FalClient::new();
+        let response = match client.submit_request(image_request).await {
+            Ok(response) => response,
             Err(err) => {
-                error!("Error checking status: {}", err);
+                error!("Error submitting request: {}", err);
                 return Ok(lambda_http::Response::builder()
                     .status(200)
                     .body(String::new())
@@ -216,65 +204,86 @@ if command == BotCommand::Flux {
             }
         };
 
-        debug!("Request status: {:?}", status.status);
+        let mut total_waiting = 0;
 
-        if status.status.to_lowercase() == "completed" {
-            info!("Request completed, total waiting time: {} seconds", total_waiting);
-            break;
-        }
-
-        // Wait for 1 second before checking again
+        // Initial wait of 1 second
         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         total_waiting += 1;
+
+        let mut status;
+        loop {
+            status = match client.check_status(&response.request_id).await {
+                Ok(status) => status,
+                Err(err) => {
+                    error!("Error checking status: {}", err);
+                    return Ok(lambda_http::Response::builder()
+                        .status(200)
+                        .body(String::new())
+                        .unwrap());
+                }
+            };
+
+            debug!("Request status: {:?}", status.status);
+
+            if status.status.to_lowercase() == "completed" {
+                info!(
+                    "Request completed, total waiting time: {} seconds",
+                    total_waiting
+                );
+                break;
+            }
+
+            // Wait for 1 second before checking again
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+            total_waiting += 1;
+        }
+
+        let result = match client.get_result(&response.request_id).await {
+            Ok(result) => result,
+            Err(err) => {
+                error!("Error fetching result: {}", err);
+                return Ok(lambda_http::Response::builder()
+                    .status(200)
+                    .body(String::new())
+                    .unwrap());
+            }
+        };
+
+        for image in result.images {
+            // info!("Image URL: {}", image.url);
+
+            if let Err(err) = bot
+                .send_chat_action(message.chat.id, teloxide::types::ChatAction::UploadPhoto)
+                .await
+            {
+                error!("Failed to send chat action: {}", err);
+                return Ok(lambda_http::Response::builder()
+                    .status(200)
+                    .body(String::new())
+                    .unwrap());
+            }
+
+            if let Err(err) = bot
+                .send_photo(
+                    message.chat.id,
+                    InputFile::url(Url::parse(&image.url).unwrap()),
+                )
+                .reply_parameters(ReplyParameters::new(message.id))
+                .await
+            {
+                error!("Failed to send photo: {}", err);
+                return Ok(lambda_http::Response::builder()
+                    .status(200)
+                    .body(String::new())
+                    .unwrap());
+            }
+        }
+
+        return Ok(lambda_http::Response::builder()
+            .status(200)
+            .body(String::new())
+            .unwrap());
     }
-
-    let result = match client.get_result(&response.request_id).await {
-        Ok(result) => result,
-        Err(err) => {
-            error!("Error fetching result: {}", err);
-            return Ok(lambda_http::Response::builder()
-                .status(200)
-                .body(String::new())
-                .unwrap());
-        }
-    };
-
-    for image in result.images {
-        // info!("Image URL: {}", image.url);
-
-        if let Err(err) = bot
-            .send_chat_action(message.chat.id, teloxide::types::ChatAction::UploadPhoto)
-            .await
-        {
-            error!("Failed to send chat action: {}", err);
-            return Ok(lambda_http::Response::builder()
-                .status(200)
-                .body(String::new())
-                .unwrap());
-        }
-
-        if let Err(err) = bot
-            .send_photo(
-                message.chat.id,
-                InputFile::url(Url::parse(&image.url).unwrap()),
-            )
-            .reply_parameters(ReplyParameters::new(message.id))
-            .await
-        {
-            error!("Failed to send photo: {}", err);
-            return Ok(lambda_http::Response::builder()
-                .status(200)
-                .body(String::new())
-                .unwrap());
-        }
-    }
-
-    return Ok(lambda_http::Response::builder()
-        .status(200)
-        .body(String::new())
-        .unwrap());
-}
-
 
     // Now all that is left is the OpenAI-compatible models
 
@@ -324,7 +333,7 @@ if command == BotCommand::Flux {
 
     // Catch error
     if let Err(e) = res {
-        bot.send_message(message.chat.id, format!("error: {:?}", e))
+        bot.send_message(message.chat.id, format!("error: {e:?}"))
             .reply_parameters(ReplyParameters::new(message.id))
             .await
             .unwrap();
@@ -376,5 +385,3 @@ if command == BotCommand::Flux {
         .body(String::new())
         .unwrap())
 }
-
-

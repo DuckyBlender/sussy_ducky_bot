@@ -1,6 +1,6 @@
 use base64::{engine::general_purpose, Engine as _};
 use teloxide::{net::Download, prelude::*, types::PhotoSize};
-use tracing::*;
+use tracing::{debug, error, warn};
 
 pub fn get_image_from_message(message: &Message) -> Option<PhotoSize> {
     if let Some(photo) = message.photo() {
@@ -27,7 +27,7 @@ pub async fn download_and_encode_image(bot: &Bot, photo: &PhotoSize) -> anyhow::
     Ok(base64_img)
 }
 
-pub async fn remove_command(text: &str) -> String {
+pub fn remove_command(text: &str) -> String {
     let mut words = text.split_whitespace();
     // if first starts with /
     let text = if let Some(word) = words.next() {
@@ -52,28 +52,24 @@ pub async fn find_prompt(message: &Message) -> Option<String> {
     }
 
     let msg_text = msg_text.unwrap();
-    let msg_text = remove_command(msg_text).await;
+    let msg_text = remove_command(msg_text);
     let msg_text = if msg_text.is_empty() {
         // Find in reply message
-        match message.reply_to_message() {
-            Some(reply) => match reply.text() {
-                Some(text) => {
-                    let msg_text = remove_command(text).await;
-                    if msg_text.is_empty() {
-                        warn!("No text found in the reply message");
-                        return None;
-                    }
-                    msg_text
-                }
-                None => {
+        if let Some(reply) = message.reply_to_message() {
+            if let Some(text) = reply.text() {
+                let msg_text = remove_command(text);
+                if msg_text.is_empty() {
                     warn!("No text found in the reply message");
                     return None;
                 }
-            },
-            None => {
-                warn!("No text found in the message & no reply message");
+                msg_text
+            } else {
+                warn!("No text found in the reply message");
                 return None;
             }
+        } else {
+            warn!("No text found in the message & no reply message");
+            return None;
         }
     } else {
         msg_text
@@ -83,8 +79,8 @@ pub async fn find_prompt(message: &Message) -> Option<String> {
     Some(msg_text.to_string())
 }
 
-pub async fn parse_webhook(
-    input: lambda_http::http::Request<lambda_http::Body>,
+pub fn parse_webhook(
+    input: &lambda_http::http::Request<lambda_http::Body>,
 ) -> Result<Update, lambda_http::Error> {
     debug!("Parsing webhook");
     let body = input.body();
@@ -92,7 +88,7 @@ pub async fn parse_webhook(
         lambda_http::Body::Text(text) => text,
         not => {
             error!("Expected Body::Text(...) got {:?}", not);
-            panic!("expected Body::Text(...) got {:?}", not);
+            return Err(lambda_http::Error::from("Expected Body::Text(...)"));
         }
     };
     let body_json: Update = serde_json::from_str(body_str)?;
