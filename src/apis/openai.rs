@@ -40,7 +40,7 @@ impl OpenAIClient {
             BotCommand::Llama | BotCommand::Caveman => {
                 ("llama-3.1-70b-versatile".to_string(), Providers::Groq)
             }
-            BotCommand::Vision => (
+            BotCommand::Pixtral => (
                 "mistralai/pixtral-12b:free".to_string(),
                 Providers::OpenRouter,
             ),
@@ -66,7 +66,7 @@ impl OpenAIClient {
         match model {
             BotCommand::Caveman => Some("You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc."),
             BotCommand::Llama => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
-            BotCommand::Vision => None,
+            BotCommand::Pixtral => None,
             BotCommand::Help | BotCommand::Start | BotCommand::Flux => unreachable!(),
         }
     }

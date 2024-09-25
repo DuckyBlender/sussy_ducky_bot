@@ -37,10 +37,12 @@ enum BotCommand {
     Caveman,
     #[command(description = "llama3.1 70b", alias = "l")]
     Llama,
-    #[command(description = "pixtral 12b vision model", aliases = ["v", "pixtral"])]
-    Vision,
+    #[command(description = "pixtral 12b vision model", aliases = ["v", "p", "vision"])]
+    Pixtral,
     #[command(description = "flux[schnell]", hide)]
     Flux,
+    // #[command(description = "cunnyGPT degenerate copypastas", alias = "cunnygpt")]
+    // CunnyGPT,
 }
 
 #[tokio::main]
@@ -373,6 +375,8 @@ async fn handle_command(
         .parse_mode(ParseMode::MarkdownV2)
         .await;
 
+
+    // Markdown still doesn't work so this is kinda useless
     if let Err(e) = res {
         error!("Failed to send markdown message: {:?}", e);
         bot.send_message(message.chat.id, response_text)
