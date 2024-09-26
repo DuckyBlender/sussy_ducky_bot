@@ -1,8 +1,8 @@
-# Telegram Bot with OpenAI Integration
+# sussy_ducky_bot
 
 ## Overview
 
-Serverless Rust Telegram bot that interacts with models from OpenRouter. It handles commands from users and processes messages with various AI models.
+sussy_ducky_bot is a serverless telegram bot written in Rust that interacts with models from OpenRouter. It handles commands from users and processes messages with various AI models.
 
 ## Features
 

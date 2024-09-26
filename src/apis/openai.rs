@@ -160,25 +160,28 @@ impl OpenAIClient {
 
         let status = response.status();
 
-        if !status.is_success() {
-            if status.as_u16() == 429 {
-                // too many requests
-                let message: Value = response.json().await?;
-                let message = message["message"].as_str().unwrap_or("Rate limited");
-                error!("Rate limited: {}", message);
-                return Err(anyhow::anyhow!("rate limited: {}", message));
-            }
+        let json_response: Value = response.json().await?;
 
-            let response_body: Value = response.json().await?;
-            let response_body_pretty = serde_json::to_string_pretty(&response_body)?;
-            error!("Status non-200: {}", response_body_pretty);
-            return Err(anyhow::anyhow!("something went wrong :("));
+        //  Object {"error": Object {"code": Number(429), "message": String("{\n  \"error\": {\n    \"message\": \"You have been rate limited for model meta-llama/Llama-Vision-Free. Your rate limit is 5 queries per minute. Please navigate to https://api.together.xyz/settings/billing to upgrade your plan and see your limit.\",\n    \"type\": \"model_rate_limit\",\n    \"param\": null,\n    \"code\": null\n  }\n}")}}
+        let ratelimited = status.as_u16() == 429
+            || json_response
+                .get("error")
+                .and_then(|error| error.get("code"))
+                .and_then(serde_json::Value::as_u64)
+                .map(|code| u16::try_from(code).unwrap())
+                == Some(429);
+
+        debug!("code: {}, response: {:?}", status, json_response);
+
+        if ratelimited {
+            error!("ratelimited: {:?}", json_response);
+            return Err(anyhow::anyhow!("ratelimited"));
+        } else if !ratelimited && !status.is_success() {
+            error!("error {}: {:?}", status, json_response);
+            return Err(anyhow::anyhow!("status code: {}", status));
         }
 
-        let response_body = response.text().await?;
-        let json_response: Value = serde_json::from_str(&response_body)?;
-        let text_response = json_response["choices"][0]["message"]["content"]
-            .as_str();
+        let text_response = json_response["choices"][0]["message"]["content"].as_str();
 
         if text_response.is_none() {
             error!("no text found in the response: {:?}", json_response);
