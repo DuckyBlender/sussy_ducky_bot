@@ -2,20 +2,20 @@
 
 ## Overview
 
-Serverless Rust Telegram bot that interacts with OpenAI and other AI models through GroqCloud and OpenRouter. It handles commands from users and processes messages with various AI models.
+Serverless Rust Telegram bot that interacts with models from OpenRouter. It handles commands from users and processes messages with various AI models.
 
 ## Features
 
 - **Serverless**: Made for AWS Lambda.
-- **Free**: Hosted on AWS Lambda, uses free groqcloud and openrouter APIs.
+- **Free**: Hosted on AWS Lambda, uses free OpenRouter models.
 - **Image Handling**: Supports vision models.
 
 ## Setup
 
 1. **Environment Variables**: Ensure you have the following environment variables set:
    - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token.
-   - `GROQ_KEY`: API key for GroqCloud.
    - `OPENROUTER_KEY`: API key for OpenRouter.
+   - `FAL_KEY`: API key for fal.ai
 
 2. **Cargo Lambda**: Install the `cargo-lambda` tool. More information can be found [here](https://www.cargo-lambda.info/guide/installation.html).
 
@@ -27,10 +27,9 @@ Serverless Rust Telegram bot that interacts with OpenAI and other AI models thro
 ## Commands
 
 - `/help` & `/start` - Displays help text.
-- `/caveman` - Uses the "llama3.1 70b" model from GroqCloud with a custom system prompt.
-- `/llama` - Uses the "llama3.1 70b" model from GroqCloud
-- `/pixtral` - Uses the "pixtral 12b" vision model from OpenRouter.
-- `/vision` - Uses the "qwen2-vl 7b" uncensored vision model from OpenRouter.
+- `/caveman` - Uses Llama3.1 8b model from OpenRouter with a custom system prompt.
+- `/llama` - Uses Llama 3.1 8b or 3.2 12b vision model from OpenRouter.
+- `/lobotomy` - Uses Llama 3.2 1b model from OpenRouter (for fun)
 
 ## Running the Bot
 

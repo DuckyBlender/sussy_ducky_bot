@@ -6,12 +6,11 @@
 use apis::{FalClient, ImageRequest, OpenAIClient};
 use lambda_http::{run, service_fn, Error};
 use reqwest::Url;
-use teloxide::utils::markdown;
 
 use std::env;
 use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
-use teloxide::types::{InputFile, Message, ParseMode, ReplyParameters, UpdateKind};
+use teloxide::types::{ChatAction, InputFile, Message, ReplyParameters, UpdateKind};
 use teloxide::utils::command::BotCommands;
 use tracing::{debug, error, info, warn};
 use tracing_subscriber::EnvFilter;
@@ -19,15 +18,10 @@ use tracing_subscriber::EnvFilter;
 mod apis;
 
 mod utils;
-use utils::{
-    download_and_encode_image, find_prompt, get_image_from_message, parse_webhook,
-};
+use utils::{download_and_encode_image, find_prompt, get_image_from_message, parse_webhook};
 
 #[derive(BotCommands, Clone, Debug, PartialEq)]
-#[command(
-    rename_rule = "lowercase",
-    description = "Models from GroqCloud & OpenRouter"
-)]
+#[command(rename_rule = "lowercase", description = "Models from OpenRouter")]
 enum BotCommand {
     #[command(description = "display this text")]
     Help,
@@ -35,10 +29,10 @@ enum BotCommand {
     Start,
     #[command(description = "caveman version of llama3.1")]
     Caveman,
-    #[command(description = "llama3.1 70b", alias = "l")]
+    #[command(description = "llama3.1 8b or llama 3.2 12b vision", alias = "l")]
     Llama,
-    #[command(description = "pixtral 12b vision model", aliases = ["v", "p", "vision"])]
-    Pixtral,
+    #[command(description = "llama 3.2 1b", alias = "1b")]
+    Lobotomy,
     #[command(description = "flux[schnell]", hide)]
     Flux,
     // #[command(description = "cunnyGPT degenerate copypastas", alias = "cunnygpt")]
@@ -103,25 +97,26 @@ async fn handler(
                 info!("Parsed command: {:?}", command);
                 return handle_command(bot.clone(), message, command).await;
             }
+
+            // Secret bawialnia easter egg
+            if let UpdateKind::Message(message) = &update.kind {
+                if message.text().is_some()
+                    && (message.chat.id == ChatId(-1001865084475)
+                        || message.chat.id == ChatId(-1001641972650))
+                {
+                    let random: f64 = rand::random();
+                    debug!("Random number: {}", random);
+                    if random < 0.001 {
+                        // 0.1% chance of triggering
+                        // this has a bug, if the message starts with a command, the bot will respond with an error
+                        return handle_command(bot.clone(), message, BotCommand::Caveman).await;
+                    }
+                }
+            }
         }
     }
 
     debug!("No command found in the message");
-
-    // Secret bawialnia easter egg
-    if let UpdateKind::Message(message) = &update.kind {
-        if message.text().is_some()
-            && (message.chat.id == ChatId(-1001865084475)
-                || message.chat.id == ChatId(-1001641972650))
-        {
-            let random: f64 = rand::random();
-            debug!("Random number: {}", random);
-            if random < 0.01 {
-                // 1% chance of triggering
-                return handle_command(bot.clone(), message, BotCommand::Caveman).await;
-            }
-        }
-    }
 
     Ok(lambda_http::Response::builder()
         .status(200)
@@ -324,7 +319,7 @@ async fn handle_command(
     };
 
     // Send typing indicator
-    bot.send_chat_action(message.chat.id, teloxide::types::ChatAction::Typing)
+    bot.send_chat_action(message.chat.id, ChatAction::Typing)
         .await
         .unwrap();
 
@@ -362,30 +357,14 @@ async fn handle_command(
             .unwrap());
     }
 
-    // Escape markdown characters
-    let escaped_response_text = markdown::escape(&response_text);
-
-    debug!("Before escaping: {}", response_text);
-    debug!("After escaping: {}", escaped_response_text);
-
-    // Try sending the response as markdown
+    // Send the response
     let res = bot
-        .send_message(message.chat.id, escaped_response_text)
+        .send_message(message.chat.id, &response_text)
         .reply_parameters(ReplyParameters::new(message.id))
-        .parse_mode(ParseMode::MarkdownV2)
         .await;
 
-
-    // Markdown still doesn't work so this is kinda useless
     if let Err(e) = res {
-        error!("Failed to send markdown message: {:?}", e);
-        bot.send_message(message.chat.id, response_text)
-            .reply_parameters(ReplyParameters::new(message.id))
-            .await
-            .unwrap();
-        info!("Plain text message sent successfully");
-    } else {
-        info!("Markdown message sent successfully");
+        error!("Failed to send message: {:?}", e);
     }
 
     Ok(lambda_http::Response::builder()

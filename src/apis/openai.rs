@@ -10,7 +10,6 @@ use tracing::{debug, error};
 
 use crate::BotCommand;
 
-const GROQ_BASE_URL: &str = "https://api.groq.com/openai/v1";
 const OPENROUTER_BASE_URL: &str = "https://openrouter.ai/api/v1";
 
 const OPENROUTER_HEADERS: [&str; 2] = [
@@ -20,7 +19,6 @@ const OPENROUTER_HEADERS: [&str; 2] = [
 
 #[derive(Debug)]
 enum Providers {
-    Groq,
     OpenRouter,
 }
 
@@ -35,13 +33,27 @@ impl OpenAIClient {
         }
     }
 
-    fn get_model_and_provider(model: &BotCommand) -> (String, Providers) {
+    fn get_model_and_provider(model: &BotCommand, image: bool) -> (String, Providers) {
         match model {
-            BotCommand::Llama | BotCommand::Caveman => {
-                ("llama-3.1-70b-versatile".to_string(), Providers::Groq)
+            BotCommand::Llama => {
+                if image {
+                    (
+                        "meta-llama/llama-3.2-11b-vision-instruct:free".to_string(),
+                        Providers::OpenRouter,
+                    )
+                } else {
+                    (
+                        "meta-llama/llama-3.1-8b-instruct:free".to_string(),
+                        Providers::OpenRouter,
+                    )
+                }
             }
-            BotCommand::Pixtral => (
-                "mistralai/pixtral-12b:free".to_string(),
+            BotCommand::Lobotomy => (
+                "meta-llama/llama-3.2-1b-instruct".to_string(),
+                Providers::OpenRouter,
+            ),
+            BotCommand::Caveman => (
+                "meta-llama/llama-3.1-8b-instruct:free".to_string(),
                 Providers::OpenRouter,
             ),
             BotCommand::Help | BotCommand::Start | BotCommand::Flux => unreachable!(),
@@ -50,14 +62,12 @@ impl OpenAIClient {
 
     fn get_provider_base_url(provider: &Providers) -> &'static str {
         match provider {
-            Providers::Groq => GROQ_BASE_URL,
             Providers::OpenRouter => OPENROUTER_BASE_URL,
         }
     }
 
     fn get_api_key(provider: &Providers) -> String {
         match provider {
-            Providers::Groq => env::var("GROQ_KEY").expect("GROQ_KEY is not set"),
             Providers::OpenRouter => env::var("OPENROUTER_KEY").expect("OPENROUTER_KEY is not set"),
         }
     }
@@ -66,14 +76,13 @@ impl OpenAIClient {
         match model {
             BotCommand::Caveman => Some("You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc."),
             BotCommand::Llama => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
-            BotCommand::Pixtral => None,
+            BotCommand::Lobotomy => None,
             BotCommand::Help | BotCommand::Start | BotCommand::Flux => unreachable!(),
         }
     }
 
     fn get_additional_headers(provider: &Providers) -> HeaderMap {
         match provider {
-            Providers::Groq => HeaderMap::new(),
             Providers::OpenRouter => {
                 let mut headers = HeaderMap::new();
                 for header in &OPENROUTER_HEADERS {
@@ -93,7 +102,7 @@ impl OpenAIClient {
         base64_img: Option<&str>,
         model: BotCommand,
     ) -> Result<String> {
-        let (model_str, provider) = Self::get_model_and_provider(&model);
+        let (model_str, provider) = Self::get_model_and_provider(&model, base64_img.is_some());
         let provider_base_url = Self::get_provider_base_url(&provider);
         let api_key = Self::get_api_key(&provider);
         let system_prompt = Self::get_system_prompt(&model);
@@ -153,6 +162,7 @@ impl OpenAIClient {
 
         if !status.is_success() {
             if status.as_u16() == 429 {
+                // too many requests
                 let message: Value = response.json().await?;
                 let message = message["message"].as_str().unwrap_or("Rate limited");
                 error!("Rate limited: {}", message);
@@ -169,7 +179,7 @@ impl OpenAIClient {
         let json_response: Value = serde_json::from_str(&response_body)?;
         let text_response = json_response["choices"][0]["message"]["content"]
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("No text found in the response"))?;
+            .ok_or_else(|| anyhow::anyhow!("no text found in the response"))?;
         Ok(text_response.to_string())
     }
 }
