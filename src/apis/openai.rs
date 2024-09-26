@@ -178,8 +178,13 @@ impl OpenAIClient {
         let response_body = response.text().await?;
         let json_response: Value = serde_json::from_str(&response_body)?;
         let text_response = json_response["choices"][0]["message"]["content"]
-            .as_str()
-            .ok_or_else(|| anyhow::anyhow!("no text found in the response"))?;
+            .as_str();
+
+        if text_response.is_none() {
+            error!("no text found in the response: {:?}", json_response);
+            return Err(anyhow::anyhow!("no text found in the response"));
+        }
+        let text_response = text_response.unwrap();
         Ok(text_response.to_string())
     }
 }
