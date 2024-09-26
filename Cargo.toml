@@ -29,4 +29,4 @@ rand = "0.8.5"
 [package.metadata.lambda.deploy]
 memory = 128      # Function's memory
 timeout = 60      # Function's execution timeout
-env_file = ".env" # File to load environment variables from
+# env_file = ".env" # File to load environment variables from. This has been disabled by default for github actions
