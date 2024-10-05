@@ -28,8 +28,9 @@ sussy_ducky_bot is a serverless telegram bot written in Rust that interacts with
 
 - `/help` & `/start` - Displays help text.
 - `/caveman` - Uses Llama3.1 8b model from OpenRouter with a custom system prompt.
-- `/llama` - Uses Llama 3.1 8b or 3.2 12b vision model from OpenRouter.
+- `/llama` - Uses Llama 3.1 70b or 3.2 12b vision model from OpenRouter.
 - `/lobotomy` - Uses Llama 3.2 1b model from OpenRouter (for fun)
+- `/flux` - Uses the free flux[schnell] model from together.ai
 
 ## Running the Bot
 
