@@ -181,6 +181,10 @@ async fn handle_command(
         let res = client.submit_request(request).await;
         if let Err(e) = res {
             error!("Failed to submit request: {:?}", e);
+            bot.send_message(message.chat.id, format!("error: {e:?}"))
+                .reply_parameters(ReplyParameters::new(message.id))
+                .await
+                .unwrap();
             return Ok(lambda_http::Response::builder()
                 .status(200)
                 .body(String::new())

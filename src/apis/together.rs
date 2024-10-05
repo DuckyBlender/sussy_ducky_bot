@@ -1,3 +1,4 @@
+use anyhow::Result;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -44,12 +45,7 @@ impl TogetherClient {
         }
     }
 
-    pub async fn submit_request(
-        &self,
-        prompt: ImageRequest,
-    ) -> Result<ImageResponse, reqwest::Error> {
-        // base64 image
-
+    pub async fn submit_request(&self, prompt: ImageRequest) -> Result<ImageResponse> {
         let response = self
             .client
             .post("https://api.together.xyz/v1/images/generations")
@@ -61,6 +57,10 @@ impl TogetherClient {
             .json(&prompt)
             .send()
             .await?;
+
+        if !response.status().is_success() {
+            return Err(anyhow::anyhow!("Status code: {}", response.status()));
+        }
 
         let response = response.json::<ImageResponse>().await?;
 
