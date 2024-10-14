@@ -48,6 +48,10 @@ impl OpenAIClient {
                     )
                 }
             }
+            BotCommand::Llama405 => (
+                "meta-llama/llama-3.1-405b-instruct:free".to_string(),
+                Providers::OpenRouter,
+            ),
             BotCommand::Lobotomy => (
                 "meta-llama/llama-3.2-1b-instruct:free".to_string(),
                 Providers::OpenRouter,
@@ -75,7 +79,7 @@ impl OpenAIClient {
     fn get_system_prompt(model: &BotCommand) -> Option<&'static str> {
         match model {
             BotCommand::Caveman => Some("You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc."),
-            BotCommand::Llama | BotCommand::Lobotomy => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
+            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
             BotCommand::Help | BotCommand::Start | BotCommand::Flux => unreachable!(),
         }
     }

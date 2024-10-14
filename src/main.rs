@@ -36,6 +36,8 @@ enum BotCommand {
     Lobotomy,
     #[command(description = "free flux[schnell] from together.ai")]
     Flux,
+    #[command(description = "llama 3.1 405b", aliases = ["405b", "405"])]
+    Llama405,
     // #[command(description = "cunnyGPT degenerate copypastas", alias = "cunnygpt")]
     // CunnyGPT,
 }
