@@ -35,6 +35,7 @@ impl OpenAIClient {
 
     fn get_model_and_provider(model: &BotCommand, image: bool) -> (String, Providers) {
         match model {
+            BotCommand::Lfm => ("liquid/lfm-40b:free".to_string(), Providers::OpenRouter),
             BotCommand::Llama => {
                 if image {
                     (
@@ -79,7 +80,7 @@ impl OpenAIClient {
     fn get_system_prompt(model: &BotCommand) -> Option<&'static str> {
         match model {
             BotCommand::Caveman => Some("You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc."),
-            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
+            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 | BotCommand::Lfm => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
             BotCommand::Help | BotCommand::Start | BotCommand::Flux => unreachable!(),
         }
     }
