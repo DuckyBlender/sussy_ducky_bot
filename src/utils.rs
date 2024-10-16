@@ -65,47 +65,36 @@ pub fn remove_command(text: &str) -> String {
 }
 
 pub async fn find_prompt(message: &Message) -> Option<String> {
-    // First, check the text in the current message
-    let msg_text = message.text();
-
-    let msg_text = if let Some(text) = msg_text {
-        // If there's text in the message, remove the command and return the prompt
-        remove_command(text)
-    } else {
-        // If no text in the current message, check for a reply message
-        if let Some(reply) = message.reply_to_message() {
-            // First, check if the reply message has text
-            if let Some(text) = reply.text() {
-                let msg_text = remove_command(text);
-                if !msg_text.is_empty() {
-                    return Some(msg_text); // Return the cleaned reply message text
-                }
-            }
-
-            // If no text, check for a caption in the reply photo or sticker
-            if let Some(caption) = reply.caption() {
-                let msg_text = remove_command(caption);
-                if !msg_text.is_empty() {
-                    return Some(msg_text); // Return the cleaned caption
-                }
-            }
-
-            // No valid text or caption found
-            warn!("No text or caption found in the reply message");
-            return None;
+    // Check if the message itself has text
+    if let Some(msg_text) = message.text() {
+        let cleaned_text = remove_command(msg_text);
+        if !cleaned_text.is_empty() {
+            return Some(cleaned_text);
         }
-        // No reply message found either
-        warn!("No text found in the message & no reply message");
-        return None;
-    };
-
-    if msg_text.is_empty() {
-        warn!("No valid text or caption found");
-        return None;
     }
 
-    debug!("Message text: {}", msg_text);
-    Some(msg_text.to_string())
+    // Check if the message is a reply to another message
+    if let Some(reply) = message.reply_to_message() {
+        // First, check if the reply message has text
+        if let Some(reply_text) = reply.text() {
+            let cleaned_text = remove_command(reply_text);
+            if !cleaned_text.is_empty() {
+                return Some(cleaned_text);
+            }
+        }
+
+        // If no text, check for a caption in the reply
+        if let Some(reply_caption) = reply.caption() {
+            let cleaned_caption = remove_command(reply_caption);
+            if !cleaned_caption.is_empty() {
+                return Some(cleaned_caption);
+            }
+        }
+    }
+
+    // If no valid text or caption found, log the warning and return None
+    warn!("No valid text or caption found in the message or reply");
+    None
 }
 
 pub fn parse_webhook(
