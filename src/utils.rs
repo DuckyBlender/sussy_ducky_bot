@@ -124,3 +124,27 @@ pub fn parse_webhook(
     debug!("Successfully parsed webhook");
     Ok(body_json)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_remove_command() {
+        let text = "/command text";
+        let result = remove_command(text);
+        assert_eq!(result, "text");
+
+        let text = "text";
+        let result = remove_command(text);
+        assert_eq!(result, "text");
+
+        let text = "/command text with spaces";
+        let result = remove_command(text);
+        assert_eq!(result, "text with spaces");
+
+        let text = "/command@bot text";
+        let result = remove_command(text);
+        assert_eq!(result, "text");
+    }
+}
