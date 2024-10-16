@@ -151,6 +151,11 @@ impl OpenAIClient {
             "model": model_str,
             "messages": messages,
             "max_tokens": 512,
+            "provider": {
+                "order": [
+                    "SambaNova" // always prioritize SambaNova, if available
+                ]
+            }
         });
 
         let response = self
