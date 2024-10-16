@@ -35,7 +35,6 @@ impl OpenAIClient {
 
     fn get_model_and_provider(model: &BotCommand, image: bool) -> (String, Providers) {
         match model {
-            BotCommand::Lfm => ("liquid/lfm-40b:free".to_string(), Providers::OpenRouter),
             BotCommand::Llama => {
                 if image {
                     (
@@ -79,8 +78,16 @@ impl OpenAIClient {
 
     fn get_system_prompt(model: &BotCommand) -> Option<&'static str> {
         match model {
-            BotCommand::Caveman => Some("You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc."),
-            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 | BotCommand::Lfm => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
+            BotCommand::Caveman => Some("You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc. Your name is Grog."),
+            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
+            BotCommand::Help | BotCommand::Start | BotCommand::Flux => unreachable!(),
+        }
+    }
+
+    fn get_temperature(model: &BotCommand) -> f64 {
+        match model {
+            BotCommand::Caveman => 1.1,
+            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 => 0.3,
             BotCommand::Help | BotCommand::Start | BotCommand::Flux => unreachable!(),
         }
     }
@@ -107,6 +114,10 @@ impl OpenAIClient {
         model: BotCommand,
     ) -> Result<String> {
         let (model_str, provider) = Self::get_model_and_provider(&model, base64_img.is_some());
+        // make sure the model ends with :free. i dont have any ratelimit and i dont want to go bankrupt
+        if !model_str.ends_with(":free") {
+            return Err(anyhow::anyhow!("model is not free. this is a bug"));
+        }
         let provider_base_url = Self::get_provider_base_url(&provider);
         let api_key = Self::get_api_key(&provider);
         let system_prompt = Self::get_system_prompt(&model);
@@ -144,6 +155,7 @@ impl OpenAIClient {
         }));
 
         let additional_headers = Self::get_additional_headers(&provider);
+        let temperature = Self::get_temperature(&model);
 
         debug!("headers: {:?}", additional_headers);
 
@@ -151,6 +163,7 @@ impl OpenAIClient {
             "model": model_str,
             "messages": messages,
             "max_tokens": 512,
+            "temperature": temperature,
             "provider": {
                 "order": [
                     "SambaNova" // always prioritize SambaNova, if available

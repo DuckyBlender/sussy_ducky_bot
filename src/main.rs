@@ -38,8 +38,6 @@ enum BotCommand {
     Flux,
     #[command(description = "llama 3.1 405b", aliases = ["405b", "405"])]
     Llama405,
-    #[command(description = "temporary LFM 40B MoE model")]
-    Lfm,
     // #[command(description = "cunnyGPT degenerate copypastas", alias = "cunnygpt")]
     // CunnyGPT,
 }
