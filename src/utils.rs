@@ -1,5 +1,9 @@
 use base64::{engine::general_purpose, Engine as _};
-use teloxide::{net::Download, prelude::*, types::{PhotoSize, Sticker}};
+use teloxide::{
+    net::Download,
+    prelude::*,
+    types::{PhotoSize, Sticker},
+};
 use tracing::{debug, error, warn};
 
 pub enum Media {
@@ -89,11 +93,10 @@ pub async fn find_prompt(message: &Message) -> Option<String> {
             // No valid text or caption found
             warn!("No text or caption found in the reply message");
             return None;
-        } else {
-            // No reply message found either
-            warn!("No text found in the message & no reply message");
-            return None;
         }
+        // No reply message found either
+        warn!("No text found in the message & no reply message");
+        return None;
     };
 
     if msg_text.is_empty() {
@@ -104,7 +107,6 @@ pub async fn find_prompt(message: &Message) -> Option<String> {
     debug!("Message text: {}", msg_text);
     Some(msg_text.to_string())
 }
-
 
 pub fn parse_webhook(
     input: &lambda_http::http::Request<lambda_http::Body>,
