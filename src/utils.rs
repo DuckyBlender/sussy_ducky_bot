@@ -2,9 +2,9 @@ use base64::{engine::general_purpose, Engine as _};
 use teloxide::{
     net::Download,
     prelude::*,
-    types::{PhotoSize, Sticker},
+    types::{MessageId, ParseMode, PhotoSize, ReplyParameters, Sticker},
 };
-use tracing::{debug, error, warn};
+use tracing::{debug, error, info, warn};
 
 pub enum Media {
     Photo(PhotoSize),
@@ -112,6 +112,96 @@ pub fn parse_webhook(
     let body_json: Update = serde_json::from_str(body_str)?;
     debug!("Successfully parsed webhook");
     Ok(body_json)
+}
+
+pub fn split_string(input: &str, max_length: usize) -> Vec<String> {
+    let mut result = Vec::new();
+    let mut current_chunk = String::new();
+    let mut current_length = 0;
+
+    for word in input.split_whitespace() {
+        if current_length + word.len() + 1 > max_length && !current_chunk.is_empty() {
+            result.push(current_chunk);
+            current_chunk = String::new();
+            current_length = 0;
+        }
+
+        if current_length > 0 {
+            current_chunk.push(' ');
+            current_length += 1;
+        }
+
+        current_chunk.push_str(word);
+        current_length += word.len();
+    }
+
+    if !current_chunk.is_empty() {
+        result.push(current_chunk);
+    }
+
+    result
+}
+
+pub fn escape_markdown(text: &str) -> String {
+    let mut escaped_text = String::new();
+    for c in text.chars() {
+        match c {
+            '[' | ']' | '(' | ')' | '~' | '>' | '#' | '+' | '-' | '=' | '|' | '{' | '}' | '.'
+            | '!' => {
+                escaped_text.push('\\');
+                escaped_text.push(c);
+            }
+            _ => escaped_text.push(c),
+        }
+    }
+
+    escaped_text
+}
+
+// This function sends a message in Markdown format if it's less than 4096 characters. If it's longer, it splits the message into chunks of 4096 characters and sends them separately.
+pub async fn safe_send(bot: Bot, chat_id: ChatId, reply_to_msg_id: MessageId, text: &str) {
+    // Try sending the message as Markdown if it's less than 4096 characters
+    if text.len() <= 4096 {
+        let escaped_text = escape_markdown(text);
+        let result = bot
+            .send_message(chat_id, escaped_text)
+            .reply_parameters(ReplyParameters::new(reply_to_msg_id))
+            .parse_mode(ParseMode::MarkdownV2)
+            .send()
+            .await;
+
+        // If sending as Markdown succeeds, return
+        match result {
+            Ok(_) => return,
+            Err(err) => {
+                warn!(
+                    "Failed to send as Markdown: {:?}, trying as plain text...",
+                    err
+                );
+            }
+        }
+    }
+
+    // If sending as Markdown fails or the text is too long, log a warning and try sending as plain text. We can now split the string.
+    let split_text = split_string(text, 4096);
+    if split_text.len() > 1 {
+        info!(
+            "Splitting the message into {} part(s) since it's too long",
+            split_text.len()
+        );
+    }
+
+    for text in split_text {
+        let res = bot
+            .send_message(chat_id, text)
+            .reply_parameters(ReplyParameters::new(reply_to_msg_id))
+            .send()
+            .await;
+
+        if let Err(err) = res {
+            error!("Failed to send message: {:?}", err);
+        }
+    }
 }
 
 #[cfg(test)]

@@ -9,7 +9,6 @@ use base64::engine::Engine as _;
 use lambda_http::{run, service_fn, Error};
 
 use std::env;
-use teloxide::payloads::SendMessageSetters;
 use teloxide::prelude::*;
 use teloxide::types::{ChatAction, InputFile, Message, ReplyParameters, UpdateKind};
 use teloxide::utils::command::BotCommands;
@@ -19,7 +18,9 @@ use tracing_subscriber::EnvFilter;
 mod apis;
 
 mod utils;
-use utils::{download_and_encode_image, find_prompt, get_image_from_message, parse_webhook};
+use utils::{
+    download_and_encode_image, find_prompt, get_image_from_message, parse_webhook, safe_send,
+};
 
 #[derive(BotCommands, Clone, Debug, PartialEq)]
 #[command(rename_rule = "lowercase", description = "Models from OpenRouter")]
@@ -110,7 +111,7 @@ async fn handler(
                 || message.chat.id == ChatId(-1001641972650))
         {
             let random: f64 = rand::random();
-            debug!("Random number: {}", random);
+            // debug!("Random number: {}", random);
             if random < 0.001 {
                 // 0.1% chance of triggering
                 // this has a bug, if the message starts with a command, the bot will respond with an error
@@ -136,9 +137,8 @@ async fn handle_command(
 
     match command {
         BotCommand::Help | BotCommand::Start => {
-            bot.send_message(message.chat.id, BotCommand::descriptions().to_string())
-                .await
-                .unwrap();
+            let help_text = BotCommand::descriptions().to_string();
+            safe_send(bot, message.chat.id, message.id, &help_text).await;
             Ok(lambda_http::Response::builder()
                 .status(200)
                 .body(String::new())
@@ -149,13 +149,7 @@ async fn handle_command(
             // Just the prompt, no image
             let Some(msg_text) = find_prompt(message).await else {
                 warn!("No prompt found in the message or reply message");
-                bot.send_message(
-                    message.chat.id,
-                    "Please provide a prompt. It can be in the message or a reply to a message.",
-                )
-                .reply_parameters(ReplyParameters::new(message.id))
-                .await
-                .unwrap();
+                safe_send(bot, message.chat.id, message.id, "Please provide a prompt.").await;
 
                 return Ok(lambda_http::Response::builder()
                     .status(200)
@@ -183,10 +177,7 @@ async fn handle_command(
             let res = client.submit_request(request).await;
             if let Err(e) = res {
                 error!("Failed to submit request: {:?}", e);
-                bot.send_message(message.chat.id, format!("error: {e:?}"))
-                    .reply_parameters(ReplyParameters::new(message.id))
-                    .await
-                    .unwrap();
+                safe_send(bot, message.chat.id, message.id, &format!("error: {e:?}")).await;
                 return Ok(lambda_http::Response::builder()
                     .status(200)
                     .body(String::new())
@@ -238,13 +229,8 @@ async fn handle_command(
                         String::new()
                     } else {
                         warn!("No prompt found in the message or reply message");
-                        bot.send_message(
-                    message.chat.id,
-                    "Please provide a prompt. It can be in the message or a reply to a message.",
-                        )
-                        .reply_parameters(ReplyParameters::new(message.id))
-                        .await
-                        .unwrap();
+                        safe_send(bot, message.chat.id, message.id, "Please provide a prompt.")
+                            .await;
 
                         return Ok(lambda_http::Response::builder()
                             .status(200)
@@ -272,10 +258,8 @@ async fn handle_command(
 
             // Catch error
             if let Err(e) = res {
-                bot.send_message(message.chat.id, format!("error: {e:?}"))
-                    .reply_parameters(ReplyParameters::new(message.id))
-                    .await
-                    .unwrap();
+                error!("Failed to submit request: {:?}", e);
+                safe_send(bot, message.chat.id, message.id, &format!("error: {e:?}")).await;
 
                 return Ok(lambda_http::Response::builder()
                     .status(200)
@@ -288,25 +272,16 @@ async fn handle_command(
             // Check if empty response
             if response_text.is_empty() {
                 warn!("Empty response from API");
-                bot.send_message(message.chat.id, "<no text>")
-                    .reply_parameters(ReplyParameters::new(message.id))
-                    .await
-                    .unwrap();
+                safe_send(bot, message.chat.id, message.id, "<no text>").await;
+
                 return Ok(lambda_http::Response::builder()
                     .status(200)
                     .body(String::new())
                     .unwrap());
             }
 
-            // Send the response
-            let res = bot
-                .send_message(message.chat.id, &response_text)
-                .reply_parameters(ReplyParameters::new(message.id))
-                .await;
-
-            if let Err(e) = res {
-                error!("Failed to send message: {:?}", e);
-            }
+            // Safe send the response
+            safe_send(bot, message.chat.id, message.id, &response_text).await;
 
             Ok(lambda_http::Response::builder()
                 .status(200)

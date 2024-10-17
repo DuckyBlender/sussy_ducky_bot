@@ -76,12 +76,18 @@ impl OpenAIClient {
         }
     }
 
-    fn get_system_prompt(model: &BotCommand) -> Option<&'static str> {
-        match model {
-            BotCommand::Caveman => Some("You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc. Your name is Grog."),
-            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 => Some("Be concise and precise. Don't be verbose. Answer in the user's language."),
+    fn get_system_prompt(model: &BotCommand) -> String {
+        let markdown_explanation =
+            "You can use markdown to format your text: *bold*, _italic_, __underline__, `code`. Use THIS FORMAT SPECIFICALLY, not any other markdown format.";
+
+        let system_prompt = match model {
+            BotCommand::Caveman => "You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc. Your name is Grog.",
+            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 => "Be concise and precise. Don't be verbose. Answer in the user's language.",
             BotCommand::Help | BotCommand::Start | BotCommand::Flux => unreachable!(),
-        }
+        };
+
+        let system_prompt = format!("{system_prompt} {markdown_explanation}");
+        system_prompt
     }
 
     fn get_temperature(model: &BotCommand) -> f64 {
@@ -124,11 +130,11 @@ impl OpenAIClient {
 
         let mut messages = vec![];
 
-        // Add system message if provided
-        if let Some(system) = system_prompt {
+        // Add system prompt
+        if !system_prompt.is_empty() {
             messages.push(json!({
                 "role": "system",
-                "content": system
+                "content": system_prompt
             }));
         }
 
