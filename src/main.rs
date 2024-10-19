@@ -3,10 +3,12 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::too_many_lines)]
 
-use apis::{ImageRequest, OpenAIClient, TogetherClient};
+use apis::{HuggingFaceClient, ImageRequest, OpenAIClient, TogetherClient};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
 use lambda_http::{run, service_fn, Error};
+use reqwest::Url;
+use serde_json::json;
 
 use std::env;
 use teloxide::prelude::*;
@@ -19,7 +21,8 @@ mod apis;
 
 mod utils;
 use utils::{
-    download_and_encode_image, find_prompt, get_image_from_message, parse_webhook, safe_send,
+    download_and_encode_image, find_prompt, get_image_from_message, parse_webhook,
+    remove_g_segment, safe_send,
 };
 
 #[derive(BotCommands, Clone, Debug, PartialEq)]
@@ -39,6 +42,8 @@ enum BotCommand {
     Flux,
     #[command(description = "llama 3.1 405b", aliases = ["405b", "405"])]
     Llama405,
+    #[command(description = "free and fast text-to-video", aliases = ["videogen", "video"])]
+    T2V,
     // #[command(description = "cunnyGPT degenerate copypastas", alias = "cunnygpt")]
     // CunnyGPT,
 }
@@ -143,6 +148,84 @@ async fn handle_command(
                 .status(200)
                 .body(String::new())
                 .unwrap())
+        }
+
+        // This command is extremely sketchy and temporary
+        BotCommand::T2V => {
+            // Just the prompt, no image
+            let Some(msg_text) = find_prompt(message).await else {
+                warn!("No prompt found in the message or reply message");
+                safe_send(bot, message.chat.id, message.id, "Please provide a prompt.").await;
+
+                return Ok(lambda_http::Response::builder()
+                    .status(200)
+                    .body(String::new())
+                    .unwrap());
+            };
+
+            // Send typing indicator
+            bot.send_chat_action(message.chat.id, teloxide::types::ChatAction::Typing)
+                .await
+                .unwrap();
+
+            // Send the request to the HF API
+            let client = HuggingFaceClient::new();
+
+            let seed = rand::random::<u32>();
+
+            let url = Url::parse("https://tiger-lab-t2v-turbo-v2.hf.space").unwrap();
+            let data = json!([
+                msg_text, // Text
+                7.5,      // Guidance scale
+                0.5,      // Percentage of steps to apply motion guidance
+                16,       // Number of inference steps
+                16,       // Number of video frames
+                seed,     // Seed
+                false,    // Randomize seed
+                "bf16"    // torch.dtype
+            ]);
+
+            let output = client.request(url, data).await;
+
+            match output {
+                Ok(event_id) => {
+                    // Send the response
+                    let url = event_id[0]["video"]["url"].as_str().unwrap();
+                    info!("Video URL: {}", url);
+
+                    let url = Url::parse(url).unwrap();
+
+                    let url = remove_g_segment(url);
+
+                    // Send sending video indicator
+                    bot.send_chat_action(message.chat.id, ChatAction::UploadVideo)
+                        .await
+                        .unwrap();
+                    let res = bot
+                        .send_video(message.chat.id, InputFile::url(url))
+                        .reply_parameters(ReplyParameters::new(message.id))
+                        .await;
+
+                    if let Err(e) = res {
+                        error!("Failed to send message: {:?}", e);
+                    }
+
+                    Ok(lambda_http::Response::builder()
+                        .status(200)
+                        .body(String::new())
+                        .unwrap())
+                }
+
+                Err(e) => {
+                    error!("Failed to submit request: {:?}", e);
+                    safe_send(bot, message.chat.id, message.id, &format!("error: {e:?}")).await;
+
+                    Ok(lambda_http::Response::builder()
+                        .status(200)
+                        .body(String::new())
+                        .unwrap())
+                }
+            }
         }
 
         BotCommand::Flux => {

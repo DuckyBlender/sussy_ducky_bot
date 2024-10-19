@@ -1,4 +1,5 @@
 use base64::{engine::general_purpose, Engine as _};
+use reqwest::Url;
 use teloxide::{
     net::Download,
     prelude::*,
@@ -204,6 +205,30 @@ pub async fn safe_send(bot: Bot, chat_id: ChatId, reply_to_msg_id: MessageId, te
     }
 }
 
+/// Function to remove `/g/` from the given URL
+pub fn remove_g_segment(mut url: Url) -> reqwest::Url {
+    // Get the current path segments
+    let path_segments: Vec<String> = url
+        .path_segments()
+        .map_or_else(Vec::new, |c| c.map(String::from).collect());
+
+    // Remove the "/g/" from the path segments
+    let path_segments: Vec<String> = path_segments
+        .into_iter()
+        .filter(|segment| segment != "g")
+        .collect();
+
+    // Clear the existing path and add the modified path segments back
+    url.set_path("");
+    url.path_segments_mut()
+        .expect("Cannot be base URL")
+        .extend(path_segments);
+
+    // Convert back to URL
+    let url = Url::parse(url.as_ref()).expect("Failed to parse URL");
+    url
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,5 +250,14 @@ mod tests {
         let text = "/command@bot text";
         let result = remove_command(text);
         assert_eq!(result, "text");
+    }
+
+    #[test]
+    fn test_remove_g_segment() {
+        let original_url = Url::parse("https://tiger-lab-t2v-turbo-v2.hf.space/g/gradio_api/file=/tmp/gradio/285a20f83d99030cb2639db6c8d6e84ad97670be17e82bc0bd70490dc3346a70/tmp.mp4").unwrap();
+        let expected_url = Url::parse("https://tiger-lab-t2v-turbo-v2.hf.space/gradio_api/file=/tmp/gradio/285a20f83d99030cb2639db6c8d6e84ad97670be17e82bc0bd70490dc3346a70/tmp.mp4").unwrap();
+
+        let result = remove_g_segment(original_url);
+        assert_eq!(result, expected_url);
     }
 }
