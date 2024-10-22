@@ -1,5 +1,5 @@
 /// Extremely sketchy huggingface client
-/// 
+
 use anyhow::Result;
 use futures::StreamExt;
 use reqwest::{Client as ReqwestClient, Url};

@@ -74,6 +74,14 @@ pub async fn find_prompt(message: &Message) -> Option<String> {
         }
     }
 
+    // Check if the caption itself has text
+    if let Some(caption) = message.caption() {
+        let cleaned_caption = remove_command(caption);
+        if !cleaned_caption.is_empty() {
+            return Some(cleaned_caption);
+        }
+    }
+
     // Check if the message is a reply to another message
     if let Some(reply) = message.reply_to_message() {
         // First, check if the reply message has text
