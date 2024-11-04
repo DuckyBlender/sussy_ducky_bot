@@ -38,7 +38,7 @@ impl OpenAIClient {
             BotCommand::Llama => {
                 if image {
                     (
-                        "meta-llama/llama-3.2-11b-vision-instruct:free".to_string(),
+                        "meta-llama/llama-3.2-90b-vision-instruct:free".to_string(),
                         Providers::OpenRouter,
                     )
                 } else {
@@ -48,10 +48,6 @@ impl OpenAIClient {
                     )
                 }
             }
-            BotCommand::Llama405 => (
-                "meta-llama/llama-3.1-405b-instruct:free".to_string(),
-                Providers::OpenRouter,
-            ),
             BotCommand::Lobotomy => (
                 "meta-llama/llama-3.2-1b-instruct:free".to_string(),
                 Providers::OpenRouter,
@@ -80,11 +76,11 @@ impl OpenAIClient {
 
     fn get_system_prompt(model: &BotCommand) -> String {
         let markdown_explanation =
-            "You can use markdown to format your text: *bold*, _italic_, __underline__, `code`. Use THIS FORMAT SPECIFICALLY, not any other markdown format.";
+            "Don't use markdown format.";
 
         let system_prompt = match model {
             BotCommand::Caveman => "You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc. Your name is Grog.",
-            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 => "Be concise and precise. Don't be verbose. Answer in the user's language.",
+            BotCommand::Llama | BotCommand::Lobotomy => "Be concise and precise. Don't be verbose. Answer in the user's language.",
             BotCommand::Help | BotCommand::Start | BotCommand::Flux | BotCommand::T2V => unreachable!(),
         };
 
@@ -94,8 +90,8 @@ impl OpenAIClient {
 
     fn get_temperature(model: &BotCommand) -> f64 {
         match model {
-            BotCommand::Caveman => 1.1,
-            BotCommand::Llama | BotCommand::Lobotomy | BotCommand::Llama405 => 0.3,
+            BotCommand::Caveman => 1.0,
+            BotCommand::Llama | BotCommand::Lobotomy => 0.4,
             BotCommand::Help | BotCommand::Start | BotCommand::Flux | BotCommand::T2V => {
                 unreachable!()
             }

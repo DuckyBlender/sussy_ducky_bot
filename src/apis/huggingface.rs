@@ -1,4 +1,4 @@
-/// Extremely sketchy huggingface client
+/// Extremely sketchy huggingface client, do not learn from this
 
 use anyhow::Result;
 use futures::StreamExt;

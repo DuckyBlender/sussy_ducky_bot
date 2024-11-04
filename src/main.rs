@@ -34,14 +34,12 @@ enum BotCommand {
     Start,
     #[command(description = "caveman version of llama3.1")]
     Caveman,
-    #[command(description = "llama3.1 70b or llama 3.2 12b vision", alias = "l")]
+    #[command(description = "llama3.1 70b or llama 3.2 90b vision", alias = "l")]
     Llama,
     #[command(description = "llama 3.2 1b", alias = "1b")]
     Lobotomy,
     #[command(description = "free flux[schnell] from together.ai")]
     Flux,
-    #[command(description = "llama 3.1 405b", aliases = ["405b", "405"])]
-    Llama405,
     #[command(description = "free and fast text-to-video", aliases = ["videogen", "video"])]
     T2V,
     // #[command(description = "cunnyGPT degenerate copypastas", alias = "cunnygpt")]
