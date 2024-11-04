@@ -75,8 +75,7 @@ impl OpenAIClient {
     }
 
     fn get_system_prompt(model: &BotCommand) -> String {
-        let markdown_explanation =
-            "Don't use markdown format.";
+        let markdown_explanation = "Don't use markdown format.";
 
         let system_prompt = match model {
             BotCommand::Caveman => "You are a caveman. Speak like a caveman would. All caps, simple words, grammar mistakes etc. Your name is Grog.",

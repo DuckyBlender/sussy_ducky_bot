@@ -1,5 +1,4 @@
 /// Extremely sketchy huggingface client, do not learn from this
-
 use anyhow::Result;
 use futures::StreamExt;
 use reqwest::{Client as ReqwestClient, Url};
