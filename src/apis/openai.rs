@@ -6,7 +6,7 @@ use reqwest::{
     Client as ReqwestClient,
 };
 use serde_json::{json, Value};
-use tracing::{debug, error};
+use tracing::{debug, error, warn};
 
 use crate::BotCommand;
 
@@ -198,11 +198,26 @@ impl OpenAIClient {
                 .map(|code| u16::try_from(code).unwrap())
                 == Some(429);
 
+        // 502 unexpected error
+        // DEBUG code: 200 OK, response: Object {"choices": Array [Object {"error": Object {"code": Number(502), "message": String("Upstream error from SambaNova: unexpected_error"), "metadata": Object {"raw": Object {"code": Null, "message": String("unexpected_error"), "param": Null, "type": String("unexpected_error")}}}, "index": Number(0), "logprobs": Null, "message": Object {"content": String(""), "refusal": String(""), "role": String("assistant")}}], "created": Number(1730789139), "id": String("gen-1730789139-aEiqaOcLEE2gvtzeegwH"), "model": String("meta-llama/llama-3.2-90b-vision-instruct:free"), "object": String("chat.completion"), "provider": String("SambaNova"), "system_fingerprint": String("fastcoe"), "usage": Object {"completion_tokens": Number(0), "prompt_tokens": Number(1486), "total_tokens": Number(1486)}}
+        let unexpected_error = status.as_u16() == 502
+            || json_response
+                .get("choices")
+                .and_then(|choices| choices.get(0))
+                .and_then(|choice| choice.get("error"))
+                .and_then(|error| error.get("code"))
+                .and_then(serde_json::Value::as_u64)
+                .map(|code| u16::try_from(code).unwrap())
+                == Some(502);
+
         debug!("code: {}, response: {:?}", status, json_response);
 
         if ratelimited {
-            error!("ratelimited: {:?}", json_response);
+            warn!("ratelimited: {:?}", json_response);
             return Err(anyhow::anyhow!("ratelimited"));
+        } else if unexpected_error {
+            error!("unexpected error: {:?}", json_response);
+            return Err(anyhow::anyhow!("unexpected error"));
         } else if !ratelimited && !status.is_success() {
             error!("error {}: {:?}", status, json_response);
             return Err(anyhow::anyhow!("status code: {}", status));
