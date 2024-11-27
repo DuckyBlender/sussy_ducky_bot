@@ -42,6 +42,7 @@ pub async fn download_and_encode_image(bot: &Bot, media: &Media) -> anyhow::Resu
         Media::Sticker(sticker) => &sticker.file.id,
     };
 
+    
     let file = bot.get_file(file_id).await?;
     bot.download_file(&file.path, &mut buf).await?;
 

@@ -127,61 +127,63 @@ impl OpenAIClient {
         let api_key = Self::get_api_key(&provider);
         let system_prompt = Self::get_system_prompt(&model);
 
-        let mut messages = vec![];
+        // Construct user message content
+        let user_content = if let Some(image) = base64_img {
+            json!([
+                {
+                    "type": "text",
+                    "text": prompt
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": format!("data:image/jpeg;base64,{}", image) // telegram photos are always jpeg
+                    }
+                }
+            ])
+        } else {
+            json!([{
+                "type": "text",
+                "text": prompt
+            }])
+        };
 
-        // Add system prompt
-        if !system_prompt.is_empty() {
-            messages.push(json!({
+        // Add system prompt and user message
+        let messages = vec![
+            json!({
                 "role": "system",
                 "content": system_prompt
-            }));
-        }
-
-        // Construct user message content
-        let mut user_content = vec![json!({
-            "type": "text",
-            "text": prompt
-        })];
-
-        // Add image if provided
-        if let Some(image) = base64_img {
-            user_content.push(json!({
-                "type": "image_url",
-                "image_url": {
-                    "url": format!("data:image/jpeg;base64,{}", image)
-                }
-            }));
-        }
-
-        // Add user message
-        messages.push(json!({
-            "role": "user",
-            "content": user_content
-        }));
+            }),
+            json!({
+                "role": "user",
+                "content": user_content
+            }),
+        ];
 
         let additional_headers = Self::get_additional_headers(&provider);
         let temperature = Self::get_temperature(&model);
 
         debug!("headers: {:?}", additional_headers);
 
-        let json_request = &json!({
+        let json_request = json!({
             "model": model_str,
             "messages": messages,
             "max_tokens": 512,
             "temperature": temperature,
             "provider": {
-                "order": [
-                    "SambaNova" // always prioritize SambaNova, if available
-                ]
+                "order": ["SambaNova"]
             }
         });
+
+        // pure json
+        debug!("json_request: {}", json_request.to_string());
 
         let response = self
             .client
             .post(format!("{provider_base_url}/chat/completions"))
             .bearer_auth(api_key)
             .headers(additional_headers)
-            .json(json_request)
+            .json(&json_request)
             .send()
             .await?;
 
@@ -189,7 +191,6 @@ impl OpenAIClient {
 
         let json_response: Value = response.json().await?;
 
-        //  Object {"error": Object {"code": Number(429), "message": String("{\n  \"error\": {\n    \"message\": \"You have been rate limited for model meta-llama/Llama-Vision-Free. Your rate limit is 5 queries per minute. Please navigate to https://api.together.xyz/settings/billing to upgrade your plan and see your limit.\",\n    \"type\": \"model_rate_limit\",\n    \"param\": null,\n    \"code\": null\n  }\n}")}}
         let ratelimited = status.as_u16() == 429
             || json_response
                 .get("error")
@@ -198,8 +199,6 @@ impl OpenAIClient {
                 .map(|code| u16::try_from(code).unwrap())
                 == Some(429);
 
-        // 502 unexpected error
-        // DEBUG code: 200 OK, response: Object {"choices": Array [Object {"error": Object {"code": Number(502), "message": String("Upstream error from SambaNova: unexpected_error"), "metadata": Object {"raw": Object {"code": Null, "message": String("unexpected_error"), "param": Null, "type": String("unexpected_error")}}}, "index": Number(0), "logprobs": Null, "message": Object {"content": String(""), "refusal": String(""), "role": String("assistant")}}], "created": Number(1730789139), "id": String("gen-1730789139-aEiqaOcLEE2gvtzeegwH"), "model": String("meta-llama/llama-3.2-90b-vision-instruct:free"), "object": String("chat.completion"), "provider": String("SambaNova"), "system_fingerprint": String("fastcoe"), "usage": Object {"completion_tokens": Number(0), "prompt_tokens": Number(1486), "total_tokens": Number(1486)}}
         let unexpected_error = status.as_u16() == 502
             || json_response
                 .get("choices")
