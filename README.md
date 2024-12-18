@@ -6,11 +6,13 @@ sussy_ducky_bot v2
 - conversation continuation using sql caching
 - (later) openai voice mode replies
 - ratelimits
-- paid tier
+- paid tier(?)
 
 ### Order of implementation
-1. Basic AI bot
-2. Captions, videos
-3. Database integration
-4. Ratelimits
-5. Threads to continue conversations
+- [x] Basic AI bot
+- [x] Captions
+- [ ] Image support
+- [ ] Database integration
+- [ ] Ratelimits
+- [ ] Threads to continue conversations
+- [ ] Docker
