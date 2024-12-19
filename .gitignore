@@ -2,3 +2,4 @@
 .env
 output.log
 Cargo.lock
+data.db
