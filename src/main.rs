@@ -77,32 +77,32 @@ fn init_logging() {
 /// Initialize the SQLite database and ensure the messages table exists
 async fn init_db() -> SqlitePool {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool = SqlitePoolOptions::new()
+    
+
+    // Create the messages table if it doesn't exist
+    // sqlx::query(
+    //     r#"
+    //     CREATE TABLE IF NOT EXISTS messages (
+    //         id INTEGER PRIMARY KEY AUTOINCREMENT,
+    //         chat_id INTEGER NOT NULL,
+    //         user_id INTEGER NOT NULL,
+    //         message_id INTEGER NOT NULL,
+    //         reply_to INTEGER,
+    //         sender TEXT NOT NULL CHECK(sender IN ('user', 'bot')),
+    //         content TEXT NOT NULL,
+    //         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    //     );
+    //     "#,
+    // )
+    // .execute(&pool)
+    // .await
+    // .expect("Failed to create messages table");
+
+    SqlitePoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
         .await
-        .expect("Failed to connect to the database");
-
-    // Create the messages table if it doesn't exist
-    sqlx::query(
-        r#"
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            message_id INTEGER NOT NULL,
-            reply_to INTEGER,
-            sender TEXT NOT NULL CHECK(sender IN ('user', 'bot')),
-            content TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-        "#,
-    )
-    .execute(&pool)
-    .await
-    .expect("Failed to create messages table");
-
-    pool
+        .expect("Failed to connect to the database")
 }
 
 /// Define bot commands using `BotCommands` derive
@@ -114,7 +114,7 @@ async fn init_db() -> SqlitePool {
 enum Command {
     #[command(description = "Display this help text")]
     Help,
-    #[command(description = "Ask Llama AI", alias = "l")]
+    #[command(description = "Ask llama 3.2 1b", alias = "l")]
     Llama(String),
 }
 
@@ -346,21 +346,12 @@ async fn get_conversation_history(
         let content: String = row.try_get("content")?;
         history.push_str(&format!(
             "{}: {}\n",
-            capitalize_first_letter(&sender),
+            &sender,
             content
         ));
     }
 
     Ok(history)
-}
-
-/// Capitalize the first letter of a string
-fn capitalize_first_letter(s: &str) -> String {
-    let mut c = s.chars();
-    match c.next() {
-        None => String::new(),
-        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-    }
 }
 
 /// Save a user or bot message to the database
