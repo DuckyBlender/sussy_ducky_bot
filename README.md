@@ -17,8 +17,11 @@ sussy_ducky_bot v2
 ### Order of implementation
 - [x] Basic AI bot
 - [x] Captions
-- [ ] Image support
-- [ ] Database integration
+- [x] Database integration
+- [ ] Async
 - [ ] Ratelimits
-- [ ] Threads to continue conversations
+- [ ] Multiple local model support
+- [ ] Groq support
+- [ ] Image support
+- [x] Threads to continue conversations
 - [ ] Docker

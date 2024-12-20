@@ -168,6 +168,8 @@ enum Command {
     Help,
     #[command(description = "Ask llama 3.2 1b", alias = "l")]
     Llama(String),
+    #[command(description = "Ask qwen 2.5 1.5b", alias = "q")]
+    Qwen(String),
 }
 
 // Handle all incoming messages
@@ -187,8 +189,7 @@ async fn handle_message(
     // Check if the message is a reply to a known bot response
     if let Some(reply) = msg.reply_to_message() {
         if let Some(model) = get_model_from_msg(reply, pool).await {
-            // todo: `model` will be useful for more models
-            handle_ollama(bot, msg, ollama, pool).await?;
+            handle_ollama(bot, msg, ollama, pool, model).await?;
             return Ok(());
         }
     }
@@ -254,7 +255,11 @@ async fn handle_command(
         }
         Command::Llama(prompt) => {
             debug!("Handling /llama command with prompt: {}", prompt);
-            handle_ollama(bot, msg, ollama, pool).await?;
+            handle_ollama(bot, msg, ollama, pool, "llama3.2:1b".to_string()).await?;
+        }
+        Command::Qwen(prompt) => {
+            debug!("Handling /qwen command with prompt: {}", prompt);
+            handle_ollama(bot, msg, ollama, pool, "qwen2.5:1.5b".to_string()).await?;
         }
     }
 
@@ -267,12 +272,14 @@ async fn handle_ollama(
     msg: Message,
     ollama: &Ollama,
     pool: &SqlitePool,
+    model: String,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Extract and format the prompt, including conversation history if replying
     // Check if the reply is a known message, else use extract_prompt()
     let mut conversation_history: Vec<ChatMessage> = Vec::new();
     if let Some(reply) = msg.reply_to_message() {
-        if let Some(model) = get_model_from_msg(reply, pool).await {
+        if get_model_from_msg(reply, pool).await.is_some() {
+            // Known message, fetch conversation history
             conversation_history = get_conversation_history(msg.chat.id, reply.id, pool).await?;
             // add the user's prompt to the conversation history
             conversation_history.push(ChatMessage {
@@ -335,10 +342,9 @@ async fn handle_ollama(
     });
 
     // Generate the AI response
-    const MODEL: &str = "llama3.2:1b";
     let res = ollama
         .send_chat_messages(ChatMessageRequest::new(
-            MODEL.to_string(),
+            model.to_string(),
             conversation_history,
         ))
         .await;
@@ -370,7 +376,7 @@ async fn handle_ollama(
             info!("Sent AI response to chat ID: {}", msg.chat.id);
 
             // Save the bot's response
-            save_message(pool, &bot_msg, Some(MODEL)).await?;
+            save_message(pool, &bot_msg, Some(&model)).await?;
             info!("Saved bot's AI response.");
         }
         Err(e) => {
@@ -438,36 +444,40 @@ async fn get_conversation_history(
         "Fetching conversation history for chat ID: {}, reply message ID: {}",
         chat_id.0, reply_to_message_id.0
     );
-    // Fetch all messages in the chat up to the replied message
-    let rows = sqlx::query!(
-        r#"
-        SELECT user_id, content FROM messages
-        WHERE chat_id = ? AND id <= (
-            SELECT id FROM messages WHERE chat_id = ? AND message_id = ?
+
+    let mut history = Vec::new();
+    let mut current_message_id = Some(reply_to_message_id.0 as i64);
+
+    // I know this is probably slow but it's fine for now. An alternative would be 
+    while let Some(message_id) = current_message_id {
+        let row = sqlx::query!(
+            r#"
+            SELECT user_id, content, reply_to FROM messages
+            WHERE chat_id = ? AND message_id = ?
+            "#,
+            chat_id.0,
+            message_id
         )
-        ORDER BY id ASC
-        "#,
-        chat_id.0,
-        chat_id.0,
-        reply_to_message_id.0
-    )
-    .fetch_all(pool)
-    .await?;
+        .fetch_optional(pool)
+        .await?;
 
-    // Format into a vector of ChatMessage
-    let history = rows
-        .into_iter()
-        .map(|row| ChatMessage {
-            role: if row.user_id == 0 {
-                MessageRole::Assistant
-            } else {
-                MessageRole::User
-            },
-            content: row.content,
-            images: None,
-        })
-        .collect();
+        if let Some(record) = row {
+            history.push(ChatMessage {
+                role: if record.user_id == 0 {
+                    MessageRole::Assistant
+                } else {
+                    MessageRole::User
+                },
+                content: record.content,
+                images: None,
+            });
+            current_message_id = record.reply_to;
+        } else {
+            break;
+        }
+    }
 
+    history.reverse();
     Ok(history)
 }
 
