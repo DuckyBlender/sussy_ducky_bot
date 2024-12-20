@@ -1,5 +1,11 @@
 sussy_ducky_bot v2
 
+### How to run
+`sqlx db create`
+`sqlx mig run`
+`cargo r`
+
+### What the heck is this rewrite
 - rewritten from scratch
 - hosted on a server, gtx 1660 super
 - custom models (racist phi)

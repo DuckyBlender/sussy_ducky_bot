@@ -1,15 +1,40 @@
 use log::{debug, error, info, warn};
-use ollama_rs::{generation::completion::request::GenerationRequest, Ollama};
+use ollama_rs::{
+    generation::chat::{request::ChatMessageRequest, ChatMessage, MessageRole},
+    Ollama,
+};
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 use std::env;
 use teloxide::{
-    dispatching::UpdateHandler,
     prelude::*,
     types::{ChatAction, Me, Message, MessageId, ReplyParameters},
     utils::command::BotCommands,
 };
 use tokio::sync::watch;
 use tokio::time::{self, Duration};
+
+// Define the Displayable trait
+trait Displayable {
+    fn display(&self) -> String;
+}
+
+// Implement the Displayable trait for ChatMessage
+impl Displayable for ChatMessage {
+    fn display(&self) -> String {
+        format!("{}: {}", self.role.display(), self.content)
+    }
+}
+
+// Implement the Displayable trait for MessageRole
+impl Displayable for MessageRole {
+    fn display(&self) -> String {
+        match self {
+            MessageRole::User => "User".to_string(),
+            MessageRole::Assistant => "Assistant".to_string(),
+            MessageRole::System => "System".to_string(),
+        }
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -59,16 +84,36 @@ async fn main() {
         }
     };
 
+    // For development, remove all messages from the database
+    sqlx::query!("DELETE FROM messages")
+        .execute(&pool)
+        .await
+        .expect("Failed to delete messages from the database");
+
     // Initialize Ollama AI service
     let ollama = Ollama::default();
-    info!("Ollama AI service initialized.");
+    info!("Successfully connected to Ollama");
 
-    // Build Dispatcher with separate handlers for commands and captions
-    Dispatcher::builder(bot, make_handler(ollama.clone(), pool.clone(), me.clone()))
-        .enable_ctrlc_handler()
-        .build()
-        .dispatch()
-        .await;
+    // Build Dispatcher with UpdateHandler
+    // Todo: Improve this in the future
+    let ollama_clone = ollama.clone();
+    let pool_clone = pool.clone();
+    let me_clone = me.clone();
+    let handler = Update::filter_message().endpoint(move |bot: Bot, msg: Message| {
+        let ollama = ollama_clone.clone();
+        let pool = pool_clone.clone();
+        let me = me_clone.clone();
+        async move {
+            handle_message(bot, msg, &ollama, &pool, &me)
+                .await
+                .map_err(|e| {
+                    error!("Error handling message: {}", e);
+                    e
+                })
+        }
+    });
+
+    Dispatcher::builder(bot, handler).build().dispatch().await;
 }
 
 /// Initialize logging using fern
@@ -87,7 +132,7 @@ fn init_logging() {
         // Set default log level to Warn
         .level(log::LevelFilter::Warn)
         // Override log level for our module to Info
-        .level_for("sussy_ducky_bot", log::LevelFilter::Info)
+        .level_for("sussy_ducky_bot", log::LevelFilter::Debug)
         // Output to stdout
         .chain(std::io::stdout())
         // Output to a log file
@@ -125,30 +170,6 @@ enum Command {
     Llama(String),
 }
 
-/// Create the dispatcher handler with organized branches
-fn make_handler(
-    ollama: Ollama,
-    pool: SqlitePool,
-    me: Me,
-) -> UpdateHandler<Box<dyn std::error::Error + Send + Sync>> {
-    // Clone for commands handler
-    let ollama_clone = ollama.clone();
-    let pool_clone = pool.clone();
-    
-    let handler =
-        dptree::entry()
-            .endpoint(move |bot, msg| {
-                let ollama = ollama_clone.clone();
-                let pool = pool_clone.clone();
-                let me = me.clone();
-                async move { handle_message(bot, msg, &ollama, &pool, &me).await }
-            });
-
-    // Return the handler
-    handler
-
-}
-
 // Handle all incoming messages
 async fn handle_message(
     bot: Bot,
@@ -165,10 +186,9 @@ async fn handle_message(
 
     // Check if the message is a reply to a known bot response
     if let Some(reply) = msg.reply_to_message() {
-        if let Some(model) = get_model_from_reply(reply, pool).await {
+        if let Some(model) = get_model_from_msg(reply, pool).await {
             // todo: `model` will be useful for more models
-            let prompt = extract_prompt(&msg, None, pool).await;
-            handle_ollama(bot, msg, prompt, ollama, pool).await?;
+            handle_ollama(bot, msg, ollama, pool).await?;
             return Ok(());
         }
     }
@@ -183,26 +203,24 @@ async fn handle_message(
 
     // Check if the message is a caption
     if let Some(caption) = msg.caption() {
-        let prompt = extract_prompt(&msg, Some(caption.to_string()), pool).await;
-        handle_ollama(bot, msg, prompt, ollama, pool).await?;
-        return Ok(());
+        if let Ok(cmd) = Command::parse(caption, me.username()) {
+            handle_command(bot, msg, cmd, ollama, pool).await?;
+            return Ok(());
+        }
     }
 
     // If none of the above, do nothing
     Ok(())
 }
 
-async fn get_model_from_reply(
-    msg: &Message,
-    pool: &SqlitePool,
-) -> Option<String> {
+async fn get_model_from_msg(msg: &Message, pool: &SqlitePool) -> Option<String> {
     let message_id = msg.id.0 as i64;
     let chat_id = msg.chat.id.0;
 
     let row = sqlx::query!(
         r#"
         SELECT model FROM messages
-        WHERE chat_id = ? AND message_id = ? AND sender = 'bot'
+        WHERE chat_id = ? AND message_id = ? AND user_id = 0
         "#,
         chat_id,
         message_id
@@ -224,10 +242,6 @@ async fn handle_command(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     debug!("Received command: {:?}", cmd);
 
-    // Save the user's command message
-    save_message(pool, &msg, "user", None, None).await?;
-    info!("Saved user message with ID: {}", msg.id);
-
     match cmd {
         Command::Help => {
             let help_text = Command::descriptions().to_string();
@@ -240,7 +254,7 @@ async fn handle_command(
         }
         Command::Llama(prompt) => {
             debug!("Handling /llama command with prompt: {}", prompt);
-            handle_ollama(bot, msg, prompt, ollama, pool).await?;
+            handle_ollama(bot, msg, ollama, pool).await?;
         }
     }
 
@@ -251,13 +265,35 @@ async fn handle_command(
 async fn handle_ollama(
     bot: Bot,
     msg: Message,
-    prompt: String,
     ollama: &Ollama,
     pool: &SqlitePool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Extract and format the prompt, including conversation history if replying
-    let formatted_prompt = extract_prompt(&msg, Some(prompt.clone()), pool).await;
-    info!("Formatted Prompt: {}", formatted_prompt);
+    // Check if the reply is a known message, else use extract_prompt()
+    let mut conversation_history: Vec<ChatMessage> = Vec::new();
+    if let Some(reply) = msg.reply_to_message() {
+        if let Some(model) = get_model_from_msg(reply, pool).await {
+            conversation_history = get_conversation_history(msg.chat.id, reply.id, pool).await?;
+            // add the user's prompt to the conversation history
+            conversation_history.push(ChatMessage {
+                role: MessageRole::User,
+                content: get_message_content(&msg),
+                images: None,
+            });
+        }
+    }
+    if conversation_history.is_empty() {
+        debug!("No conversation history found, extracting prompt from message.");
+        conversation_history.push(ChatMessage {
+            role: MessageRole::User,
+            content: extract_prompt(&msg).await,
+            images: None,
+        });
+    }
+    info!("Conversation history: {:?}", conversation_history);
+    // for debug
+    bot.send_message(msg.chat.id, conversation_history.clone().into_iter().map(|m| m.display()).collect::<Vec<String>>().join("\n").to_string())
+        .await?;
 
     // Send initial typing action
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
@@ -265,7 +301,7 @@ async fn handle_ollama(
     debug!("Sent typing action to chat ID: {}", msg.chat.id);
 
     // Save the user's prompt
-    save_message(pool, &msg, "user", None, None).await?;
+    save_message(pool, &msg, None).await?;
     info!("Saved user's llama prompt message.");
 
     // Create a watch channel to signal the typing indicator task when done
@@ -301,7 +337,10 @@ async fn handle_ollama(
     // Generate the AI response
     const MODEL: &str = "llama3.2:1b";
     let res = ollama
-        .generate(GenerationRequest::new(MODEL.to_string(), formatted_prompt))
+        .send_chat_messages(ChatMessageRequest::new(
+            MODEL.to_string(),
+            conversation_history,
+        ))
         .await;
     debug!("Received response from Ollama generator.");
 
@@ -311,15 +350,27 @@ async fn handle_ollama(
 
     match res {
         Ok(response) => {
-            let ai_response = response.response;
-            debug!("AI Response: {}", ai_response);
-            bot.send_message(msg.chat.id, &ai_response)
+            let ai_response = response.message.unwrap_or(ChatMessage {
+                role: MessageRole::Assistant,
+                content: "<no response>".to_string(), // todo: this should be handled better, without saving to db
+                images: None,
+            });
+            let response_str = if ai_response.content.is_empty() {
+                warn!("Empty AI response received.");
+                "<no response>".to_string()
+            } else {
+                ai_response.content.clone()
+            };
+
+            debug!("AI Response: {}", &response_str);
+            let bot_msg = bot
+                .send_message(msg.chat.id, &response_str)
                 .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             info!("Sent AI response to chat ID: {}", msg.chat.id);
 
             // Save the bot's response
-            save_message(pool, &msg, "bot", Some(&ai_response), Some(MODEL)).await?;
+            save_message(pool, &bot_msg, Some(MODEL)).await?;
             info!("Saved bot's AI response.");
         }
         Err(e) => {
@@ -329,10 +380,7 @@ async fn handle_ollama(
                 .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             info!("Sent error message to chat ID: {}", msg.chat.id);
-
-            // Save the error message as bot's response
-            // save_message(pool, &msg, "bot", Some(&error_message), None).await?;
-            // info!("Saved bot's error response.");
+            // Don't save the error message
         }
     }
 
@@ -340,49 +388,44 @@ async fn handle_ollama(
 }
 
 /// Extract and format the prompt based on the message content and conversation history
-async fn extract_prompt(msg: &Message, cmd_prompt: Option<String>, pool: &SqlitePool) -> String {
+async fn extract_prompt(msg: &Message) -> String {
     let mut prompt = String::new();
 
     // If the message is a reply, include the replied message's content and history
     if let Some(reply) = &msg.reply_to_message() {
         debug!("Message is a reply to message ID: {}", reply.id);
-        // Fetch the conversation history
-        match get_conversation_history(msg.chat.id, reply.id, pool).await {
-            Ok(history) => {
-                prompt.push_str(&history);
-                prompt.push('\n');
-                info!("Fetched conversation history.");
-            }
-            Err(e) => {
-                warn!("Failed to fetch conversation history: {}", e);
-            }
-        }
+        // Todo: maybe we should fetch the conversation history here?
 
         // Append the current user's message without the command prefix
         if let Some(text) = &reply.text() {
-            let text = text.trim_start_matches('/');
-            let text = text.split_once(' ').map(|x| x.1).unwrap_or(text);
-            prompt.push_str(text);
-            prompt.push('\n');
+            prompt.push_str(&remove_prefix(text));
+            prompt.push_str("\n\n");
             debug!("Appended text from replied message.");
         } else if let Some(caption) = reply.caption() {
-            let caption = caption.trim_start_matches('/');
-            let caption = caption.split_once(' ').map(|x| x.1).unwrap_or(caption);
-            prompt.push_str(caption);
-            prompt.push('\n');
+            prompt.push_str(&remove_prefix(caption));
+            prompt.push_str("\n\n");
             debug!("Appended caption from replied message.");
         }
     } else {
         debug!("Message is not a reply.");
     }
 
-    // Append the current prompt (from command or caption)
-    if let Some(cp) = cmd_prompt {
-        prompt.push_str(&cp);
-        debug!("Appended current command prompt.");
-    }
+    // Append the current user's message without the command prefix
+    let content = get_message_content(msg);
+    prompt.push_str(&remove_prefix(&content));
 
     prompt
+}
+
+fn remove_prefix(text: &str) -> String {
+    // If the first word starts with a slash, remove it
+    let mut words = text.split_whitespace();
+    let first_word = words.next().unwrap_or_default();
+    if first_word.starts_with('/') {
+        let text = words.collect::<Vec<&str>>().join(" ");
+        return text;
+    }
+    text.to_string()
 }
 
 /// Fetch the conversation history for the given chat and reply message ID
@@ -390,7 +433,7 @@ async fn get_conversation_history(
     chat_id: ChatId,
     reply_to_message_id: MessageId,
     pool: &SqlitePool,
-) -> Result<String, sqlx::Error> {
+) -> Result<Vec<ChatMessage>, sqlx::Error> {
     debug!(
         "Fetching conversation history for chat ID: {}, reply message ID: {}",
         chat_id.0, reply_to_message_id.0
@@ -398,7 +441,7 @@ async fn get_conversation_history(
     // Fetch all messages in the chat up to the replied message
     let rows = sqlx::query!(
         r#"
-        SELECT sender, content FROM messages
+        SELECT user_id, content FROM messages
         WHERE chat_id = ? AND id <= (
             SELECT id FROM messages WHERE chat_id = ? AND message_id = ?
         )
@@ -411,50 +454,49 @@ async fn get_conversation_history(
     .fetch_all(pool)
     .await?;
 
-    // Concatenate messages to form the conversation history
-    let mut history = String::new();
-    for row in rows {
-        let sender = row.sender;
-        let content = row.content;
-        history.push_str(&format!("{}: {}\n", sender, content));
-        debug!("Appended to history: {}: {}", sender, content);
-    }
+    // Format into a vector of ChatMessage
+    let history = rows
+        .into_iter()
+        .map(|row| ChatMessage {
+            role: if row.user_id == 0 {
+                MessageRole::Assistant
+            } else {
+                MessageRole::User
+            },
+            content: row.content,
+            images: None,
+        })
+        .collect();
 
     Ok(history)
 }
 
-/// Save a user or bot message to the database
-///
-/// - If `content_override` is `Some`, it uses the provided content (for bot messages).
-/// - If `content_override` is `None`, it extracts the content from the `Message`.
+/// Save a user or bot message to the database. If a model is None, it's a user message.
 async fn save_message(
     pool: &SqlitePool,
     msg: &Message,
-    sender: &str,
-    content_override: Option<&str>,
     model: Option<&str>,
 ) -> Result<(), sqlx::Error> {
-    let user_id = if sender == "bot" {
+    let user_id = if model.is_some() {
         0
     } else {
         msg.from.as_ref().map(|u| u.id.0).unwrap_or(0) as i64
     };
-    let content = match content_override {
-        Some(content) => content.to_string(),
-        None => get_message_content(msg),
-    };
+
+    let content = get_message_content(msg);
+    let content = remove_prefix(&content);
+
     let reply_to = msg.reply_to_message().map(|reply| reply.id.0);
     let chat_id = msg.chat.id.0;
     let message_id = msg.id.0 as i64;
     let reply_to = reply_to as Option<i32>;
 
     debug!(
-        "Saving message - Chat ID: {}, User ID: {}, Message ID: {}, Reply To: {:?}, Sender: {}, Model: {:?}, Content: {}",
+        "Saving message - Chat ID: {}, User ID: {}, Message ID: {}, Reply To: {:?}, Model: {:?}, Content: {}",
         chat_id,
         user_id,
         message_id,
         reply_to,
-        sender,
         model,
         content
     );
@@ -462,14 +504,13 @@ async fn save_message(
     // Use SQLx macros for compile-time checked queries
     sqlx::query!(
         r#"
-        INSERT INTO messages (chat_id, user_id, message_id, reply_to, sender, model, content)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO messages (chat_id, user_id, message_id, reply_to, model, content)
+        VALUES (?, ?, ?, ?, ?, ?)
         "#,
         chat_id,
         user_id,
         message_id,
         reply_to,
-        sender,
         model,
         content
     )
