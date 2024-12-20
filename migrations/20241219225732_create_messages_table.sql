@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS messages (
     message_id INTEGER NOT NULL,
     reply_to INTEGER,
     sender TEXT NOT NULL CHECK(sender IN ('user', 'bot')),
+    model TEXT,
     content TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
