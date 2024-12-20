@@ -103,13 +103,15 @@ async fn main() {
         let ollama = ollama_clone.clone();
         let pool = pool_clone.clone();
         let me = me_clone.clone();
+        let bot_clone = bot.clone();
+        
         async move {
-            handle_message(bot, msg, &ollama, &pool, &me)
-                .await
-                .map_err(|e| {
+            tokio::spawn(async move {
+                if let Err(e) = handle_message(bot_clone, msg, &ollama, &pool, &me).await {
                     error!("Error handling message: {}", e);
-                    e
-                })
+                }
+            });
+            Ok::<(), std::convert::Infallible>(())
         }
     });
 
@@ -251,7 +253,6 @@ async fn handle_command(
                 .reply_parameters(ReplyParameters::new(msg.id))
                 .await?;
             info!("Help text sent to chat ID: {}", msg.chat.id);
-            info!("Saved bot's help response.");
         }
         Command::Llama(prompt) => {
             debug!("Handling /llama command with prompt: {}", prompt);
@@ -299,8 +300,19 @@ async fn handle_ollama(
     }
     info!("Conversation history: {:?}", conversation_history);
     // for debug
-    bot.send_message(msg.chat.id, conversation_history.clone().into_iter().map(|m| m.display()).collect::<Vec<String>>().join("\n").to_string())
+    if msg.chat.id == ChatId(5337682436) {
+        bot.send_message(
+            msg.chat.id,
+            conversation_history
+                .clone()
+                .into_iter()
+                .map(|m| m.display())
+                .collect::<Vec<String>>()
+                .join("\n")
+                .to_string(),
+        )
         .await?;
+    }
 
     // Send initial typing action
     bot.send_chat_action(msg.chat.id, ChatAction::Typing)
@@ -448,7 +460,7 @@ async fn get_conversation_history(
     let mut history = Vec::new();
     let mut current_message_id = Some(reply_to_message_id.0 as i64);
 
-    // I know this is probably slow but it's fine for now. An alternative would be 
+    // I know this is probably slow but it's fine for now. An alternative would be
     while let Some(message_id) = current_message_id {
         let row = sqlx::query!(
             r#"

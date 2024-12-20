@@ -18,7 +18,7 @@ sussy_ducky_bot v2
 - [x] Basic AI bot
 - [x] Captions
 - [x] Database integration
-- [ ] Async
+- [x] Async
 - [ ] Ratelimits
 - [ ] Multiple local model support
 - [ ] Groq support
