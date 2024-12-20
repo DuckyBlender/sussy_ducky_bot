@@ -13,6 +13,8 @@ use teloxide::{
 use tokio::sync::watch;
 use tokio::time::{self, Duration};
 
+const SYSTEM_PROMPT: &str = "Be precise and concise. Don't use markdown.";
+
 // Define the Displayable trait
 trait Displayable {
     fn display(&self) -> String;
@@ -172,6 +174,8 @@ enum Command {
     Llama(String),
     #[command(description = "Ask qwen 2.5 1.5b", alias = "q")]
     Qwen(String),
+    #[command(description = "Ask racist-phi custom model", alias = "r")]
+    Racist(String),
 }
 
 // Handle all incoming messages
@@ -262,6 +266,10 @@ async fn handle_command(
             debug!("Handling /qwen command with prompt: {}", prompt);
             handle_ollama(bot, msg, ollama, pool, "qwen2.5:1.5b".to_string()).await?;
         }
+        Command::Racist(prompt) => {
+            debug!("Handling /racist command with prompt: {}", prompt);
+            handle_ollama(bot, msg, ollama, pool, "duckyblender/racist-phi3".to_string()).await?;
+        }
     }
 
     Ok(())
@@ -298,6 +306,20 @@ async fn handle_ollama(
             images: None,
         });
     }
+
+    // Check if there is a system prompt in any message
+    if !conversation_history.iter().any(|m| m.role == MessageRole::System) {
+        // Add system prompt as first message
+        conversation_history.insert(
+            0,
+            ChatMessage {
+                role: MessageRole::System,
+                content: SYSTEM_PROMPT.to_string(),
+                images: None,
+            },
+        );
+    }
+
     info!("Conversation history: {:?}", conversation_history);
     // for debug
     if msg.chat.id == ChatId(5337682436) {
@@ -460,7 +482,7 @@ async fn get_conversation_history(
     let mut history = Vec::new();
     let mut current_message_id = Some(reply_to_message_id.0 as i64);
 
-    // I know this is probably slow but it's fine for now. An alternative would be
+    // I know this is probably slow but it's fine for now. An alternative would be much more complicated
     while let Some(message_id) = current_message_id {
         let row = sqlx::query!(
             r#"

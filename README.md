@@ -20,7 +20,8 @@ sussy_ducky_bot v2
 - [x] Database integration
 - [x] Async
 - [ ] Ratelimits
-- [ ] Multiple local model support
+- [x] Multiple local model support
+- [ ] Message editing progress
 - [ ] Groq support
 - [ ] Image support
 - [x] Threads to continue conversations
