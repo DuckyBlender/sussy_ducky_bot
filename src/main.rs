@@ -1,6 +1,9 @@
 use log::{debug, error, info, warn};
 use ollama_rs::{
-    generation::chat::{request::ChatMessageRequest, ChatMessage, MessageRole},
+    generation::{
+        chat::{request::ChatMessageRequest, ChatMessage, MessageRole},
+        options::GenerationOptions,
+    },
     Ollama,
 };
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
@@ -106,7 +109,7 @@ async fn main() {
         let pool = pool_clone.clone();
         let me = me_clone.clone();
         let bot_clone = bot.clone();
-        
+
         async move {
             tokio::spawn(async move {
                 if let Err(e) = handle_message(bot_clone, msg, &ollama, &pool, &me).await {
@@ -176,6 +179,8 @@ enum Command {
     Qwen(String),
     #[command(description = "Ask racist-phi custom model", alias = "r")]
     Racist(String),
+    #[command(description = "Ask uncensored llama 3.2 3b", alias = "u")]
+    Uncensored(String),
 }
 
 // Handle all incoming messages
@@ -268,7 +273,25 @@ async fn handle_command(
         }
         Command::Racist(prompt) => {
             debug!("Handling /racist command with prompt: {}", prompt);
-            handle_ollama(bot, msg, ollama, pool, "duckyblender/racist-phi3".to_string()).await?;
+            handle_ollama(
+                bot,
+                msg,
+                ollama,
+                pool,
+                "duckyblender/racist-phi3".to_string(),
+            )
+            .await?;
+        }
+        Command::Uncensored(prompt) => {
+            debug!("Handling /uncensored command with prompt: {}", prompt);
+            handle_ollama(
+                bot,
+                msg,
+                ollama,
+                pool,
+                "artifish/llama3.2-uncensored".to_string(),
+            )
+            .await?;
         }
     }
 
@@ -308,7 +331,10 @@ async fn handle_ollama(
     }
 
     // Check if there is a system prompt in any message
-    if !conversation_history.iter().any(|m| m.role == MessageRole::System) {
+    if !conversation_history
+        .iter()
+        .any(|m| m.role == MessageRole::System)
+    {
         // Add system prompt as first message
         conversation_history.insert(
             0,
@@ -376,11 +402,11 @@ async fn handle_ollama(
     });
 
     // Generate the AI response
+    let options = GenerationOptions::default().temperature(0.3);
     let res = ollama
-        .send_chat_messages(ChatMessageRequest::new(
-            model.to_string(),
-            conversation_history,
-        ))
+        .send_chat_messages(
+            ChatMessageRequest::new(model.to_string(), conversation_history).options(options),
+        )
         .await;
     debug!("Received response from Ollama generator.");
 

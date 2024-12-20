@@ -1,6 +1,7 @@
 sussy_ducky_bot v2
 
 ### How to run
+`cargo install sqlx-cli --no-default-features --features sqlite`
 `sqlx db create`
 `sqlx mig run`
 `cargo r`
@@ -13,6 +14,9 @@ sussy_ducky_bot v2
 - (later) openai voice mode replies
 - ratelimits
 - paid tier(?)
+
+### bugs
+- [ ] fix message length limit
 
 ### Order of implementation
 - [x] Basic AI bot
