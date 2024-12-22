@@ -20,9 +20,11 @@ sussy_ducky_bot v2
 
 ### Order of implementation
 - [x] Basic AI bot
+- [x] Typing indicator on different thread
 - [x] Captions
 - [x] Database integration
 - [x] Async
+- [x] Ollama model pulling
 - [ ] Ratelimits
 - [x] Multiple local model support
 - [ ] Message editing progress
