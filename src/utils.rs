@@ -1,6 +1,7 @@
 use std::env;
 use std::error::Error;
 
+use fern::colors::ColoredLevelConfig;
 use sqlx::sqlite::SqlitePoolOptions;
 use teloxide::prelude::*;
 use teloxide::types::{ChatAction, ReplyParameters};
@@ -22,13 +23,14 @@ use ollama_rs::{
 pub const SYSTEM_PROMPT: &str = "Be precise and concise. Don't use markdown.";
 
 pub fn init_logging() {
+    let colors = ColoredLevelConfig::new();
     fern::Dispatch::new()
         // Custom format: [Timestamp Level Target] Message
-        .format(|out, message, record| {
+        .format(move |out, message, record| {
             out.finish(format_args!(
                 "[{} {} {}] {}",
                 Local::now().format("%Y-%m-%d %H:%M:%S"),
-                record.level(),
+                colors.color(record.level()),
                 record.target(),
                 message
             ))
