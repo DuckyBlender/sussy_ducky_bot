@@ -1,10 +1,10 @@
-use log::{debug, error, info, warn};
-use ollama_rs::{models::LocalModel, Ollama};
+use log::{debug, error, info};
 use teloxide::prelude::*;
 use teloxide::types::Message;
 use teloxide::utils::command::BotCommands;
 mod commands;
 mod utils;
+mod ollama;
 
 use commands::Command;
 use utils::{handle_message, init_db, init_logging};
@@ -56,50 +56,25 @@ async fn main() {
         }
     };
 
-    // For development, remove all messages from the database
-    sqlx::query!("DELETE FROM messages")
-        .execute(&pool)
-        .await
-        .expect("Failed to delete messages from the database");
-
-    // Initialize Ollama AI service
-    let ollama = Ollama::default();
-    info!("Successfully connected to Ollama");
-    // List models to ensure they are available
-    let local_models: Vec<LocalModel> = ollama.list_local_models().await.unwrap();
-    let local_models: Vec<String> = local_models.iter().map(|m| m.name.clone()).collect();
-    let bot_models = Command::available_models();
-    info!("Local models: {:?}", local_models);
-    info!("Bot models: {:?}", bot_models);
-    // Check if all models are available
-    for model in &bot_models {
-        if local_models.contains(model) {
-            info!("Model {} is available", model);
-        } else {
-            warn!("Model {} is not available, pulling", model);
-            let res = ollama.pull_model(model.to_string(), false).await;
-            if let Err(e) = res {
-                error!("Failed to pull model {}: {}", model, e);
-            }
-            info!("Model {} has been pulled", model);
-        }
+    // Verify ollama models
+    if let Err(e) = ollama::verify_ollama_models().await {
+        error!("Failed to verify ollama models: {}", e);
+        panic!("Failed to verify ollama models");
     }
 
     // Clone necessary components for the handler
-    let ollama_clone = ollama.clone();
     let pool_clone = pool.clone();
     let me_clone = me.clone();
 
     // Build Dispatcher with UpdateHandler
     let handler = Update::filter_message().endpoint(move |bot: Bot, msg: Message| {
-        let ollama = ollama_clone.clone();
         let pool = pool_clone.clone();
         let me = me_clone.clone();
         let bot_clone = bot.clone();
 
         async move {
             tokio::spawn(async move {
-                if let Err(e) = handle_message(bot_clone, msg, &ollama, &pool, &me).await {
+                if let Err(e) = handle_message(bot_clone, msg, &pool, &me).await {
                     error!("Error handling message: {}", e);
                 }
             });
