@@ -7,7 +7,7 @@ AI telegram bot with convenient features.
 cargo install sqlx-cli --no-default-features --features sqlite
 sqlx db create
 sqlx mig run
-`cargo r --release
+cargo r --release
 ```
 Also don't forget about populating .env
 

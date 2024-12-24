@@ -33,7 +33,7 @@ async fn main() {
         }
         Err(e) => {
             error!("Failed to get bot info: {}", e);
-            panic!("Failed to get bot info");
+            panic!("Failed to get bot info"); 
         }
     };
 
@@ -42,7 +42,7 @@ async fn main() {
         error!("Failed to set commands: {}", e);
         panic!("Failed to set commands");
     }
-    info!("Bot commands have been set.");
+    info!("Bot commands have been set."); 
 
     // Initialize SQLite Pool
     let pool = match init_db().await {

@@ -40,7 +40,8 @@ impl AiSource {
         match self {
             AiSource::Ollama => "http://localhost:11434/v1".to_string(),
             AiSource::Google => {
-                "https://generativelanguage.googleapis.com/v1beta/openai".to_string()
+                "https://generativelanguage.googleapis.com/v1beta".to_string()
+                // "http://localhost:8080/v1".to_string()
             }
             AiSource::GroqCloud => "https://api.groq.com/openai/v1".to_string(),
         }
@@ -101,8 +102,8 @@ impl Command {
             Command::Start => None,
             Command::Stats => None,
             Command::Llama => Some(("llama-3.3-70b-versatile", AiSource::GroqCloud)),
-            Command::Uncensored => Some(("artifish/llama3.2-uncensored", AiSource::Ollama)),
-            Command::Racist => Some(("duckyblender/racist-phi3", AiSource::Ollama)),
+            Command::Uncensored => Some(("artifish/llama3.2-uncensored:latest", AiSource::Ollama)),
+            Command::Racist => Some(("duckyblender/racist-phi3:latest", AiSource::Ollama)),
             Command::Gemini => Some(("gemini-2.0-flash-exp", AiSource::Google)),
             Command::Martin => Some(("gemini-2.0-flash-exp", AiSource::Google)),
             Command::Cunny => Some(("gemini-2.0-flash-exp", AiSource::Google)),

@@ -7,14 +7,14 @@ use crate::commands::Command;
 pub async fn verify_ollama_models() -> Result<(), Box<dyn Error + Send + Sync>> {
     let downloaded_models = list_ollama_models().await?;
     let bot_local_models = Command::local_models();
-    info!("Local models: {:?}", downloaded_models);
+    info!("Downloaded models: {:?}", downloaded_models);
     info!("Bot models: {:?}", bot_local_models);
     // Check if all models are available
     for model in &bot_local_models {
         if downloaded_models.contains(model) {
             info!("Model {} is available", model);
         } else {
-            warn!("Model {} is not available, pulling", model);
+            warn!("Model {} is not available, pulling...", model);
             pull_ollama_model(model.to_string()).await?;
         }
     }

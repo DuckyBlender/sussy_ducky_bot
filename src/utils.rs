@@ -318,9 +318,9 @@ pub async fn handle_ai(
         .with_endpoint(model_url.clone())
         .build()
         .unwrap();
-    let req = ChatCompletionRequest::new(model_id.clone(), conversation_history);
-        // .max_tokens(max_tokens)
-        // .temperature(temperature);
+    let req = ChatCompletionRequest::new(model_id.clone(), conversation_history)
+        .max_tokens(max_tokens)
+        .temperature(temperature);
     assert!(max_tokens <= 512, "max_tokens must be at most 512");
     info!(
         "Sending request to {} using model {} and url {}",
