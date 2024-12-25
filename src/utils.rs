@@ -19,7 +19,6 @@ use teloxide::utils::command::BotCommands;
 use tokio::time::{self, Duration};
 
 use crate::commands::{handle_command, AiSource, Command, ModelInfo, SystemMethod};
-use crate::markdown::TelegramMarkdownConverter;
 
 pub fn init_logging() {
     let colors = ColoredLevelConfig::new();
@@ -181,7 +180,7 @@ pub async fn form_conversation_history(
             // add the user's prompt to the conversation history
             conversation_history.push(ChatCompletionMessage {
                 role: MessageRole::user,
-                content: Text(get_message_content(&msg)),
+                content: Text(get_message_content(msg)),
                 name: None,
                 tool_calls: None,
                 tool_call_id: None,
@@ -194,7 +193,7 @@ pub async fn form_conversation_history(
             // Add user prompt, no system prompt or it was already injected
             conversation_history.push(ChatCompletionMessage {
                 role: MessageRole::user,
-                content: Text(extract_prompt(&msg).await),
+                content: Text(extract_prompt(msg).await),
                 name: None,
                 tool_calls: None,
                 tool_call_id: None,
@@ -215,7 +214,7 @@ pub async fn form_conversation_history(
                     // Add user prompt as second message
                     conversation_history.push(ChatCompletionMessage {
                         role: MessageRole::user,
-                        content: Text(extract_prompt(&msg).await),
+                        content: Text(extract_prompt(msg).await),
                         name: None,
                         tool_calls: None,
                         tool_call_id: None,
@@ -226,7 +225,7 @@ pub async fn form_conversation_history(
                     let system_prompt = system_prompt_info.1.clone();
                     conversation_history.push(ChatCompletionMessage {
                         role: MessageRole::user,
-                        content: Text(format!("{}{}", system_prompt, extract_prompt(&msg).await)),
+                        content: Text(format!("{}{}", system_prompt, extract_prompt(msg).await)),
                         name: None,
                         tool_calls: None,
                         tool_call_id: None,
@@ -238,7 +237,7 @@ pub async fn form_conversation_history(
                     conversation_history.push(ChatCompletionMessage {
                         role: MessageRole::user,
                         content: Text(
-                            system_prompt.replace("<INSERT>", &extract_prompt(&msg).await),
+                            system_prompt.replace("<INSERT>", &extract_prompt(msg).await),
                         ),
                         name: None,
                         tool_calls: None,
@@ -404,41 +403,12 @@ pub async fn handle_ai(
                 response_str.push_str(" [MAX LENGTH]");
             }
 
-            // Parse the response into markdown
-            let converter = TelegramMarkdownConverter::new();
-            let response_md = converter.convert(&response_str);
-
             debug!("AI Response: {}", &response_str);
-            let res = bot
-                .send_message(msg.chat.id, &response_md)
+            let bot_msg = bot
+                .send_message(msg.chat.id, &response_str)
                 .reply_parameters(ReplyParameters::new(msg.id))
                 .parse_mode(ParseMode::MarkdownV2)
-                .await;
-
-            let bot_msg = match res {
-                Ok(message) => {
-                    info!("Sent markdown AI response to chat ID: {}", msg.chat.id);
-                    message
-                }
-                Err(e) => {
-                    error!("Failed to send AI markdown response: {}", e);
-                    // Send a text message instead
-                    let fallback_res = bot
-                        .send_message(msg.chat.id, &response_str)
-                        .reply_parameters(ReplyParameters::new(msg.id))
-                        .await;
-                    match fallback_res {
-                        Ok(fallback_message) => {
-                            info!("Sent plaintext AI response to chat ID: {}", msg.chat.id);
-                            fallback_message
-                        }
-                        Err(fallback_e) => {
-                            error!("Failed to send plaintext AI response: {}", fallback_e);
-                            return Err(fallback_e.into());
-                        }
-                    }
-                }
-            };
+                .await?;
 
             // Save the bot's response
             save_message(pool, &bot_msg, Some(model_info), Some(db_response)).await?;
@@ -476,7 +446,7 @@ pub async fn handle_context(
         return Ok(());
     }
     let reply_msg = msg.reply_to_message().unwrap();
-    let model_from_msg = get_model_from_msg(&reply_msg, pool).await;
+    let model_from_msg = get_model_from_msg(reply_msg, pool).await;
     if model_from_msg.is_none() {
         bot.send_message(msg.chat.id, "No context found for this message.")
             .reply_parameters(ReplyParameters::new(msg.id))

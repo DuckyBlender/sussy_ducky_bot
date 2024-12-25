@@ -4,7 +4,7 @@ use log::{debug, info};
 use sqlx::SqlitePool;
 use strum::{EnumIter, IntoEnumIterator};
 use teloxide::prelude::*;
-use teloxide::types::{ParseMode, ReplyParameters};
+use teloxide::types::ReplyParameters;
 use teloxide::utils::command::BotCommands;
 
 #[derive(PartialEq)]
@@ -40,7 +40,7 @@ impl AiSource {
     pub fn to_url(&self) -> String {
         match self {
             AiSource::Ollama => "http://localhost:11434/v1".to_string(),
-            AiSource::OpenRouter => { "https://openrouter.ai/api/v1".to_string()      }
+            AiSource::OpenRouter => "https://openrouter.ai/api/v1".to_string(),
             AiSource::GroqCloud => "https://api.groq.com/openai/v1".to_string(),
         }
     }
@@ -48,7 +48,9 @@ impl AiSource {
     pub fn api_key(&self) -> String {
         match self {
             AiSource::Ollama => "ollama".to_string(),
-            AiSource::OpenRouter => env::var("OPENROUTER_API_KEY").expect("OPENROUTER_API_KEY must be set"),
+            AiSource::OpenRouter => {
+                env::var("OPENROUTER_API_KEY").expect("OPENROUTER_API_KEY must be set")
+            }
             AiSource::GroqCloud => env::var("GROQ_API_KEY").expect("GROQ_API_KEY must be set"),
         }
     }
@@ -69,15 +71,17 @@ impl std::fmt::Display for AiSource {
 /// 🖥️ - Hosted locally
 /// These commands are currently supported by the bot:
 #[derive(BotCommands, Clone, Debug, EnumIter)]
-#[command(
-    rename_rule = "lowercase",
-)]
+#[command(rename_rule = "lowercase")]
 pub enum Command {
     #[command(description = "Display this help text")]
     Help,
     #[command(description = "Start a conversation with the bot")]
     Start,
-    #[command(description = "[WIP] Usage stats, DM for global stats", alias = "top", hide)]
+    #[command(
+        description = "[WIP] Usage stats, DM for global stats",
+        alias = "top",
+        hide
+    )]
     Stats,
     #[command(description = "Check the context for a message", alias = "ctx")]
     Context,
@@ -113,7 +117,8 @@ impl Command {
     }
 
     pub fn system_prompt(&self) -> Option<(SystemMethod, String)> {
-        const DEFAULT_SYSTEM_PROMPT: &str = "Be precise and concise. Don't use markdown. Answer in the language of the user.";
+        const DEFAULT_SYSTEM_PROMPT: &str =
+            "Be precise and concise. Don't use markdown. Answer in the language of the user.";
         match self {
             Command::Help => None,
             Command::Start => None,

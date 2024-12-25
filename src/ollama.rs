@@ -40,7 +40,10 @@ async fn list_ollama_models() -> Result<Vec<String>, Box<dyn Error + Send + Sync
     let reqwest = reqwest::Client::new();
     let res = reqwest.get("http://localhost:11434/api/tags").send().await;
     if let Err(e) = res {
-        error!("Failed to list models. Do you have ollama downloaded and running? {}", e);
+        error!(
+            "Failed to list models. Do you have ollama downloaded and running? {}",
+            e
+        );
         return Err(Box::new(e));
     }
     let json = res.unwrap().json::<serde_json::Value>().await;
@@ -51,7 +54,7 @@ async fn list_ollama_models() -> Result<Vec<String>, Box<dyn Error + Send + Sync
     let json = json.unwrap();
 
     let models_array = json["models"].as_array();
-    
+
     if models_array.is_none() {
         // No models, return empty vec
         return Ok(vec![]);

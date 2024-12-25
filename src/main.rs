@@ -3,9 +3,8 @@ use teloxide::prelude::*;
 use teloxide::types::Message;
 use teloxide::utils::command::BotCommands;
 mod commands;
-mod utils;
 mod ollama;
-mod markdown;
+mod utils;
 
 use commands::Command;
 use utils::{handle_message, init_db, init_logging};
@@ -34,7 +33,7 @@ async fn main() {
         }
         Err(e) => {
             error!("Failed to get bot info: {}", e);
-            panic!("Failed to get bot info"); 
+            panic!("Failed to get bot info");
         }
     };
 
@@ -43,7 +42,7 @@ async fn main() {
         error!("Failed to set commands: {}", e);
         panic!("Failed to set commands");
     }
-    info!("Bot commands have been set."); 
+    info!("Bot commands have been set.");
 
     // Initialize SQLite Pool
     let pool = match init_db().await {
@@ -83,7 +82,10 @@ async fn main() {
         }
     });
 
-    info!("Started @{} bot", me.username.clone().unwrap_or("unknown".to_string()));
+    info!(
+        "Started @{} bot",
+        me.username.clone().unwrap_or("unknown".to_string())
+    );
 
     Dispatcher::builder(bot, handler)
         .dependencies(dptree::deps![])
