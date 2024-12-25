@@ -8,16 +8,18 @@ use openai_api_rs::v1::api::OpenAIClient;
 use openai_api_rs::v1::chat_completion::Content::Text;
 use openai_api_rs::v1::chat_completion::{
     ChatCompletionChoice, ChatCompletionMessage, ChatCompletionMessageForResponse,
-    ChatCompletionRequest, MessageRole,
+    ChatCompletionRequest, FinishReason, MessageRole,
 };
+use serde_json::json;
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::SqlitePool;
 use teloxide::prelude::*;
-use teloxide::types::{ChatAction, ReplyParameters};
+use teloxide::types::{ChatAction, MessageId, ParseMode, ReplyParameters};
 use teloxide::utils::command::BotCommands;
 use tokio::time::{self, Duration};
 
 use crate::commands::{handle_command, AiSource, Command, ModelInfo, SystemMethod};
+use crate::markdown::TelegramMarkdownConverter;
 
 pub fn init_logging() {
     let colors = ColoredLevelConfig::new();
@@ -126,16 +128,9 @@ pub async fn handle_message(
     Ok(())
 }
 
-pub async fn handle_stats(
-    bot: Bot,
-    msg: Message,
-    pool: &SqlitePool,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn handle_stats(bot: Bot, msg: Message) -> Result<(), Box<dyn Error + Send + Sync>> {
     let chat_id = msg.chat.id;
-    let usage_stats = top_usage_stats(pool, Some(chat_id)).await?;
-    let command_stats = top_command_stats(pool, Some(chat_id)).await?;
-    let stats = format!("{}\n\n{}", usage_stats, command_stats);
-    bot.send_message(chat_id, &stats)
+    bot.send_message(chat_id, "Usage statistics are not implemented yet.")
         .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
     info!("Sent usage statistics to chat ID: {}", chat_id);
@@ -173,18 +168,16 @@ async fn get_model_from_msg(msg: &Message, pool: &SqlitePool) -> Option<(String,
     }
 }
 
-pub async fn handle_ai(
-    bot: Bot,
-    msg: Message,
+pub async fn form_conversation_history(
+    msg: &Message,
+    model_info: &ModelInfo,
     pool: &SqlitePool,
-    model_info: ModelInfo,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
-    // Extract and format the prompt, including conversation history if replying
+) -> Result<Vec<ChatCompletionMessage>, Box<dyn Error + Send + Sync>> {
     let mut conversation_history: Vec<ChatCompletionMessage> = Vec::new();
     if let Some(reply) = msg.reply_to_message() {
         if get_model_from_msg(reply, pool).await.is_some() {
             // Known message, fetch conversation history
-            conversation_history = get_conversation_history(msg.chat.id, reply.id, pool).await?;
+            conversation_history = get_conversation_history_db(msg.chat.id, reply.id, pool).await?;
             // add the user's prompt to the conversation history
             conversation_history.push(ChatCompletionMessage {
                 role: MessageRole::user,
@@ -208,8 +201,8 @@ pub async fn handle_ai(
             });
         } else {
             let system_prompt_info = model_info.system_prompt.as_ref().unwrap();
-            let system_prompt = system_prompt_info.0.clone();
-            match system_prompt_info.1 {
+            let system_prompt = system_prompt_info.1.clone();
+            match system_prompt_info.0 {
                 SystemMethod::System => {
                     // Add system prompt as first message
                     conversation_history.push(ChatCompletionMessage {
@@ -230,7 +223,7 @@ pub async fn handle_ai(
                 }
                 SystemMethod::Inject => {
                     // Add user prompt as first message with prefix system prompt
-                    let system_prompt = system_prompt_info.0.clone();
+                    let system_prompt = system_prompt_info.1.clone();
                     conversation_history.push(ChatCompletionMessage {
                         role: MessageRole::user,
                         content: Text(format!("{}{}", system_prompt, extract_prompt(&msg).await)),
@@ -239,9 +232,33 @@ pub async fn handle_ai(
                         tool_call_id: None,
                     });
                 }
+                SystemMethod::InjectInsert => {
+                    // Add user prompt as first message, replace <INSERT> with the users prompt
+                    let system_prompt = system_prompt_info.1.clone();
+                    conversation_history.push(ChatCompletionMessage {
+                        role: MessageRole::user,
+                        content: Text(
+                            system_prompt.replace("<INSERT>", &extract_prompt(&msg).await),
+                        ),
+                        name: None,
+                        tool_calls: None,
+                        tool_call_id: None,
+                    });
+                }
             }
         }
     }
+    Ok(conversation_history)
+}
+
+pub async fn handle_ai(
+    bot: Bot,
+    msg: Message,
+    pool: &SqlitePool,
+    model_info: ModelInfo,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    // Extract and format the prompt, including conversation history if replying
+    let conversation_history = form_conversation_history(&msg, &model_info, pool).await?;
 
     info!("Conversation history: {:?}", conversation_history);
     if msg.chat.id == ChatId(5337682436) {
@@ -267,8 +284,16 @@ pub async fn handle_ai(
         .await?;
     debug!("Sent typing action to chat ID: {}", msg.chat.id);
 
-    // Save the user's prompt
-    save_message(pool, &msg, None).await?;
+    // Save the user's prompt (from the conversation history)
+    let user_prompt = &conversation_history.last().unwrap().content;
+    let user_prompt = match user_prompt {
+        Text(text) => text,
+        _ => {
+            warn!("Unsupported content type for user prompt.");
+            return Ok(());
+        }
+    };
+    save_message(pool, &msg, None, Some(user_prompt.to_string())).await?;
     info!("Saved user's prompt message.");
 
     // Create a watch channel to signal the typing indicator task when done
@@ -307,7 +332,7 @@ pub async fn handle_ai(
     });
 
     // Generate the AI response
-    let max_tokens = 512; // 1 token is around 4 chars
+    let max_tokens = 1024; // 1 token is around 4 chars
     let temperature = 1.0;
     let model_url = model_info.model_provider.to_url();
     let provider_name = model_info.model_provider.to_string();
@@ -316,12 +341,27 @@ pub async fn handle_ai(
     let client = OpenAIClient::builder()
         .with_api_key(api_key)
         .with_endpoint(model_url.clone())
+        .with_json(json!({
+        "safetySettings": [
+            {"category": "HARM_CATEGORY_UNSPECIFIED", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_CIVIC_INTEGRITY", "threshold": "BLOCK_NONE"}
+        ],
+        "provider": {
+            "order": [
+              "Google AI Studio"
+            ],
+            "allow_fallbacks": false
+          }
+        }))
         .build()
         .unwrap();
     let req = ChatCompletionRequest::new(model_id.clone(), conversation_history)
         .max_tokens(max_tokens)
         .temperature(temperature);
-    assert!(max_tokens <= 512, "max_tokens must be at most 512");
     info!(
         "Sending request to {} using model {} and url {}",
         provider_name, model_id, model_url
@@ -349,34 +389,122 @@ pub async fn handle_ai(
                 finish_reason: None,
                 finish_details: None,
             });
-            let response_str = if let Some(content) = &ai_response.message.content {
+            let mut response_str = if let Some(content) = &ai_response.message.content {
                 content.to_string()
             } else {
                 warn!("Empty AI response received.");
                 "<no response>".to_string()
             };
 
+            let db_response = response_str.clone();
+
+            // If finish reason is length, append [MAX LENGTH] to the response
+            if ai_response.finish_reason == Some(FinishReason::length) {
+                info!("AI response reached max length.");
+                response_str.push_str(" [MAX LENGTH]");
+            }
+
+            // Parse the response into markdown
+            let converter = TelegramMarkdownConverter::new();
+            let response_md = converter.convert(&response_str);
+
             debug!("AI Response: {}", &response_str);
-            let bot_msg = bot
-                .send_message(msg.chat.id, &response_str)
+            let res = bot
+                .send_message(msg.chat.id, &response_md)
                 .reply_parameters(ReplyParameters::new(msg.id))
-                .await?;
-            info!("Sent AI response to chat ID: {}", msg.chat.id);
+                .parse_mode(ParseMode::MarkdownV2)
+                .await;
+
+            let bot_msg = match res {
+                Ok(message) => {
+                    info!("Sent markdown AI response to chat ID: {}", msg.chat.id);
+                    message
+                }
+                Err(e) => {
+                    error!("Failed to send AI markdown response: {}", e);
+                    // Send a text message instead
+                    let fallback_res = bot
+                        .send_message(msg.chat.id, &response_str)
+                        .reply_parameters(ReplyParameters::new(msg.id))
+                        .await;
+                    match fallback_res {
+                        Ok(fallback_message) => {
+                            info!("Sent plaintext AI response to chat ID: {}", msg.chat.id);
+                            fallback_message
+                        }
+                        Err(fallback_e) => {
+                            error!("Failed to send plaintext AI response: {}", fallback_e);
+                            return Err(fallback_e.into());
+                        }
+                    }
+                }
+            };
 
             // Save the bot's response
-            save_message(pool, &bot_msg, Some(model_info)).await?;
+            save_message(pool, &bot_msg, Some(model_info), Some(db_response)).await?;
             info!("Saved bot's AI response.");
         }
         Err(e) => {
-            let error_message = format!("Error: {}", e);
-            warn!("Error generating AI response: {}", e);
-            bot.send_message(msg.chat.id, &error_message)
-                .reply_parameters(ReplyParameters::new(msg.id))
-                .await?;
+            error!("Error generating AI response: {}", e);
+            bot.send_message(
+                msg.chat.id,
+                "Error generating AI response, please try again later. @DuckyBlender",
+            )
+            .reply_parameters(ReplyParameters::new(msg.id))
+            .await?;
             info!("Sent error message to chat ID: {}", msg.chat.id);
             // Don't save the error message
         }
     }
+
+    Ok(())
+}
+
+/// Returns the context of the message in the format:
+/// User: Hello, how are you?
+/// Bot: I'm fine, thank you.
+pub async fn handle_context(
+    bot: Bot,
+    msg: Message,
+    pool: &SqlitePool,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    if msg.reply_to_message().is_none() {
+        bot.send_message(msg.chat.id, "Please reply to a message to get the context.")
+            .reply_parameters(ReplyParameters::new(msg.id))
+            .await?;
+        info!("Sent no reply message to chat ID: {}", msg.chat.id);
+        return Ok(());
+    }
+    let reply_msg = msg.reply_to_message().unwrap();
+    let model_from_msg = get_model_from_msg(&reply_msg, pool).await;
+    if model_from_msg.is_none() {
+        bot.send_message(msg.chat.id, "No context found for this message.")
+            .reply_parameters(ReplyParameters::new(msg.id))
+            .await?;
+        info!("Sent no context message to chat ID: {}", msg.chat.id);
+        return Ok(());
+    }
+
+    let history = get_conversation_history_db(msg.chat.id, reply_msg.id, pool).await?;
+
+    let mut final_msg = String::new();
+    for message in &history {
+        let content = match &message.content {
+            Text(text) => text,
+            _ => "<unsupported content type>",
+        };
+        final_msg.push_str(&format!("{:?}: {}\n", message.role, content));
+    }
+
+    if final_msg.len() > 4096 {
+        final_msg.truncate(4090);
+        final_msg.push_str(" [...]");
+    }
+
+    bot.send_message(msg.chat.id, &final_msg)
+        .reply_parameters(ReplyParameters::new(msg.id))
+        .await?;
+    info!("Sent context message to chat ID: {}", msg.chat.id);
 
     Ok(())
 }
@@ -419,9 +547,9 @@ fn remove_prefix(text: &str) -> String {
     text.to_string()
 }
 
-async fn get_conversation_history(
-    chat_id: teloxide::types::ChatId,
-    reply_to_message_id: teloxide::types::MessageId,
+async fn get_conversation_history_db(
+    chat_id: ChatId,
+    reply_to_message_id: MessageId,
     pool: &SqlitePool,
 ) -> Result<Vec<ChatCompletionMessage>, sqlx::Error> {
     debug!(
@@ -467,124 +595,12 @@ async fn get_conversation_history(
     Ok(history)
 }
 
-/// Top 10 users global/per chat
-pub async fn top_usage_stats(
-    pool: &SqlitePool,
-    chat_id: Option<ChatId>,
-) -> Result<String, sqlx::Error> {
-    let mut stats = String::new();
-
-    // Get top 10 users globally
-    stats.push_str("Top 10 users globally:\n");
-    let global_users = sqlx::query!(
-        r#"
-        SELECT user_id, COUNT(*) AS count FROM messages
-        WHERE user_id > 0
-        GROUP BY user_id
-        ORDER BY count DESC
-        LIMIT 10
-        "#,
-    )
-    .fetch_all(pool)
-    .await?;
-    for (i, user) in global_users.iter().enumerate() {
-        stats.push_str(&format!(
-            "{}. User ID: {} - Messages: {}\n",
-            i + 1,
-            user.user_id,
-            user.count
-        ));
-    }
-
-    // Get top 10 users in the chat
-    if let Some(chat_id) = chat_id {
-        stats.push_str("\nTop 10 users in this chat:\n");
-        let chat_users = sqlx::query!(
-            r#"
-            SELECT user_id, COUNT(*) AS count FROM messages
-            WHERE chat_id = ? AND user_id > 0
-            GROUP BY user_id
-            ORDER BY count DESC
-            LIMIT 10
-            "#,
-            chat_id.0
-        )
-        .fetch_all(pool)
-        .await?;
-        for (i, user) in chat_users.iter().enumerate() {
-            stats.push_str(&format!(
-                "{}. User ID: {} - Messages: {}\n",
-                i + 1,
-                user.user_id,
-                user.count
-            ));
-        }
-    }
-
-    Ok(stats)
-}
-
-/// Top 10 commands global/per chat
-pub async fn top_command_stats(
-    pool: &SqlitePool,
-    chat_id: Option<ChatId>,
-) -> Result<String, sqlx::Error> {
-    let mut stats = String::new();
-
-    // Get top 10 commands globally
-    stats.push_str("Top 10 commands globally:\n");
-    let global_commands = sqlx::query!(
-        r#"
-        SELECT content, COUNT(*) AS count FROM messages
-        WHERE user_id = 0
-        GROUP BY content
-        ORDER BY count DESC
-        LIMIT 10
-        "#,
-    )
-    .fetch_all(pool)
-    .await?;
-    for (i, command) in global_commands.iter().enumerate() {
-        stats.push_str(&format!(
-            "{}. Command: {} - Count: {}\n",
-            i + 1,
-            command.content,
-            command.count
-        ));
-    }
-
-    // Get top 10 commands in the chat
-    if let Some(chat_id) = chat_id {
-        stats.push_str("\nTop 10 commands in this chat:\n");
-        let chat_commands = sqlx::query!(
-            r#"
-            SELECT content, COUNT(*) AS count FROM messages
-            WHERE chat_id = ? AND user_id = 0
-            GROUP BY content
-            ORDER BY count DESC
-            LIMIT 10
-            "#,
-            chat_id.0
-        )
-        .fetch_all(pool)
-        .await?;
-        for (i, command) in chat_commands.iter().enumerate() {
-            stats.push_str(&format!(
-                "{}. Command: {} - Count: {}\n",
-                i + 1,
-                command.content,
-                command.count
-            ));
-        }
-    }
-
-    Ok(stats)
-}
-
+/// This function saves a message to the database. Should be refactored cause it's a mess
 pub async fn save_message(
     pool: &SqlitePool,
     msg: &Message,
     model_info: Option<ModelInfo>,
+    content_override: Option<String>,
 ) -> Result<(), sqlx::Error> {
     let user_id: i64;
     let model_id: Option<String>;
@@ -599,8 +615,12 @@ pub async fn save_message(
         user_id = msg.from.as_ref().map(|u| u.id.0 as i64).unwrap_or(0);
     };
 
-    let content = get_message_content(msg);
-    let content = remove_prefix(&content);
+    let content = if let Some(override_content) = content_override {
+        override_content
+    } else {
+        let content = get_message_content(msg);
+        remove_prefix(&content)
+    };
 
     let reply_to = msg.reply_to_message().map(|reply| reply.id.0);
     let chat_id = msg.chat.id.0;

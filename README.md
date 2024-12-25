@@ -15,8 +15,9 @@ Also don't forget about populating .env
 - rewritten from scratch for the third time
 - hosted on a server, gtx 1660 super
 - custom models (some controvertial, use at own risk)
-- conversation continuation using sql caching
+- conversation continuation using sql caching (/context)
 - ollama model verification
+- markdown (soon)
 - ratelimits (soon)
 
 ### TODO
@@ -32,6 +33,7 @@ Also don't forget about populating .env
 - [x] Groq support
 - [x] Threads to continue conversations
 - [x] Ollama model verification
+- [ ] Markdown
 - [ ] Ratelimits
 - [ ] Image support
 - [ ] Docker

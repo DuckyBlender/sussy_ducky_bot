@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-teloxide = { version = "0.13", features = ["macros"] }
+teloxide = { git = "https://github.com/teloxide/teloxide", rev = "94db1757dc96116f4756a586fcbce3ac5ebd0c59", features = ["macros"] }
 log = "0.4"
 fern = { version = "0.7.1", features = ["colored"] }
 tokio = { version =  "1.8", features = ["rt-multi-thread", "macros"] }
@@ -15,7 +15,8 @@ serde_json = "1.0.134"
 chrono = "0.4.39"
 reqwest = { version = "0.12.9" }
 strum = { version = "0.26", features = ["derive"] }
-openai-api-rs = "5.2.4"
+openai-api-rs = {git = "https://github.com/DuckyBlender/openai-api-rs"} # added support for openrouter
+# openai-api-rs = { path = "../openai-api-rs"}
 
 [profile.dev.package.sqlx-macros]
 opt-level = 3

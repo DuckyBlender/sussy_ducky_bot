@@ -5,6 +5,7 @@ use teloxide::utils::command::BotCommands;
 mod commands;
 mod utils;
 mod ollama;
+mod markdown;
 
 use commands::Command;
 use utils::{handle_message, init_db, init_logging};
