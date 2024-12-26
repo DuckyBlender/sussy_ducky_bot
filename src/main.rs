@@ -10,6 +10,7 @@ mod commands;
 mod ollama;
 mod ratelimit;
 mod utils;
+// mod image_utils;
 
 use commands::Command;
 use ratelimit::{RateLimitResult, RateLimiter};

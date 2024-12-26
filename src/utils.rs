@@ -93,7 +93,6 @@ pub async fn handle_message(
         warn!("User ID not found in message, ignoring.");
         return Ok(());
     }
-    // let user_id = user_id.unwrap(); // TODO: ratelimit
 
     // Check if the message is a command
     if let Some(text) = msg.text() {

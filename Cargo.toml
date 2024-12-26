@@ -16,6 +16,7 @@ chrono = "0.4.39"
 reqwest = { version = "0.12.9" }
 strum = { version = "0.26", features = ["derive"] }
 openai-api-rs = {git = "https://github.com/DuckyBlender/openai-api-rs"} # added support for openrouter
+base64 = "0.22.1"
 # openai-api-rs = { path = "../openai-api-rs"}
 
 [profile.dev.package.sqlx-macros]

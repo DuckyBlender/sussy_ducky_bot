@@ -18,8 +18,9 @@ Also don't forget about populating .env
 - conversation continuation using sql caching (/context)
 - ollama model verification
 - stats command
+- ratelimits
 - markdown (soon)
-- ratelimits (soon)
+- image support (soon)
 
 ### TODO
 - [x] Basic AI bot
@@ -35,9 +36,9 @@ Also don't forget about populating .env
 - [x] Threads to continue conversations
 - [x] Ollama model verification
 - [x] Stats command (requires mapping user id to username)
+- [x] Ratelimits
 - [ ] Markdown
-- [ ] Ratelimits
 - [ ] Image support
 - [ ] Docker
 - [ ] File reorganization
-- [ ] OpenAI voice mode replies
+- [ ] OpenAI voice mode replies (?)
