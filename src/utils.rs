@@ -426,7 +426,7 @@ pub async fn handle_ai(
     });
 
     // Generate the AI response
-    let max_tokens = 1024; // 1 token is around 4 chars
+    let max_tokens = 512; // 1 token is around 4 chars
     let temperature = 1.0;
     let model_url = model_info.model_provider.to_url();
     let provider_name = model_info.model_provider.to_string();

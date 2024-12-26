@@ -25,7 +25,7 @@ async fn pull_ollama_model(model: String) -> Result<(), Box<dyn Error + Send + S
     let reqwest = reqwest::Client::new();
     let res = reqwest
         .post("http://localhost:11434/api/pull")
-        .json(&serde_json::json!({ "model": model }))
+        .json(&serde_json::json!({ "model": model, "stream": false }))
         .send()
         .await;
     if let Err(e) = res {
