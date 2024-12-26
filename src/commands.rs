@@ -6,6 +6,7 @@ use strum::{EnumIter, IntoEnumIterator};
 use teloxide::prelude::*;
 use teloxide::types::ReplyParameters;
 use teloxide::utils::command::BotCommands;
+use crate::ratelimit::RateLimit;
 
 #[derive(PartialEq)]
 pub enum SystemMethod {
@@ -134,6 +135,21 @@ impl Command {
         }
     }
 
+    pub fn rate_limit(&self) -> Option<RateLimit> {  
+        match self {  
+            Command::Help => None, // No rate limit  
+            Command::Start => None,  
+            Command::Stats => Some(RateLimit::new(5, 60)), // 5 requests per minute  
+            Command::Context => Some(RateLimit::new(10, 60)), // 10 requests per minute  
+            Command::Llama => Some(RateLimit::new(3, 60)), // 3 requests per minute  
+            Command::Uncensored => Some(RateLimit::new(3, 60)),  
+            Command::Racist => Some(RateLimit::new(3, 60)),  
+            Command::Gemini => Some(RateLimit::new(3, 60)),  
+            Command::Martin => Some(RateLimit::new(3, 60)),  
+            Command::Cunny => Some(RateLimit::new(3, 60)),  
+        }  
+    }
+
     pub fn local_models() -> Vec<String> {
         // get all from model_id
         let mut models = vec![];
@@ -146,8 +162,23 @@ impl Command {
         }
         models
     }
+}
 
-    // Todo: Define ratelimits here
+impl std::fmt::Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Command::Help => write!(f, "help"),
+            Command::Start => write!(f, "start"),
+            Command::Stats => write!(f, "stats"),
+            Command::Context => write!(f, "context"),
+            Command::Llama => write!(f, "llama"),
+            Command::Uncensored => write!(f, "uncensored"),
+            Command::Racist => write!(f, "racist"),
+            Command::Gemini => write!(f, "gemini"),
+            Command::Martin => write!(f, "martin"),
+            Command::Cunny => write!(f, "cunny"),
+        }
+    }
 }
 
 /// Handle incoming commands
