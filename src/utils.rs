@@ -496,6 +496,13 @@ pub async fn handle_ai(
             if ai_response.finish_reason == Some(FinishReason::length) {
                 info!("AI response reached max length.");
                 response_str.push_str(" [MAX LENGTH]");
+            } else if ai_response.finish_reason == Some(FinishReason::stop) {
+                info!("AI response stopped.");
+                // Check if max 4096 chars
+                if response_str.len() > 4096 {
+                    response_str.truncate(4090);
+                    response_str.push_str(" [...]");
+                }
             }
 
             debug!("AI Response: {}", &response_str);
