@@ -78,7 +78,7 @@ pub enum Command {
     #[command(description = "Start a conversation with the bot")]
     Start,
     #[command(
-        description = "[WIP] Usage stats, DM for global stats",
+        description = "Usage stats, DM for global stats",
         alias = "top",
         hide
     )]
@@ -184,7 +184,7 @@ Features:
             info!("Start text sent to chat ID: {}", msg.chat.id);
         }
         Command::Stats => {
-            super::utils::handle_stats(bot, msg).await?;
+            super::utils::handle_stats(bot, msg, pool).await?;
         }
         Command::Context => {
             super::utils::handle_context(bot, msg, pool).await?;
@@ -194,7 +194,7 @@ Features:
                 let model_info = ModelInfo {
                     model_id: model.0.to_string(),
                     model_provider: model.1,
-                    system_prompt: Some(cmd.system_prompt().unwrap()),
+                    system_prompt: cmd.system_prompt(),
                 };
                 super::utils::handle_ai(bot, msg, pool, model_info).await?;
             }

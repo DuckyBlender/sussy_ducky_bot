@@ -16,6 +16,7 @@ use sqlx::SqlitePool;
 use teloxide::prelude::*;
 use teloxide::types::{ChatAction, MessageId, ParseMode, ReplyParameters};
 use teloxide::utils::command::BotCommands;
+use teloxide::utils::markdown;
 use tokio::time::{self, Duration};
 
 use crate::commands::{handle_command, AiSource, Command, ModelInfo, SystemMethod};
@@ -127,12 +128,107 @@ pub async fn handle_message(
     Ok(())
 }
 
-pub async fn handle_stats(bot: Bot, msg: Message) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let chat_id = msg.chat.id;
-    bot.send_message(chat_id, "Usage statistics are not implemented yet.")
+pub async fn handle_stats(bot: Bot, msg: Message, pool: &SqlitePool) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let chat_id = msg.chat.id.0;
+
+    // Create a formatted stats message
+    let mut response = String::from("📊 *Statistics*\n\n");
+    
+    // Add user stats
+    response.push_str("👥 *Top Users*:\n");
+    if msg.chat.is_private() {
+        // Global stats for DMs
+        let user_stats = sqlx::query!(
+            r#"
+            SELECT username, COUNT(*) as message_count
+            FROM messages 
+            WHERE user_id != 0 AND username IS NOT NULL
+            GROUP BY username
+            ORDER BY message_count DESC
+            LIMIT 5
+            "#
+        )
+        .fetch_all(pool)
+        .await?;
+
+        for (i, user) in user_stats.iter().enumerate() {
+            let username = markdown::escape(user.username.as_deref().unwrap_or("Unknown"));
+            response.push_str(&format!(
+                "{}\\. {} \\- {} messages\n",
+                i + 1,
+                username,
+                user.message_count
+            ));
+        }
+    } else {
+        // Chat-specific stats
+        let user_stats = sqlx::query!(
+            r#"
+            SELECT username, COUNT(*) as message_count
+            FROM messages 
+            WHERE chat_id = ? AND user_id != 0 AND username IS NOT NULL
+            GROUP BY username
+            ORDER BY message_count DESC
+            LIMIT 5
+            "#,
+            chat_id
+        )
+        .fetch_all(pool)
+        .await?;
+
+        for (i, user) in user_stats.iter().enumerate() {
+            let username = markdown::escape(user.username.as_deref().unwrap_or("Unknown"));
+            response.push_str(&format!(
+                "{}\\. {} \\- {} messages\n",
+                i + 1,
+                username,
+                user.message_count
+            ));
+        }
+    }
+
+    // Add model stats
+    response.push_str("\n🤖 *Top Models*:\n");
+    
+    let model_stats = sqlx::query!(
+        r#"
+        SELECT model, provider, COUNT(*) as usage_count
+        FROM messages
+        WHERE chat_id = ? AND model IS NOT NULL AND provider IS NOT NULL
+        GROUP BY model, provider
+        ORDER BY usage_count DESC
+        LIMIT 5
+        "#,
+        chat_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    for (i, model) in model_stats.iter().enumerate() {
+        let model_name = markdown::escape(model.model.as_deref().unwrap_or("Unknown"));
+        let provider_name = markdown::escape(model.provider.as_deref().unwrap_or("Unknown"));
+        response.push_str(&format!(
+            "{}\\. {} \\({}\\) \\- {} uses\n",
+            i + 1,
+            model_name,
+            provider_name,
+            model.usage_count
+        ));
+    }
+
+    // Add context about whether these are global or chat-specific stats
+    if msg.chat.is_private() {
+        response.push_str("\n_Showing global user statistics and chat\\-specific model usage_");
+    } else {
+        response.push_str("\n_Showing chat\\-specific statistics_");
+    }
+
+    // Send the formatted message
+    bot.send_message(msg.chat.id, response)
+        .parse_mode(ParseMode::MarkdownV2)
         .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
-    info!("Sent usage statistics to chat ID: {}", chat_id);
+
     Ok(())
 }
 
@@ -407,7 +503,6 @@ pub async fn handle_ai(
             let bot_msg = bot
                 .send_message(msg.chat.id, &response_str)
                 .reply_parameters(ReplyParameters::new(msg.id))
-                .parse_mode(ParseMode::MarkdownV2)
                 .await?;
 
             // Save the bot's response
@@ -575,14 +670,19 @@ pub async fn save_message(
     let user_id: i64;
     let model_id: Option<String>;
     let model_provider_name: Option<String>;
+    let username_or_first_name: Option<String>;
+
     if model_info.is_some() {
         model_id = Some(model_info.as_ref().unwrap().model_id.clone());
         model_provider_name = Some(model_info.as_ref().unwrap().model_provider.to_string());
         user_id = 0;
+        username_or_first_name = None;
     } else {
         model_id = None;
         model_provider_name = None;
         user_id = msg.from.as_ref().map(|u| u.id.0 as i64).unwrap_or(0);
+        username_or_first_name = msg.from.as_ref().and_then(|u| u.username.clone())
+            .or_else(|| msg.from.as_ref().map(|u| u.first_name.clone()));
     };
 
     let content = if let Some(override_content) = content_override {
@@ -595,13 +695,12 @@ pub async fn save_message(
     let reply_to = msg.reply_to_message().map(|reply| reply.id.0);
     let chat_id = msg.chat.id.0;
     let message_id = msg.id.0 as i64;
-    let reply_to = reply_to as Option<i32>;
 
     // Use SQLx macros for compile-time checked queries
     sqlx::query!(
         r#"
-        INSERT INTO messages (chat_id, user_id, message_id, reply_to, model, provider, content)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO messages (chat_id, user_id, message_id, reply_to, model, provider, content, username)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         "#,
         chat_id,
         user_id,
@@ -609,7 +708,8 @@ pub async fn save_message(
         reply_to,
         model_id,
         model_provider_name,
-        content
+        content,
+        username_or_first_name
     )
     .execute(pool)
     .await?;

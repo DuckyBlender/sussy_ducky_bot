@@ -17,6 +17,7 @@ Also don't forget about populating .env
 - custom models (some controvertial, use at own risk)
 - conversation continuation using sql caching (/context)
 - ollama model verification
+- stats command
 - markdown (soon)
 - ratelimits (soon)
 
@@ -33,10 +34,10 @@ Also don't forget about populating .env
 - [x] Groq support
 - [x] Threads to continue conversations
 - [x] Ollama model verification
+- [x] Stats command (requires mapping user id to username)
 - [ ] Markdown
 - [ ] Ratelimits
 - [ ] Image support
 - [ ] Docker
-- [ ] Stats command (requires mapping user id to username)
 - [ ] File reorganization
 - [ ] OpenAI voice mode replies

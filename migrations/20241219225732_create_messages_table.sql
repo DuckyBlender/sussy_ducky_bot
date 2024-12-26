@@ -7,5 +7,6 @@ CREATE TABLE IF NOT EXISTS messages (
     model TEXT,
     provider TEXT,
     content TEXT NOT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    username TEXT
 );
