@@ -206,7 +206,7 @@ Hello! I'm an AI chatbot which uses various models to generate text. Some models
 Features:
 - custom models & jailbroken models
 - ability to reply to bot messages and remember context. you can check this with /context while replying to a message
-- usage statistics (soon)
+- usage statistics with /stats
 - open source
 "#;
             debug!("Sending start text to user.");

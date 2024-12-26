@@ -164,6 +164,36 @@ pub async fn handle_stats(bot: Bot, msg: Message, pool: &SqlitePool) -> Result<(
                 user.message_count
             ));
         }
+
+        // Second query for top models
+        let model_stats = sqlx::query!(
+            r#"
+            SELECT model, provider, COUNT(*) as usage_count
+            FROM messages
+            WHERE model IS NOT NULL AND provider IS NOT NULL
+            GROUP BY model, provider
+            ORDER BY usage_count DESC
+            LIMIT 5
+            "#
+        )
+        .fetch_all(pool)
+        .await?;
+
+        response.push_str("\n🤖 *Top Models*:\n");
+        for (i, model) in model_stats.iter().enumerate() {
+            let model_name = markdown::escape(model.model.as_deref().unwrap_or("Unknown"));
+            let provider_name = markdown::escape(model.provider.as_deref().unwrap_or("Unknown"));
+            response.push_str(&format!(
+                "{}\\. {} \\({}\\) \\- {} uses\n",
+                i + 1,
+                model_name,
+                provider_name,
+                model.usage_count
+            ));
+        }
+
+        // Add context about whether these are global or chat-specific stats
+        response.push_str("\n_Showing global user statistics and model usage_");
     } else {
         // Chat-specific stats
         let user_stats = sqlx::query!(
@@ -189,44 +219,41 @@ pub async fn handle_stats(bot: Bot, msg: Message, pool: &SqlitePool) -> Result<(
                 user.message_count
             ));
         }
+
+        // Second query for top models
+        let model_stats = sqlx::query!(
+            r#"
+            SELECT model, provider, COUNT(*) as usage_count
+            FROM messages
+            WHERE chat_id = ? AND model IS NOT NULL AND provider IS NOT NULL
+            GROUP BY model, provider
+            ORDER BY usage_count DESC
+            LIMIT 5
+            "#,
+            chat_id
+        )
+
+        .fetch_all(pool)
+        .await?;
+
+        response.push_str("\n🤖 *Top Models*:\n");
+        for (i, model) in model_stats.iter().enumerate() {
+            let model_name = markdown::escape(model.model.as_deref().unwrap_or("Unknown"));
+            let provider_name = markdown::escape(model.provider.as_deref().unwrap_or("Unknown"));
+            response.push_str(&format!(
+                "{}\\. {} \\({}\\) \\- {} uses\n",
+                i + 1,
+                model_name,
+                provider_name,
+                model.usage_count
+            ));
+        }
+
+        // Add context about whether these are global or chat-specific stats
+        response.push_str("\n_Showing chat-specific statistics_");
     }
 
-    // Add model stats
-    response.push_str("\n🤖 *Top Models*:\n");
     
-    let model_stats = sqlx::query!(
-        r#"
-        SELECT model, provider, COUNT(*) as usage_count
-        FROM messages
-        WHERE chat_id = ? AND model IS NOT NULL AND provider IS NOT NULL
-        GROUP BY model, provider
-        ORDER BY usage_count DESC
-        LIMIT 5
-        "#,
-        chat_id
-    )
-    .fetch_all(pool)
-    .await?;
-
-    for (i, model) in model_stats.iter().enumerate() {
-        let model_name = markdown::escape(model.model.as_deref().unwrap_or("Unknown"));
-        let provider_name = markdown::escape(model.provider.as_deref().unwrap_or("Unknown"));
-        response.push_str(&format!(
-            "{}\\. {} \\({}\\) \\- {} uses\n",
-            i + 1,
-            model_name,
-            provider_name,
-            model.usage_count
-        ));
-    }
-
-    // Add context about whether these are global or chat-specific stats
-    if msg.chat.is_private() {
-        response.push_str("\n_Showing global user statistics and chat\\-specific model usage_");
-    } else {
-        response.push_str("\n_Showing chat\\-specific statistics_");
-    }
-
     // Send the formatted message
     bot.send_message(msg.chat.id, response)
         .parse_mode(ParseMode::MarkdownV2)
