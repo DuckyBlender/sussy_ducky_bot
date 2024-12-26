@@ -19,7 +19,7 @@ use utils::{handle_message, init_db, init_logging};
 #[tokio::main]
 async fn main() {
     // Load environment variables from `.env` file
-    dotenvy::dotenv().ok();
+    dotenvy::dotenv_override().ok();
     debug!("Loaded environment variables from .env");
 
     // Initialize Logging

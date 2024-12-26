@@ -94,6 +94,11 @@ pub async fn handle_message(
         return Ok(());
     }
 
+    // If the message starts with //, ignore it
+    if msg.text().unwrap_or_default().starts_with("//") {
+        return Ok(());
+    }
+
     // Check if the message is a command
     if let Some(text) = msg.text() {
         if let Ok(cmd) = Command::parse(text, me.username()) {
