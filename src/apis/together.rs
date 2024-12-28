@@ -28,14 +28,8 @@ pub struct ImageResponse {
 
 #[derive(Deserialize, Debug)]
 pub struct ImageData {
-    pub timings: Timings,
     // pub index: u32,
     pub b64_json: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Timings {
-    pub inference: f64,
 }
 
 impl TogetherClient {

@@ -1,11 +1,11 @@
 use base64::{engine::general_purpose, Engine as _};
+use log::{debug, error, info, warn};
 use reqwest::Url;
 use teloxide::{
     net::Download,
     prelude::*,
     types::{MessageId, PhotoSize, ReplyParameters, Sticker},
 };
-use tracing::{debug, error, info, warn};
 
 pub enum Media {
     Photo(PhotoSize),
@@ -42,7 +42,6 @@ pub async fn download_and_encode_image(bot: &Bot, media: &Media) -> anyhow::Resu
         Media::Sticker(sticker) => &sticker.file.id,
     };
 
-    
     let file = bot.get_file(file_id).await?;
     bot.download_file(&file.path, &mut buf).await?;
 
@@ -52,26 +51,26 @@ pub async fn download_and_encode_image(bot: &Bot, media: &Media) -> anyhow::Resu
 }
 
 pub fn remove_command(text: &str) -> String {
-    let mut words = text.split_whitespace();
-    // if first starts with /
-    let text = if let Some(word) = words.next() {
-        if word.starts_with('/') {
-            words.collect::<Vec<&str>>().join(" ")
-        } else {
-            text.to_string()
-        }
+    if text.starts_with('/') {
+        // Find the end of the first word (first whitespace or end of string)
+        let end_of_first_word = text.find(char::is_whitespace).unwrap_or(text.len());
+        // Return the rest of the string after the first word
+        text[end_of_first_word..].trim_start().to_string()
     } else {
+        // Return the original string if it doesn't start with '/'
         text.to_string()
-    };
-    text.trim().to_string()
+    }
 }
 
-pub async fn find_prompt(message: &Message) -> Option<String> {
+pub async fn find_prompt(message: &Message) -> (Option<String>, Option<String>) {
+    let mut prompt = None;
+    let mut context = None;
+
     // Check if the message itself has text
     if let Some(msg_text) = message.text() {
         let cleaned_text = remove_command(msg_text);
         if !cleaned_text.is_empty() {
-            return Some(cleaned_text);
+            prompt = Some(cleaned_text);
         }
     }
 
@@ -79,32 +78,66 @@ pub async fn find_prompt(message: &Message) -> Option<String> {
     if let Some(caption) = message.caption() {
         let cleaned_caption = remove_command(caption);
         if !cleaned_caption.is_empty() {
-            return Some(cleaned_caption);
+            prompt = Some(cleaned_caption);
         }
     }
 
     // Check if the message is a reply to another message
     if let Some(reply) = message.reply_to_message() {
-        // First, check if the reply message has text
-        if let Some(reply_text) = reply.text() {
-            let cleaned_text = remove_command(reply_text);
-            if !cleaned_text.is_empty() {
-                return Some(cleaned_text);
+        // Check if the reply message is from a bot
+        if let Some(reply_from) = reply.from.as_ref() {
+            if reply_from.is_bot {
+                info!("The reply message is from the assistant.");
+                // If the reply is from the assistant, extract its text as context
+                if let Some(reply_text) = reply.text() {
+                    let cleaned_text = remove_command(reply_text);
+                    if !cleaned_text.is_empty() {
+                        context = Some(cleaned_text);
+                    }
+                }
+            } else {
+                // If the reply is not from the assistant, extract its text as prompt.
+                // If there was a prompt before, prefix it with the reply text and newlines
+                if let Some(reply_text) = reply.text() {
+                    let cleaned_text = remove_command(reply_text);
+                    if !cleaned_text.is_empty() {
+                        if let Some(prompt_text) = prompt {
+                            prompt = Some(format!("{cleaned_text}\n\n{prompt_text}"));
+                        } else {
+                            prompt = Some(cleaned_text);
+                        }
+                    }
+                }
             }
         }
 
-        // If no text, check for a caption in the reply
-        if let Some(reply_caption) = reply.caption() {
-            let cleaned_caption = remove_command(reply_caption);
-            if !cleaned_caption.is_empty() {
-                return Some(cleaned_caption);
+        // If no prompt found yet, check if the reply message has text
+        if prompt.is_none() {
+            if let Some(reply_text) = reply.text() {
+                let cleaned_text = remove_command(reply_text);
+                if !cleaned_text.is_empty() {
+                    prompt = Some(cleaned_text);
+                }
+            }
+        }
+
+        // If no prompt found yet, check for a caption in the reply
+        if prompt.is_none() {
+            if let Some(reply_caption) = reply.caption() {
+                let cleaned_caption = remove_command(reply_caption);
+                if !cleaned_caption.is_empty() {
+                    prompt = Some(cleaned_caption);
+                }
             }
         }
     }
 
-    // If no valid text or caption found, log the warning and return None
-    warn!("No valid text or caption found in the message or reply");
-    None
+    // If no valid text or caption found, log the warning
+    if prompt.is_none() {
+        warn!("No valid text or caption found in the message or reply");
+    }
+
+    (prompt, context)
 }
 
 pub fn parse_webhook(
@@ -129,22 +162,23 @@ pub fn split_string(input: &str, max_length: usize) -> Vec<String> {
     let mut current_chunk = String::new();
     let mut current_length = 0;
 
-    for word in input.split_whitespace() {
-        if current_length + word.len() + 1 > max_length && !current_chunk.is_empty() {
+    // Split the input into words while preserving whitespace
+    let words = input.split_inclusive(char::is_whitespace);
+
+    for word in words {
+        // If adding the current word exceeds max_length, finalize the current chunk
+        if current_length + word.len() > max_length && !current_chunk.is_empty() {
             result.push(current_chunk);
             current_chunk = String::new();
             current_length = 0;
         }
 
-        if current_length > 0 {
-            current_chunk.push(' ');
-            current_length += 1;
-        }
-
+        // Add the word to the chunk
         current_chunk.push_str(word);
         current_length += word.len();
     }
 
+    // Add the last chunk if it's not empty
     if !current_chunk.is_empty() {
         result.push(current_chunk);
     }

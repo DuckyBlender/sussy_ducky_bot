@@ -19,6 +19,7 @@ sussy_ducky_bot is a serverless telegram bot written in Rust that interacts with
    - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token
    - `OPENROUTER_KEY`: API key for OpenRouter
    - `TOGETHER_KEY`: API key for together.ai
+   - `GROQCLOUD_KEY`: API key for GroqCloud
 
 2. **Cargo Lambda**: Install the `cargo-lambda` tool. More information can be found [here](https://www.cargo-lambda.info/guide/installation.html).
 
@@ -29,11 +30,7 @@ sussy_ducky_bot is a serverless telegram bot written in Rust that interacts with
 
 ## Commands
 
-- `/help` & `/start` - Displays help text
-- `/caveman` - Uses Llama3.1 8b model from OpenRouter with a custom system prompt
-- `/llama` - Uses Llama 3.1 70b or 3.2 12b vision model from OpenRouter
-- `/lobotomy` - Uses Llama 3.2 1b model from OpenRouter (for fun)
-- `/flux` - Uses the free flux[schnell] model from together.ai
+Look at the top of the `src/main.rs` file for the list of commands the bot supports.
 
 ## Running the Bot
 

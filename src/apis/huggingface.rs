@@ -1,9 +1,9 @@
 /// Extremely sketchy huggingface client, do not learn from this
 use anyhow::Result;
 use futures::StreamExt;
+use log::{debug, error};
 use reqwest::{Client as ReqwestClient, Url};
 use serde_json::{json, Value};
-use tracing::{debug, error};
 
 pub struct HuggingFaceClient {
     client: ReqwestClient,
