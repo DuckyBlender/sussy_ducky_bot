@@ -3,24 +3,22 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::too_many_lines)]
 
-use apis::{HuggingFaceClient, ImageRequest, OpenAIClient, TogetherClient};
+use apis::{ImageRequest, OpenAIClient, TogetherClient};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
 use chrono::Local;
 use fern::colors::ColoredLevelConfig;
 use lambda_http::{run, service_fn, Error};
 use log::{debug, error, info, warn};
-use reqwest::Url;
-use serde_json::json;
 use std::env;
 use teloxide::prelude::*;
 use teloxide::types::{ChatAction, InputFile, Message, ReplyParameters, UpdateKind};
 use teloxide::utils::command::BotCommands;
 mod apis;
 mod utils;
+use std::panic;
 use utils::{
-    download_and_encode_image, find_prompt, get_image_from_message, parse_webhook,
-    remove_g_segment, safe_send,
+    download_and_encode_image, find_prompt, get_image_from_message, parse_webhook, safe_send,
 };
 
 #[derive(BotCommands, Clone, Debug, PartialEq)]
@@ -34,8 +32,6 @@ enum Command {
     Llama,
     #[command(description = "flux[schnell] from together.ai")]
     Flux,
-    #[command(description = "fast text-to-video", aliases = ["videogen", "t2v"])]
-    Video,
     #[command(description = "gemini 2.0 flash exp with absurd system prompt")]
     Lobotomy,
     #[command(description = "gemini 2.0 flash exp with cunny system prompt")]
@@ -44,6 +40,12 @@ enum Command {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    // Set a custom panic hook so it never returns non-200 to telegram
+    panic::set_hook(Box::new(|panic_info| {
+        error!("Application panicked: {:?}", panic_info);
+        std::process::exit(0);
+    }));
+
     // Initialize tracing for logging
     let colors = ColoredLevelConfig::new();
     fern::Dispatch::new()
@@ -158,83 +160,6 @@ async fn handle_command(
                 .status(200)
                 .body(String::new())
                 .unwrap())
-        }
-
-        // This command is extremely sketchy and temporary
-        Command::Video => {
-            // Just the prompt, no image
-            let Some(msg_text) = find_prompt(message).await.0 else {
-                warn!("No prompt found in the message or reply message");
-                safe_send(bot, message.chat.id, message.id, "Please provide a prompt.").await;
-                return Ok(lambda_http::Response::builder()
-                    .status(200)
-                    .body(String::new())
-                    .unwrap());
-            };
-
-            // Send typing indicator
-            bot.send_chat_action(message.chat.id, ChatAction::Typing)
-                .await
-                .unwrap();
-
-            // Send the request to the HF API
-            let client = HuggingFaceClient::new();
-
-            let seed = rand::random::<u32>();
-
-            let url = Url::parse("https://tiger-lab-t2v-turbo-v2.hf.space").unwrap();
-            let data = json!([
-                msg_text, // Text
-                7.5,      // Guidance scale
-                0.5,      // Percentage of steps to apply motion guidance
-                16,       // Number of inference steps
-                16,       // Number of video frames
-                seed,     // Seed
-                false,    // Randomize seed
-                "bf16"    // torch.dtype
-            ]);
-
-            let output = client.request(url, data).await;
-
-            match output {
-                Ok(event_id) => {
-                    // Send the response
-                    let url = event_id[0]["video"]["url"].as_str().unwrap();
-                    info!("Video URL: {}", url);
-
-                    let url = Url::parse(url).unwrap();
-
-                    let url = remove_g_segment(url);
-
-                    // Send sending video indicator
-                    bot.send_chat_action(message.chat.id, ChatAction::UploadVideo)
-                        .await
-                        .unwrap();
-                    let res = bot
-                        .send_video(message.chat.id, InputFile::url(url))
-                        .reply_parameters(ReplyParameters::new(message.id))
-                        .await;
-
-                    if let Err(e) = res {
-                        error!("Failed to send message: {:?}", e);
-                    }
-
-                    Ok(lambda_http::Response::builder()
-                        .status(200)
-                        .body(String::new())
-                        .unwrap())
-                }
-
-                Err(e) => {
-                    error!("Failed to submit request: {:?}", e);
-                    safe_send(bot, message.chat.id, message.id, &format!("error: {e:?}")).await;
-
-                    Ok(lambda_http::Response::builder()
-                        .status(200)
-                        .body(String::new())
-                        .unwrap())
-                }
-            }
         }
 
         Command::Flux => {
