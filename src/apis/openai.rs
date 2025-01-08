@@ -12,7 +12,7 @@ use crate::Command;
 
 const OPENROUTER_HEADERS: [&str; 2] = [
     "X-Title: sussy_ducky_bot",
-    "HTTP-Referer: https://krolok.pics",
+    "HTTP-Referer: https://krolok.net",
 ];
 
 #[derive(Debug)]
@@ -34,7 +34,7 @@ impl OpenAIClient {
 
     fn get_model_and_provider(model: &Command, image: bool) -> (String, Providers) {
         match model {
-            Command::Llama => {
+            Command::Llama | Command::Lobotomy | Command::Cunny => {
                 if image {
                     (
                         "llama-3.2-90b-vision-preview".to_string(),
@@ -44,10 +44,10 @@ impl OpenAIClient {
                     ("llama-3.3-70b-specdec".to_string(), Providers::GroqCloud)
                 }
             }
-            Command::Lobotomy | Command::Cunny => (
-                "google/gemini-2.0-flash-exp:free".to_string(),
-                Providers::OpenRouter,
-            ),
+            // Command::Lobotomy | Command::Cunny => (
+            //     "google/gemini-2.0-flash-exp:free".to_string(),
+            //     Providers::OpenRouter,
+            // ),
             Command::Help | Command::Start | Command::Flux => {
                 unreachable!()
             }
