@@ -1,53 +1,8 @@
-use base64::{engine::general_purpose, Engine as _};
 use log::{debug, error, info, warn};
 use teloxide::{
-    net::Download,
     prelude::*,
-    types::{MessageId, PhotoSize, ReplyParameters, Sticker},
+    types::{MessageId, ReplyParameters},
 };
-
-pub enum Media {
-    Photo(PhotoSize),
-    Sticker(Sticker),
-}
-
-pub fn get_image_from_message(message: &Message) -> Option<Media> {
-    if let Some(photo) = message.photo() {
-        debug!("Photo found in the message");
-        let photo = photo.last().unwrap();
-        Some(Media::Photo(photo.clone()))
-    } else if let Some(sticker) = message.sticker() {
-        debug!("Sticker found in the message");
-        Some(Media::Sticker(sticker.clone()))
-    } else if let Some(photo) = message.reply_to_message().and_then(|m| m.photo()) {
-        debug!("Photo found in the reply message");
-        let photo = photo.last().unwrap();
-        return Some(Media::Photo(photo.clone()));
-    } else if let Some(sticker) = message.reply_to_message().and_then(|m| m.sticker()) {
-        debug!("Sticker found in the reply message");
-        return Some(Media::Sticker(sticker.clone()));
-    } else {
-        debug!("No photo or sticker found in the message or reply message");
-        return None;
-    }
-}
-
-pub async fn download_and_encode_image(bot: &Bot, media: &Media) -> anyhow::Result<String> {
-    let mut buf: Vec<u8> = Vec::new();
-
-    // Determine whether it's a photo or a sticker
-    let file_id = match media {
-        Media::Photo(photo) => &photo.file.id,
-        Media::Sticker(sticker) => &sticker.file.id,
-    };
-
-    let file = bot.get_file(file_id).await?;
-    bot.download_file(&file.path, &mut buf).await?;
-
-    let base64_img = general_purpose::STANDARD.encode(&buf).to_string();
-
-    Ok(base64_img)
-}
 
 pub fn remove_command(text: &str) -> String {
     if text.starts_with('/') {
@@ -147,7 +102,7 @@ pub fn parse_webhook(
     let body_str = match body {
         lambda_http::Body::Text(text) => text,
         not => {
-            error!("Expected Body::Text(...) got {:?}", not);
+            error!("Expected Body::Text(...) got {not:?}");
             return Err(lambda_http::Error::from("Expected Body::Text(...)"));
         }
     };
@@ -204,7 +159,7 @@ pub async fn safe_send(bot: Bot, chat_id: ChatId, reply_to_msg_id: MessageId, te
             .await;
 
         if let Err(err) = res {
-            error!("Failed to send message: {:?}", err);
+            error!("Failed to send message: {err:?}");
         }
     }
 }

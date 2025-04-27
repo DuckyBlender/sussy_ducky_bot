@@ -3,7 +3,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::too_many_lines)]
 
-use apis::{ImageRequest, OpenAIClient, TogetherClient};
+use apis::{ImageRequest, TogetherClient};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::engine::Engine as _;
 use chrono::Local;
@@ -18,7 +18,7 @@ mod apis;
 mod utils;
 use std::panic;
 use utils::{
-    download_and_encode_image, find_prompt, get_image_from_message, parse_webhook, safe_send,
+    find_prompt, parse_webhook, safe_send,
 };
 
 #[derive(BotCommands, Clone, Debug, PartialEq)]
@@ -28,21 +28,15 @@ enum Command {
     Help,
     #[command(description = "welcome message")]
     Start,
-    #[command(description = "llama3.3 70b or llama 3.2 90b vision", alias = "l")]
-    Llama,
     #[command(description = "flux[schnell] from together.ai")]
     Flux,
-    #[command(description = "gemini 2.0 flash exp with absurd system prompt")]
-    Lobotomy,
-    #[command(description = "gemini 2.0 flash exp with cunny system prompt")]
-    Cunny,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     // Set a custom panic hook so it never returns non-200 to telegram
     panic::set_hook(Box::new(|panic_info| {
-        error!("Application panicked: {:?}", panic_info);
+        error!("Application panicked: {panic_info:?}");
         std::process::exit(0);
     }));
 
@@ -80,7 +74,7 @@ async fn main() -> Result<(), Error> {
 
     match res {
         Ok(_) => info!("Bot commands set successfully"),
-        Err(e) => warn!("Failed to set commands: {:?}", e),
+        Err(e) => warn!("Failed to set commands: {e:?}"),
     }
 
     // Run the Lambda function
@@ -102,7 +96,7 @@ async fn handler(
             message
         }
         Err(e) => {
-            error!("Failed to parse webhook: {:?}", e);
+            error!("Failed to parse webhook: {e:?}");
             return Ok(lambda_http::Response::builder()
                 .status(200)
                 .body("Failed to parse webhook".into())
@@ -113,26 +107,10 @@ async fn handler(
     // Handle commands
     if let UpdateKind::Message(message) = &update.kind {
         if let Some(text) = message.text().or_else(|| message.caption()) {
-            debug!("Received text or caption: {}", text);
+            debug!("Received text or caption: {text}");
             if let Ok(command) = Command::parse(text, bot.get_me().await.unwrap().username()) {
-                info!("Parsed command: {:?}", command);
+                info!("Parsed command: {command:?}");
                 return handle_command(bot.clone(), message, command).await;
-            }
-        }
-    }
-
-    // Secret bawialnia easter egg
-    if let UpdateKind::Message(message) = &update.kind {
-        if message.text().is_some()
-            && (message.chat.id == ChatId(-1001865084475)
-                || message.chat.id == ChatId(-1001641972650))
-        {
-            let random: f64 = rand::random();
-            // debug!("Random number: {}", random);
-            if random < 0.001 {
-                // 0.1% chance of triggering
-                // this has a bug, if the message starts with a command, the bot will respond with an error
-                return handle_command(bot.clone(), message, Command::Lobotomy).await;
             }
         }
     }
@@ -150,7 +128,7 @@ async fn handle_command(
     message: &Message,
     command: Command,
 ) -> Result<lambda_http::Response<String>, lambda_http::Error> {
-    info!("Handling command: {:?}", command);
+    info!("Handling command: {command:?}");
 
     match command {
         Command::Help | Command::Start => {
@@ -193,7 +171,7 @@ async fn handle_command(
 
             let res = client.submit_request(request).await;
             if let Err(e) = res {
-                error!("Failed to submit request: {:?}", e);
+                error!("Failed to submit request: {e:?}");
                 safe_send(bot, message.chat.id, message.id, &format!("error: {e:?}")).await;
                 return Ok(lambda_http::Response::builder()
                     .status(200)
@@ -225,95 +203,8 @@ async fn handle_command(
                 .await;
 
             if let Err(e) = res {
-                error!("Failed to send message: {:?}", e);
+                error!("Failed to send message: {e:?}");
             }
-
-            Ok(lambda_http::Response::builder()
-                .status(200)
-                .body(String::new())
-                .unwrap())
-        }
-        _ => {
-            // Get the image file, if any
-            let img = get_image_from_message(message);
-
-            let (msg_text, assistant_text) = find_prompt(message).await;
-
-            let base64_img = match img {
-                Some(photo) => Some(download_and_encode_image(&bot, &photo).await.unwrap()),
-                None => None,
-            };
-
-            // Check if base64 image is larger than 4MB
-            if let Some(base64_img) = &base64_img {
-                if base64_img.len() > 4 * 1024 * 1024 {
-                    warn!("Image is too large: {} bytes", base64_img.len());
-                    safe_send(
-                        bot,
-                        message.chat.id,
-                        message.id,
-                        &format!(
-                            "Image is too large: {:.2}MB (max 4MB)",
-                            base64_img.len() / 1024 / 1024
-                        ),
-                    )
-                    .await;
-
-                    return Ok(lambda_http::Response::builder()
-                        .status(200)
-                        .body(String::new())
-                        .unwrap());
-                }
-            }
-
-            // If there is no user prompt, send an error message
-            if msg_text.is_none() {
-                safe_send(bot, message.chat.id, message.id, "Please provide a prompt.").await;
-
-                return Ok(lambda_http::Response::builder()
-                    .status(200)
-                    .body(String::new())
-                    .unwrap());
-            }
-            let msg_text = msg_text.unwrap();
-
-            // Send typing indicator
-            bot.send_chat_action(message.chat.id, ChatAction::Typing)
-                .await
-                .unwrap();
-
-            // Send the request
-            let client = OpenAIClient::new();
-            let res = client
-                .openai_request(msg_text, assistant_text, base64_img, command)
-                .await;
-
-            // Catch error
-            if let Err(e) = res {
-                error!("Failed to submit request: {:?}", e);
-                safe_send(bot, message.chat.id, message.id, &format!("error: {e:?}")).await;
-
-                return Ok(lambda_http::Response::builder()
-                    .status(200)
-                    .body(String::new())
-                    .unwrap());
-            }
-
-            let response_text = res.unwrap();
-
-            // Check if empty response
-            if response_text.is_empty() {
-                warn!("Empty response from API");
-                safe_send(bot, message.chat.id, message.id, "<no text>").await;
-
-                return Ok(lambda_http::Response::builder()
-                    .status(200)
-                    .body(String::new())
-                    .unwrap());
-            }
-
-            // Safe send the response
-            safe_send(bot, message.chat.id, message.id, &response_text).await;
 
             Ok(lambda_http::Response::builder()
                 .status(200)
