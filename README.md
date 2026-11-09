@@ -1,45 +1,35 @@
 # sussy_ducky_bot
 
-## Overview
+A tiny Telegram bot that chats through a local LLM (llama.cpp's `llama-server`, OpenAI-compatible API).
 
-sussy_ducky_bot is a serverless telegram bot written in Rust that interacts with models from OpenRouter. It handles commands from users and processes messages with various AI models.
+- **Where it answers:** every message in private chats; in groups, `/ask`, @mentions and replies to its messages.
+- **Reply chains:** reply to any message in a conversation to continue it; the whole chain is sent as context (kept in memory, lost on restart).
+- **Images:** sent at the highest resolution Telegram has (photos, or images sent as files) when the model has vision (llama-server started with `--mmproj`). This is checked live via `/props`.
+- **Formatting:** the model's Markdown is converted to Telegram HTML (bold, italics, code blocks, links, lists, quotes). If Telegram rejects a message, it is resent as plain text.
+- **Startup:** messages that arrived while the bot was offline are skipped, not answered.
+- **Errors:** the bot reacts with 🤯 instead of posting an error. 🤷 means there was nothing to answer (for example a picture while vision is off).
 
-> [!NOTE]
-> NEW! Now for three months the bot also uses the free flux[schnell] model from together.ai
+## System prompts
 
-## Features
+The default system prompt is "Keep replies short." Users build a shared library of named prompts and each picks one for their own messages:
 
-- **Serverless**: Made for AWS Lambda.
-- **Free**: Hosted on AWS Lambda, uses free OpenRouter models.
-- **Image Handling**: Supports vision models.
+| Command | What it does |
+| --- | --- |
+| `/prompts` | list all prompts, marking yours |
+| `/prompt [name]` | show a prompt (yours if no name) |
+| `/newprompt <name> <text>` | create, or edit one you own; reply to a message with `/newprompt <name>` to use its text |
+| `/useprompt <name>` / `/useprompt default` | pick a prompt for yourself / go back to the default |
+| `/delprompt <name>` | delete a prompt you created (its users fall back to the default) |
 
-## Setup
+Prompts are stored in `data/prompts.json`.
 
-1. **Environment Variables**: Ensure you have the following environment variables set:
-   - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token
-   - `OPENROUTER_KEY`: API key for OpenRouter
-   - `TOGETHER_KEY`: API key for together.ai
-   - `GROQCLOUD_KEY`: API key for GroqCloud
+## Run
 
-2. **Cargo Lambda**: Install the `cargo-lambda` tool. More information can be found [here](https://www.cargo-lambda.info/guide/installation.html).
+```bash
+cp .env.example .env   # set TELEGRAM_BOT_TOKEN
+mkdir -p data
+docker compose up -d --build
+docker compose logs -f
+```
 
-> [!IMPORTANT]  
-> Don't install cargo lambda using `cargo install cargo-lambda`, as it doesn't support ARM64. Because of this, the brew installation is recommended.
-
-3. **AWS CLI**: Ensure you have the AWS CLI installed and configured.
-
-## Commands
-
-Look at the top of the `src/main.rs` file for the list of commands the bot supports.
-
-## Running the Bot
-
-To run the bot, ensure all environment variables are set, then execute the `deploy.sh` script. It compiles the project in arm64 and deploys it to AWS Lambda.
-
-## Contributing
-
-Feel free to open issues or submit pull requests for improvements or bug fixes.
-
-## License
-
-This project is licensed under the MIT License. See `LICENSE` for details.
+Logs go to stdout and to `data/logs/sussy_ducky_bot.YYYY-MM-DD.log`. The compose file expects `llama-server` on the Docker host at port 8081.
